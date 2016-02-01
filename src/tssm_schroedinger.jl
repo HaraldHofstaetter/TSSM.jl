@@ -1,11 +1,11 @@
 
-type Schroedinger1D <: TSSM
+type Schroedinger1D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function Schroedinger1D(nx::Integer, xmin::Real, xmax::Real; 
                         hbar::Real=1.0, mass::Real=1.0, potential::Function=none_1D,
                         cubic_coupling::Real=0.0,
                         boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_1D
         V_c = cfunction(potential, Cdouble, (Cdouble,))
         m = new( ccall( dlsym(tssm_handle, "c_new_schroedinger_1d"), Ptr{Void}, 
@@ -16,13 +16,13 @@ type Schroedinger1D <: TSSM
     end
 end
 
-type Schroedinger2D <: TSSM
+type Schroedinger2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function Schroedinger2D(nx::Integer, xmin::Real, xmax::Real, ny::Integer, ymin::Real, ymax::Real;
                         hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
                         cubic_coupling::Real=0.0,
                         boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_2D
         V_c = cfunction(potential, Cdouble, (Cdouble,Cdouble))
         m = new( ccall( dlsym(tssm_handle, "c_new_schroedinger_2d"), Ptr{Void}, 
@@ -33,14 +33,14 @@ type Schroedinger2D <: TSSM
     end
 end
 
-type Schroedinger3D <: TSSM
+type Schroedinger3D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function Schroedinger3D(nx::Integer, xmin::Real, xmax::Real,  ny::Integer, ymin::Real, ymax::Real,
                        nz::Integer, zmin::Real, zmax::Real; 
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_3D
         V_c = cfunction(potential, Cdouble, (Cdouble,Cdouble,Cdouble))
         m = new( ccall( dlsym(tssm_handle, "c_new_schroedinger_3d"), Ptr{Void}, 
@@ -51,13 +51,13 @@ type Schroedinger3D <: TSSM
     end
 end
 
-type SchroedingerReal1D <: TSSM
+type SchroedingerReal1D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function SchroedingerReal1D(nx::Integer, xmin::Real, xmax::Real; 
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_1D,
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_1D
         V_c = cfunction(potential, Cdouble, (Cdouble,))
         m = new( ccall( dlsym(tssm_handle, "c_new_schroedinger_real_1d"), Ptr{Void}, 
@@ -68,13 +68,13 @@ type SchroedingerReal1D <: TSSM
     end
 end
 
-type SchroedingerReal2D <: TSSM
+type SchroedingerReal2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function SchroedingerReal2D(nx::Integer, xmin::Real, xmax::Real, ny::Integer, ymin::Real, ymax::Real;
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_2D
         V_c = cfunction(potential, Cdouble, (Cdouble,Cdouble))
         m = new( ccall( dlsym(tssm_handle, "c_new_schroedinger_real_2d"), Ptr{Void}, 
@@ -85,14 +85,14 @@ type SchroedingerReal2D <: TSSM
     end
 end
 
-type SchroedingerReal3D <: TSSM
+type SchroedingerReal3D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function SchroedingerReal3D(nx::Integer, xmin::Real, xmax::Real,  ny::Integer, ymin::Real, ymax::Real,
                        nz::Integer, zmin::Real, zmax::Real; 
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_3D
         V_c = cfunction(potential, Cdouble, (Cdouble,Cdouble,Cdouble))
         m = new( ccall( dlsym(tssm_handle, "c_new_schroedinger_real_3d"), Ptr{Void}, 

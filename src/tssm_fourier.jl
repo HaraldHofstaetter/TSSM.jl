@@ -1,9 +1,9 @@
 
-type Fourier1D <: TSSM
+type Fourier1D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function Fourier1D(nx::Integer, xmin::Real, xmax::Real; 
                         boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         m = new( ccall( dlsym(tssm_handle, "c_new_fourier_1d"), Ptr{Void}, 
                    (Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, boundary_conditions) )
@@ -12,11 +12,11 @@ type Fourier1D <: TSSM
     end
 end
 
-type Fourier2D <: TSSM
+type Fourier2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function Fourier2D(nx::Integer, xmin::Real, xmax::Real, ny::Integer, ymin::Real, ymax::Real;
                         boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         m = new( ccall( dlsym(tssm_handle, "c_new_fourier_2d"), Ptr{Void}, 
                    (Int32, Float64, Float64,Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, boundary_conditions) )
@@ -25,11 +25,11 @@ type Fourier2D <: TSSM
     end
 end
 
-type Fourier3D <: TSSM
+type Fourier3D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function Fourier3D(nx::Integer, xmin::Real, xmax::Real,  ny::Integer, ymin::Real, ymax::Real,
                        nz::Integer, zmin::Real, zmax::Real; boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         m = new( ccall( dlsym(tssm_handle, "c_new_fourier_3d"), Ptr{Void}, 
                    (Int32, Float64, Float64,Int32, Float64, Float64,Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax, boundary_conditions) )
@@ -38,11 +38,11 @@ type Fourier3D <: TSSM
     end
 end
 
-type FourierReal1D <: TSSM
+type FourierReal1D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function FourierReal1D(nx::Integer, xmin::Real, xmax::Real; 
                         boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         m = new( ccall( dlsym(tssm_handle, "c_new_fourier_real_1d"), Ptr{Void}, 
                    (Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, boundary_conditions) )
@@ -51,11 +51,11 @@ type FourierReal1D <: TSSM
     end
 end
 
-type FourierReal2D <: TSSM
+type FourierReal2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function FourierReal2D(nx::Integer, xmin::Real, xmax::Real, ny::Integer, ymin::Real, ymax::Real;
                         boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         m = new( ccall( dlsym(tssm_handle, "c_new_fourier_real_2d"), Ptr{Void}, 
                    (Int32, Float64, Float64,Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, boundary_conditions) )
@@ -64,11 +64,11 @@ type FourierReal2D <: TSSM
     end
 end
 
-type FourierReal3D <: TSSM
+type FourierReal3D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function FourierReal3D(nx::Integer, xmin::Real, xmax::Real,  ny::Integer, ymin::Real, ymax::Real,
                        nz::Integer, zmin::Real, zmax::Real; boundary_conditions::Integer=periodic)
-        ccall( dlsym(tssm.tssm_handle, "c_initialize_tssm_fourier"), Void, ())
+        ccall( dlsym(tssm_handle, "c_initialize_tssm_fourier"), Void, ())
         m = new( ccall( dlsym(tssm_handle, "c_new_fourier_real_3d"), Ptr{Void}, 
                    (Int32, Float64, Float64,Int32, Float64, Float64,Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax, boundary_conditions) )

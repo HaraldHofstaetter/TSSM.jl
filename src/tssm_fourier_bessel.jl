@@ -7,7 +7,7 @@ const radau = 2
 const lobatto = 3
 
 
-type FourierBessel2D <: TSSM
+type FourierBessel2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function FourierBessel2D(M::Integer, nr::Integer, nfr::Integer; 
                              r_max::Real = 1.0,
@@ -22,7 +22,7 @@ type FourierBessel2D <: TSSM
     end
 end
 
-type FourierBesselReal2D <: TSSM
+type FourierBesselReal2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function FourierBesselReal2D(M::Integer, nr::Integer, nfr::Integer;
                                  r_max::Real = 1.0,

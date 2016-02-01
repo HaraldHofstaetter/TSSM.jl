@@ -1,18 +1,12 @@
 module TSSM
 
-using Base.dlopen
-using Base.dlsym
-#using Base.dlext
-
-#using Base.Libdl.dlopen
-#using Base.Libdl.dlsym
-#using Base.Libdl.dlext
+import Base.Libdl: dlsym, dlopen 
 
 import Base.copy!
 import Base.scale!
 import Base.norm
 
-export WaveFunction, WaveFunction1D, WaveFunction2D, WaveFunction3D, TSSM
+export WaveFunction, WaveFunction1D, WaveFunction2D, WaveFunction3D, TimeSplittingSpectralMethod
 export dim
 #export tssm_handle
 
@@ -74,12 +68,13 @@ export selfconsistent_nonlinear_step!
 
 function __init__()
     global tssm_handle
-    tssm_handle = dlopen( (@windows? :"libtssm.dll" : ( @osx? "libtssm.dylib" : :"libtssm.so" )) );
-#    tssm_handle = dlopen( string("libtssm.", dlext) );
-    ccall( dlsym(tssm_handle, "c_initialize_tssm"), Void, ())
+    libtssm = string(joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib", "libtssm."), 
+                   (@windows? :"dll" : ( @osx? "dylib" : :"so" )) )
+    tssm_handle = Libdl.dlopen(libtssm);
+    ccall( Libdl.dlsym(tssm_handle, "c_initialize_tssm"), Void, ())
 end
 
-abstract TSSM
+abstract TimeSplittingSpectralMethod
 
 abstract WaveFunction
 abstract WaveFunction1D <: WaveFunction

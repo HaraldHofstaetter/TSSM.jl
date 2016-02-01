@@ -1,4 +1,4 @@
-type SchroedingerHermite1D <: TSSM
+type SchroedingerHermite1D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function SchroedingerHermite1D(nx::Integer, omega_x::Real; 
                         hbar::Real=1.0, mass::Real=1.0, potential::Function=none_1D,
@@ -13,7 +13,7 @@ type SchroedingerHermite1D <: TSSM
     end
 end
 
-type SchroedingerHermite2D <: TSSM
+type SchroedingerHermite2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function SchroedingerHermite2D(nx::Integer, omega_x::Real, ny::Integer, omega_y::Real;
                         hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
@@ -28,7 +28,7 @@ type SchroedingerHermite2D <: TSSM
     end
 end
 
-type SchroedingerHermite3D <: TSSM
+type SchroedingerHermite3D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function SchroedingerHermite3D(nx::Integer, omega_x::Real,  ny::Integer, omega_y::Real,
                        nz::Integer, omega_z::Real; 
@@ -44,7 +44,7 @@ type SchroedingerHermite3D <: TSSM
     end
 end
 
-type SchroedingerHermiteReal1D <: TSSM
+type SchroedingerHermiteReal1D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function SchroedingerHermiteReal1D(nx::Integer, omega_x::Real; 
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_1D,
@@ -59,7 +59,7 @@ type SchroedingerHermiteReal1D <: TSSM
     end
 end
 
-type SchroedingerHermiteReal2D <: TSSM
+type SchroedingerHermiteReal2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function SchroedingerHermiteReal2D(nx::Integer, omega_x::Real, ny::Integer, omega_y::Real;
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
@@ -74,7 +74,7 @@ type SchroedingerHermiteReal2D <: TSSM
     end
 end
 
-type SchroedingerHermiteReal3D <: TSSM
+type SchroedingerHermiteReal3D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function SchroedingerHermiteReal3D(nx::Integer, omega_x::Real,  ny::Integer, omega_y::Real,
                        nz::Integer, omega_z::Real; 

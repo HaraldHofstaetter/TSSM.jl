@@ -1,5 +1,5 @@
 
-type GeneralizedLaguerre2D <: TSSM
+type GeneralizedLaguerre2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function GeneralizedLaguerre2D(M::Integer, K::Integer, gamma_r::Real, Omega::Real) 
         meth = new( ccall( dlsym(tssm_handle, "c_new_gen_laguerre_2d"), Ptr{Void}, 
@@ -10,7 +10,7 @@ type GeneralizedLaguerre2D <: TSSM
     end
 end
 
-type GeneralizedLaguerreHermite3D <: TSSM
+type GeneralizedLaguerreHermite3D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function GeneralizedLaguerreHermite3D(M::Integer, K::Integer, gamma_r::Real, Omega::Real, nz::Integer, gamma_z::Real) 
         meth = new( ccall( dlsym(tssm_handle, "c_new_gen_laguerre_hermite_3d"), Ptr{Void}, 
@@ -21,7 +21,7 @@ type GeneralizedLaguerreHermite3D <: TSSM
     end
 end
 
-type GeneralizedLaguerreReal2D <: TSSM
+type GeneralizedLaguerreReal2D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function GeneralizedLaguerreReal2D(M::Integer, K::Integer, gamma_r::Real, Omega::Real) 
         meth = new( ccall( dlsym(tssm_handle, "c_new_gen_laguerre_real_2d"), Ptr{Void}, 
@@ -32,7 +32,7 @@ type GeneralizedLaguerreReal2D <: TSSM
     end
 end
 
-type GeneralizedLaguerreHermiteReal3D <: TSSM
+type GeneralizedLaguerreHermiteReal3D <: TimeSplittingSpectralMethod
     m::Ptr{Void}
     function GeneralizedLaguerreHermiteReal3D(M::Integer, K::Integer, gamma_r::Real, Omega::Real, nz::Integer, gamma_z::Real) 
         meth = new( ccall( dlsym(tssm_handle, "c_new_gen_laguerre_hermite_real_3d"), Ptr{Void}, 
