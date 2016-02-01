@@ -47,7 +47,7 @@ export wave_function, clone
 export is_real_space, is_frequency_space, to_real_space!, to_frequency_space!
 export propagate_A!, propagate_B!, add_apply_A!
 export norm, norm_in_frequency_space, normalize!, distance, scale!, axpy! 
-export inner_product, eigen_function!, eval
+export inner_product, eigen_function!, evaluate
 export save, load!, get_data, set!, copy!
 export get_eigenvalues, get_nodes, get_weights
 export get_nx, get_ny, get_nz
