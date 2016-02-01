@@ -7,7 +7,11 @@ else
     cd("..")
 end
 
-run(`make -C TSSM/OPENMP JULIA_BUILD=1 all`)
+if searchindex(readall(`uname -a`), "juliabox")>0
+    run(`make -C TSSM/OPENMP JULIABOX_BUILD=1 all`)
+else    
+    run(`make -C TSSM/OPENMP all`)
+end
 
 if (!ispath("usr"))
     run(`mkdir usr`)
