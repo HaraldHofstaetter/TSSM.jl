@@ -564,44 +564,44 @@ end
 
 function save(psi::WfGeneralizedLaguerre2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_gen_laguerre_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfGeneralizedLaguerreHermite3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_gen_laguerre_hermite_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfGeneralizedLaguerreReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_gen_laguerre_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfGeneralizedLaguerreHermiteReal3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_gen_laguerre_hermite_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 ## method: load! ###################################################################################
 
 function load!(psi::WfGeneralizedLaguerre2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_gen_laguerre_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfGeneralizedLaguerreHermite3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_gen_laguerre_hermite_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfGeneralizedLaguerreReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_gen_laguerre_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfGeneralizedLaguerreHermiteReal3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_gen_laguerre_hermite_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 ## method: norm ###################################################################################

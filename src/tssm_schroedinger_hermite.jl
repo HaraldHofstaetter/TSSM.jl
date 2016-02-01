@@ -443,64 +443,64 @@ end
 
 function save(psi::WfSchroedingerHermite1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wfs_hermite_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfSchroedingerHermite2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wfs_hermite_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfSchroedingerHermite3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wfs_hermite_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfSchroedingerHermiteReal1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wfs_hermite_real_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfSchroedingerHermiteReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wfs_hermite_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfSchroedingerHermiteReal3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wfs_hermite_real_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 ## method: load! ##################################################################################
 
 function load!(psi::WfSchroedingerHermite1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wfs_hermite_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfSchroedingerHermite2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wfs_hermite_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfSchroedingerHermite3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wfs_hermite_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfSchroedingerHermiteReal1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wfs_hermite_real_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfSchroedingerHermiteReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wfs_hermite_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfSchroedingerHermiteReal3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wfs_hermite_real_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 ## method: norm ###################################################################################
@@ -1621,64 +1621,64 @@ end
 
 function load_potential!(m::SchroedingerHermite1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_potential_schroedinger_hermite_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function load_potential!(m::SchroedingerHermite2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_potential_schroedinger_hermite_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function load_potential!(m::SchroedingerHermite3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_potential_schroedinger_hermite_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function load_potential!(m::SchroedingerHermiteReal1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_potential_schroedinger_hermite_real_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function load_potential!(m::SchroedingerHermiteReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_potential_schroedinger_hermite_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function load_potential!(m::SchroedingerHermiteReal3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_potential_schroedinger_hermite_real_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 ## method: save_potential #########################################################################
 
 function save_potential(m::SchroedingerHermite1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_potential_schroedinger_hermite_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function save_potential(m::SchroedingerHermite2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_potential_schroedinger_hermite_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function save_potential(m::SchroedingerHermite3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_potential_schroedinger_hermite_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function save_potential(m::SchroedingerHermiteReal1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_potential_schroedinger_hermite_real_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function save_potential(m::SchroedingerHermiteReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_potential_schroedinger_hermite_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 function save_potential(m::SchroedingerHermiteReal3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_potential_schroedinger_hermite_real_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), m.m, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
 end    
 
 ## method: imaginary_time_propagate_A! ############################################################

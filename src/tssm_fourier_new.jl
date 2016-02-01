@@ -259,12 +259,12 @@ for (METHOD, WF, PARENT_WF, SUF, COMPLEX_METHOD, DIM) in (
         
         function save(psi::($WF){$T}, filename::ASCIIString)
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_save_wf",SUF))), Void,
-                 (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+                 (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
         end         
 
         function load!(psi::($WF){$T}, filename::ASCIIString)
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_load_wf",SUF))), Void,
-                 (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+                 (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
         end    
 
         function copy!(target::($WF){$T}, source::($WF){$T})

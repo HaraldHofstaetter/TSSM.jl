@@ -467,64 +467,64 @@ end
 
 function save(psi::WfFourier1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_fourier_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfFourier2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_fourier_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfFourier3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_fourier_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfFourierReal1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_fourier_real_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfFourierReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_fourier_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfFourierReal3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_fourier_real_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 ## method: load! ###################################################################################
 
 function load!(psi::WfFourier1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_fourier_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfFourier2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_fourier_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfFourier3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_fourier_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfFourierReal1D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_fourier_real_1d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfFourierReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_fourier_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfFourierReal3D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_fourier_real_3d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 ## method: norm ###################################################################################

@@ -291,24 +291,24 @@ end
 
 function save(psi::WfFourierBessel2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_fourier_bessel_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function save(psi::WfFourierBesselReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_save_wf_fourier_bessel_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 ## method: load! ###################################################################################
 
 function load!(psi::WfFourierBessel2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_fourier_bessel_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 function load!(psi::WfFourierBesselReal2D, filename::ASCIIString)
    ccall( dlsym(tssm_handle, "c_load_wf_fourier_bessel_real_2d"), Void,
-         (Ptr{Void}, Ptr{Uint8}, Int32,), psi.p, filename, length(filename))
+         (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
 end    
 
 ## method: evaluate ###################################################################################
