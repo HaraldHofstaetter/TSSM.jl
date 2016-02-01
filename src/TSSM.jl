@@ -68,10 +68,22 @@ export selfconsistent_nonlinear_step!
 
 function __init__()
     global tssm_handle
+    if searchindex(readall(`uname -a`), "juliabox")>0
+        # In JuliaBox only 8 out of 16 cores are available.
+        ENV["OMP_NUM_THREADS"] = "8"
+    end
     libtssm = string(joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib", "libtssm."), 
                    (@windows? :"dll" : ( @osx? "dylib" : :"so" )) )
     tssm_handle = Libdl.dlopen(libtssm);
     ccall( Libdl.dlsym(tssm_handle, "c_initialize_tssm"), Void, ())
+    set_fftw_planning_rigor(FFTW.ESTIMATE)
+end
+
+function set_fftw_planning_rigor(flag::Integer=FFTW.ESTIMATE)
+   if !(flag in [ FFTW.ESTIMATE, FFTW.PATIENT, FFTW.MEASURE])
+       error("wrong planning rigor flag")
+   end
+   ccall( dlsym(tssm_handle, "c_set_fftw_planning_rigor"), Void, (Int32,), flag )
 end
 
 abstract TimeSplittingSpectralMethod
@@ -129,74 +141,4 @@ function eigen_function!(psi::WaveFunction3D, k, l, m)
     psi
 end
 
-function get_eigenvalues(psi::WaveFunction, unsafe_access::Bool=false)
-    get_eigenvalues(psi.m, unsafe_access)
-end
-
-function get_nodes(psi::WaveFunction)
-    get_nodes(psi.m) 
-end 
-
-function get_nx(psi::WaveFunction)
-    get_nx(psi.m)
-end
-
-function get_ny(psi::WaveFunction)
-    get_ny(psi.m)
-end
-
-function get_nz(psi::WaveFunction)
-    get_nz(psi.m)
-end
-
-function get_xmin(psi::WaveFunction)
-    get_xmin(psi.m)
-end
-
-function get_xmax(psi::WaveFunction)
-    get_xmax(psi.m)
-end
-
-function get_ymin(psi::WaveFunction)
-    get_ymin(psi.m)
-end
-
-function get_ymax(psi::WaveFunction)
-    get_ymax(psi.m)
-end
-
-function get_zmin(psi::WaveFunction)
-    get_zmin(psi.m)
-end
-
-function get_zmax(psi::WaveFunction)
-    get_zmax(psi.m)
-end
-
-function get_omega_x(psi::WaveFunction)
-    get_omega_x(psi.m)
-end
-
-function get_omega_y(psi::WaveFunction)
-    get_omega_y(psi.m)
-end
-
-function get_omega_z(psi::WaveFunction)
-    get_omega_z(psi.m)
-end
-
-
-function get_hbar(psi::WaveFunction)
-    get_hbar(psi.m)
-end
-
-function get_mass(psi::WaveFunction)
-    get_mass(psi.m)
-end
-
-function get_cubic_coupling(psi::WaveFunction)
-    get_cubic_coupling(psi.m)
-end
-
-end
-
+end # TSSM

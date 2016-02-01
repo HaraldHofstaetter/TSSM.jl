@@ -12,6 +12,7 @@ type Schroedinger1D <: TimeSplittingSpectralMethod
                    (Int32, Float64, Float64, Float64, Float64, Ptr{Void}, Bool, Float64, Int32), 
                    nx, xmin, xmax, hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_schroedinger_1d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom
         m          
     end
 end
@@ -29,6 +30,7 @@ type Schroedinger2D <: TimeSplittingSpectralMethod
                (Int32, Float64, Float64, Int32, Float64, Float64, Float64, Float64, Ptr{Void}, Bool, Float64, Int32), 
                nx, xmin, xmax, ny, ymin, ymax, hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_schroedinger_2d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom
         m           
     end
 end
@@ -47,6 +49,7 @@ type Schroedinger3D <: TimeSplittingSpectralMethod
                (Int32, Float64, Float64, Int32, Float64, Float64, Int32, Float64, Float64, Float64, Float64, Ptr{Void}, Bool, Float64, Int32), 
                nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax, hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_schroedinger_3d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom
         m           
     end
 end
@@ -64,6 +67,7 @@ type SchroedingerReal1D <: TimeSplittingSpectralMethod
                (Int32, Float64, Float64, Float64, Float64, Ptr{Void}, Bool, Float64, Int32), 
                nx, xmin, xmax, hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_schroedinger_real_1d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom
         m           
     end
 end
@@ -81,6 +85,7 @@ type SchroedingerReal2D <: TimeSplittingSpectralMethod
                (Int32, Float64, Float64, Int32, Float64, Float64, Float64, Float64, Ptr{Void}, Bool, Float64, Int32), 
                nx, xmin, xmax, ny, ymin, ymax, hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_schroedinger_real_2d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom
         m           
     end
 end
@@ -99,6 +104,7 @@ type SchroedingerReal3D <: TimeSplittingSpectralMethod
               (Int32, Float64, Float64, Int32, Float64, Float64, Int32, Float64, Float64, Float64, Float64, Ptr{Void}, Bool, Float64, Int32), 
                nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax, hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_schroedinger_real_3d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom
         m           
     end
 end

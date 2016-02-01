@@ -1,5 +1,14 @@
 cd(dirname(@__FILE__))
-run(`make`)
+if (!ispath("TSSM"))
+    run(`git clone git://github.com/HaraldHofstaetter/TSSM.git`)
+else
+    cd("TSSM")
+    run(`git pull`)
+    cd("..")
+end
+
+run(`make -C TSSM/OPENMP JULIA_BUILD=1 all`)
+
 if (!ispath("usr"))
     run(`mkdir usr`)
 end

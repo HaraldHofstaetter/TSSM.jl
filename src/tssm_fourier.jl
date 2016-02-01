@@ -8,6 +8,7 @@ type Fourier1D <: TimeSplittingSpectralMethod
                    (Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_fourier_1d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom 
         m           
     end
 end
@@ -21,6 +22,7 @@ type Fourier2D <: TimeSplittingSpectralMethod
                    (Int32, Float64, Float64,Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_fourier_2d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom 
         m           
     end
 end
@@ -34,6 +36,7 @@ type Fourier3D <: TimeSplittingSpectralMethod
                    (Int32, Float64, Float64,Int32, Float64, Float64,Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_fourier_3d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom 
         m           
     end
 end
@@ -47,6 +50,7 @@ type FourierReal1D <: TimeSplittingSpectralMethod
                    (Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_fourier_real_1d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom 
         m           
     end
 end
@@ -60,6 +64,7 @@ type FourierReal2D <: TimeSplittingSpectralMethod
                    (Int32, Float64, Float64,Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_fourier_real_2d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom 
         m           
     end
 end
@@ -73,6 +78,7 @@ type FourierReal3D <: TimeSplittingSpectralMethod
                    (Int32, Float64, Float64,Int32, Float64, Float64,Int32, Float64, Float64, Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax, boundary_conditions) )
         finalizer(m, x -> ccall( dlsym(tssm_handle, "c_finalize_fourier_real_3d"), Void, (Ptr{Ptr{Void}},), &x.m) )
+        dummy = wave_function(m) # dummy will be garbage collected soon, only to generate fftw wisdom 
         m           
     end
 end
