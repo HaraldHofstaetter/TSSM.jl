@@ -5,7 +5,7 @@ Pkg.clone("https://github.com/HaraldHofstaetter/TSSM.jl")
 Pkg.build("TSSM")
 ```
 ##Examples
-To get easy access to the examples, make a symbol link in the home directory:
+To get easy access to the examples, make a symbolic link in the home directory:
 ```julia
 symlink(joinpath(homedir(), ".julia/v0.4/TSSM/examples/"), joinpath(homedir(), "TSSM_examples"))
 ```
