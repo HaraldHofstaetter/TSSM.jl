@@ -77,11 +77,6 @@ if DIM==1
                        boundary_conditions::Integer=periodic)
         ccall( Libdl.dlsym(($TSSM_HANDLE), "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_1D
-        println("*** ", ($METHOD), " hbar=", hbar)
-        println("*** ", ($METHOD), " mass=", mass)
-        println("*** ", ($METHOD), " potential=", potential)
-        println("*** ", ($METHOD), " cubic_coupling=", cubic_coupling)
-        println("*** ", ($METHOD), " none_1D=", none_1D)
         V_c = cfunction(potential, ($T), (($T),))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
