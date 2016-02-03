@@ -49,7 +49,7 @@ println("WF= ", WF, " T= ", T, " common")
 
         function ($WF){($T)}( m::($METHOD){($T)} )
             wf = ($WF){($T)}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_new_wf",SUF))), Ptr{Void}, (Ptr{Void},), m.m) , m)   
-            finalizer(wf, x -> ccall( Libdl.dlsym(h, $(string("c_finalize_wf",SUF))), Void, (Ptr{Ptr{Void}},), &x.p) )
+            finalizer(wf, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_finalize_wf",SUF))), Void, (Ptr{Ptr{Void}},), &x.p) )
             wf
         end
      end

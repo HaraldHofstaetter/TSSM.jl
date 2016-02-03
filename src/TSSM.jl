@@ -1,9 +1,6 @@
 module TSSM
 
 push!(LOAD_PATH, dirname(@__FILE__))
-using tssm_base
-
-import Base.Libdl: dlsym, dlopen 
 
 import Base.copy!
 import Base.scale!
@@ -60,7 +57,6 @@ export get_omega_x,  get_omega_y,  get_omega_z
 export get_H
 export get_L, get_Omega 
 
-
 export get_hbar, get_mass, get_cubic_coupling
 export set_potential!, get_potential, load_potential!, save_potential
 export imaginary_time_propagate_A!, imaginary_time_propagate_B!, add_apply_B!
@@ -68,24 +64,203 @@ export kinetic_energy, potential_energy, interaction_energy, observable
 export get_energy_expectation_deviation, get_realspace_observables
 export selfconsistent_nonlinear_step!
 
+## abstract types ############################################################################
+
+abstract TimeSplittingSpectralMethod{T<:AbstractFloat}
+abstract TimeSplittingSpectralMethodReal{T<:AbstractFloat} <: TimeSplittingSpectralMethod{T}
+abstract TimeSplittingSpectralMethodReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal{T}
+abstract TimeSplittingSpectralMethodReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal{T}
+abstract TimeSplittingSpectralMethodReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal{T}
+abstract TimeSplittingSpectralMethodComplex{T<:AbstractFloat} <: TimeSplittingSpectralMethod{T}
+abstract TimeSplittingSpectralMethodComplex1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex{T}
+abstract TimeSplittingSpectralMethodComplex2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex{T}
+abstract TimeSplittingSpectralMethodComplex3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex{T}
+
+abstract WaveFunction{T<:AbstractFloat}
+abstract WaveFunctionReal{T<:AbstractFloat} <: WaveFunction{T}
+abstract WaveFunctionReal1D{T<:AbstractFloat} <: WaveFunctionReal{T}
+abstract WaveFunctionReal2D{T<:AbstractFloat} <: WaveFunctionReal{T}
+abstract WaveFunctionReal3D{T<:AbstractFloat} <: WaveFunctionReal{T}
+abstract WaveFunctionComplex{T<:AbstractFloat} <: WaveFunction{T}
+abstract WaveFunctionComplex1D{T<:AbstractFloat} <: WaveFunctionComplex{T}
+abstract WaveFunctionComplex2D{T<:AbstractFloat} <: WaveFunctionComplex{T}
+abstract WaveFunctionComplex3D{T<:AbstractFloat} <: WaveFunctionComplex{T}
+
+dim(psi::WaveFunctionReal1D) = 1
+dim(psi::WaveFunctionReal2D) = 2
+dim(psi::WaveFunctionReal3D) = 3
+dim(psi::WaveFunctionComplex1D) = 1
+dim(psi::WaveFunctionComplex2D) = 2
+dim(psi::WaveFunctionComplex3D) = 3
+dim(psi::TimeSplittingSpectralMethodReal1D) = 1
+dim(psi::TimeSplittingSpectralMethodReal2D) = 2
+dim(psi::TimeSplittingSpectralMethodReal3D) = 3
+dim(psi::TimeSplittingSpectralMethodComplex1D) = 1
+dim(psi::TimeSplittingSpectralMethodComplex2D) = 2
+dim(psi::TimeSplittingSpectralMethodComplex3D) = 3
+
+
+## Fourier types ############################################################################
+
+type Fourier1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
+    m::Ptr{Void}
+end 
+
+type Fourier2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Void}
+end 
+
+type Fourier3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Void}
+end 
+
+type FourierReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
+    m::Ptr{Void}
+end 
+
+type FourierReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Void}
+end 
+
+type FourierReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Void}
+end 
+
+type WfFourier1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
+    p::Ptr{Void}
+    m::Fourier1D{T}
+end
+
+type WfFourier2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Void}
+    m::Fourier2D{T}
+end
+
+type WfFourier3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Void}
+    m::Fourier3D{T}
+end
+
+type WfFourierReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
+    p::Ptr{Void}
+    m::FourierReal1D{T}
+end
+
+type WfFourierReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Void}
+    m::FourierReal2D{T}
+end
+
+type WfFourierReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Void}
+    m::FourierReal3D{T}
+end
+
+## Schroedinger types ############################################################################
+
+type Schroedinger1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
+    m::Ptr{Void}
+end 
+
+type Schroedinger2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Void}
+end 
+
+type Schroedinger3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Void}
+end 
+
+type WfSchroedinger1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
+    p::Ptr{Void}
+    m::Schroedinger1D{T}
+end
+
+type WfSchroedinger2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Void}
+    m::Schroedinger2D{T}
+end
+
+type WfSchroedinger3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Void}
+    m::Schroedinger3D{T}
+end
+
+type WfSchroedingerReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
+    p::Ptr{Void}
+    m::SchroedingerReal1D{T}
+end
+
+type WfSchroedingerReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Void}
+    m::SchroedingerReal2D{T}
+end
+
+type WfSchroedingerReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Void}
+    m::SchroedingerReal3D{T}
+end
+
+
+const periodic = 0
+const dirichlet = 1
+const neumann = 2
+
+none_1D(x)=0.0
+none_2D(x,y)=0.0
+none_3D(x,y,z)=0.0
+
+const libtssm = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
+                     string("libtssm.", Libdl.dlext))
+const libtssmq = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
+                     string("libtssmq.", Libdl.dlext))
+
+__use_Float128 = false
+try
+   Libdl.dlopen(libtssmq);
+   using Quadmath
+   __use_Float128 = true
+end   
+const use_Float128 = __use_Float128                     
+
 function __init__()
-    global tssm_handle
     if searchindex(readall(`uname -a`), "juliabox")>0
         # In JuliaBox only 8 out of 16 cores are available.
         ENV["OMP_NUM_THREADS"] = "8"
     end
-    libtssm = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
-                       string("libtssm.", Libdl.dlext))
+
+    global tssm_handle
     tssm_handle = Libdl.dlopen(libtssm);
     ccall( Libdl.dlsym(tssm_handle, "c_initialize_tssm"), Void, ())
+
+    global tssmq_handle 
+    if use_Float128
+        tssmq_handle = Libdl.dlopen(libtssmq);
+        ccall( Libdl.dlsym(tssmq_handle, "c_initialize_tssm"), Void, ())
+    end    
     set_fftw_planning_rigor(FFTW.ESTIMATE)
 end
+
 
 function set_fftw_planning_rigor(flag::Integer=FFTW.ESTIMATE)
    if !(flag in [ FFTW.ESTIMATE, FFTW.PATIENT, FFTW.MEASURE])
        error("wrong planning rigor flag")
    end
-   ccall( dlsym(tssm_handle, "c_set_fftw_planning_rigor"), Void, (Int32,), flag )
+   ccall( Libdl.dlsym(tssm_handle, "c_set_fftw_planning_rigor"), Void, (Int32,), flag )
+    if use_Float128
+       ccall( Libdl.dlsym(tssmq_handle, "c_set_fftw_planning_rigor"), Void, (Int32,), flag )
+   end
 end
 
 
@@ -96,9 +271,21 @@ include("tssm_schroedinger.jl")
 #include("tssm_schroedinger_hermite.jl")
 #include("tssm_generalized_laguerre.jl")
 #include("tssm_fourier_bessel.jl")
-
 include("tssm_common.jl")
 include("tssm_schroedinger_common.jl")
+
+
+if use_Float128
+    T = :Float128
+    TSSM_HANDLE = :tssmq_handle
+    include("tssm_fourier.jl")
+    include("tssm_schroedinger.jl")
+    #include("tssm_schroedinger_hermite.jl")
+    #include("tssm_generalized_laguerre.jl")
+    #include("tssm_fourier_bessel.jl")
+    include("tssm_common.jl")
+    include("tssm_schroedinger_common.jl")
+end    
 
 
 
