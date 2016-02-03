@@ -1,5 +1,8 @@
 module TSSM
 
+push!(LOAD_PATH, dirname(@__FILE__))
+using tssm_base
+
 import Base.Libdl: dlsym, dlopen 
 
 import Base.copy!
@@ -8,7 +11,6 @@ import Base.norm
 
 export WaveFunction, WaveFunction1D, WaveFunction2D, WaveFunction3D, TimeSplittingSpectralMethod
 export dim
-#export tssm_handle
 
 export periodic, dirichlet, neumann
 
@@ -72,8 +74,8 @@ function __init__()
         # In JuliaBox only 8 out of 16 cores are available.
         ENV["OMP_NUM_THREADS"] = "8"
     end
-    libtssm = string(joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib", "libtssm."), 
-                   (@windows? :"dll" : ( @osx? "dylib" : :"so" )) )
+    libtssm = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
+                       string("libtssm.", Libdl.dlext))
     tssm_handle = Libdl.dlopen(libtssm);
     ccall( Libdl.dlsym(tssm_handle, "c_initialize_tssm"), Void, ())
     set_fftw_planning_rigor(FFTW.ESTIMATE)
@@ -86,59 +88,19 @@ function set_fftw_planning_rigor(flag::Integer=FFTW.ESTIMATE)
    ccall( dlsym(tssm_handle, "c_set_fftw_planning_rigor"), Void, (Int32,), flag )
 end
 
-abstract TimeSplittingSpectralMethod
 
-abstract WaveFunction
-abstract WaveFunction1D <: WaveFunction
-abstract WaveFunction2D <: WaveFunction
-abstract WaveFunction3D <: WaveFunction
-
-dim(psi::WaveFunction1D) = 1
-dim(psi::WaveFunction2D) = 2
-dim(psi::WaveFunction3D) = 3
-
-## Boundary conditions ############################################################################
-
-const periodic = 0
-const dirichlet = 1
-const neumann = 2
-
-none_1D(x)=0.0
-none_2D(x,y)=0.0
-none_3D(x,y,z)=0.0
-
+T = :Float64
+TSSM_HANDLE = :tssm_handle
 include("tssm_fourier.jl")
 include("tssm_schroedinger.jl")
-include("tssm_schroedinger_hermite.jl")
-include("tssm_generalized_laguerre.jl")
-include("tssm_fourier_bessel.jl")
+#include("tssm_schroedinger_hermite.jl")
+#include("tssm_generalized_laguerre.jl")
+#include("tssm_fourier_bessel.jl")
 
-function clone(psi::WaveFunction)
-    wave_function(psi.m)
-end
+include("tssm_common.jl")
+include("tssm_schroedinger_common.jl")
 
-function eigen_function!(psi::WaveFunction1D, k)
-    to_frequency_space!(psi)
-    u=get_data(psi,true)
-    u[:]=0.0
-    u[k]=1
-    psi
-end
 
-function eigen_function!(psi::WaveFunction2D, k, l)
-    to_frequency_space!(psi)
-    u=get_data(psi,true)
-    u[:,:]=0.0
-    u[k,l]=1
-    psi
-end
 
-function eigen_function!(psi::WaveFunction3D, k, l, m)
-    to_frequency_space!(psi)
-    u=get_data(psi,true)
-    u[:,:,:]=0.0
-    u[k,l,m]=1
-    psi
-end
 
 end # TSSM
