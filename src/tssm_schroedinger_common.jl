@@ -1,3 +1,4 @@
+println("including tssm_schroedinger.jl for type ", T)
 for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:Schroedinger1D, :_schroedinger_1d, true, 1 ),             
                  (:Schroedinger2D, :_schroedinger_2d, true, 2 ),             
@@ -5,10 +6,15 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:SchroedingerReal1D, :_schroedinger_real_1d, false, 1 ), 
                  (:SchroedingerReal2D, :_schroedinger_real_2d, false, 2 ),
                  (:SchroedingerReal3D, :_schroedinger_real_3d, false, 3 ),
-                 
+                 (:SchroedingerHermite1D, :_schroedinger_hermite_1d, true, 1 ),             
+                 (:SchroedingerHermite2D, :_schroedinger_hermite_2d, true, 2 ),             
+                 (:SchroedingerHermite3D, :_schroedinger_hermite_3d, true, 3 ),             
+                 (:SchroedingerHermiteReal1D, :_schroedinger_hermite_real_1d, false, 1 ), 
+                 (:SchroedingerHermiteReal2D, :_schroedinger_hermite_real_2d, false, 2 ),
+                 (:SchroedingerHermiteReal3D, :_schroedinger_hermite_real_3d, false, 3 ),
                 )
+    println("    ", METHOD)      
     WF = symbol(:Wf,METHOD)
-println("WF= ", WF, " T= ", T, " (schroedinger_common)")
     @eval begin
 
         function get_hbar(m::($METHOD){($T)})
@@ -65,12 +71,6 @@ println("WF= ", WF, " T= ", T, " (schroedinger_common)")
            tuple(ans...)
         end
 
-        function selfconsistent_nonlinear_step!(psi::($WF){$T}, dt::Number, 
-                          dt1::Number, eps::Number=100.0_prec*eps(($T)), max_iters::Integer=30)
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_selfconsistent_nonlinear_step_wf",SUF))), Void,
-                  (Ptr{Void}, Complex{($T)}, Complex{($T)}, ($T), Int32), psi.p, dt, dt1, eps, max_itesr)
-        end
-
     end #eval
 
     if COMPLEX_METHOD
@@ -94,6 +94,13 @@ println("WF= ", WF, " T= ", T, " (schroedinger_common)")
                                 (Ptr{Void}, Ptr{Void}, Complex{($T)}), 
                                  this.p, other.p, coefficient)
             end
+
+            function selfconsistent_nonlinear_step!(psi::($WF){$T}, dt::Number, 
+                           dt1::Number, eps::Number=100.0_prec*eps(($T)), max_iters::Integer=30)
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_selfconsistent_nonlinear_step_wf",SUF))), Void,
+                          (Ptr{Void}, Complex{($T)}, Complex{($T)}, ($T), Int32), psi.p, dt, dt1, eps, max_itesr)
+            end
+            
          end #eval   
     else
         @eval begin
@@ -115,6 +122,12 @@ println("WF= ", WF, " T= ", T, " (schroedinger_common)")
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_add_apply_b_wf",SUF))), Void,
                                 (Ptr{Void}, Ptr{Void}, ($T)), 
                                  this.p, other.p, coefficient)
+            end
+
+            function selfconsistent_nonlinear_step!(psi::($WF){$T}, dt::Number, 
+                           dt1::Number, eps::Number=100.0_prec*eps(($T)), max_iters::Integer=30)
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_selfconsistent_nonlinear_step_wf",SUF))), Void,
+                          (Ptr{Void}, ($T), ($T), ($T), Int32), psi.p, dt, dt1, eps, max_itesr)
             end
         end #eval   
     end #if

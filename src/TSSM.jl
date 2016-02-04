@@ -75,6 +75,9 @@ abstract TimeSplittingSpectralMethodComplex{T<:AbstractFloat} <: TimeSplittingSp
 abstract TimeSplittingSpectralMethodComplex1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex{T}
 abstract TimeSplittingSpectralMethodComplex2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex{T}
 abstract TimeSplittingSpectralMethodComplex3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex{T}
+TimeSplittingSpectralMethod1D = Union{TimeSplittingSpectralMethodReal1D, TimeSplittingSpectralMethodComplex1D}
+TimeSplittingSpectralMethod2D = Union{TimeSplittingSpectralMethodReal2D, TimeSplittingSpectralMethodComplex2D}
+TimeSplittingSpectralMethod3D = Union{TimeSplittingSpectralMethodReal3D, TimeSplittingSpectralMethodComplex3D}
 
 abstract WaveFunction{T<:AbstractFloat}
 abstract WaveFunctionReal{T<:AbstractFloat} <: WaveFunction{T}
@@ -85,19 +88,16 @@ abstract WaveFunctionComplex{T<:AbstractFloat} <: WaveFunction{T}
 abstract WaveFunctionComplex1D{T<:AbstractFloat} <: WaveFunctionComplex{T}
 abstract WaveFunctionComplex2D{T<:AbstractFloat} <: WaveFunctionComplex{T}
 abstract WaveFunctionComplex3D{T<:AbstractFloat} <: WaveFunctionComplex{T}
+WaveFunction1D = Union{WaveFunctionReal1D, WaveFunctionComplex1D}
+WaveFunction2D = Union{WaveFunctionReal2D, WaveFunctionComplex2D}
+WaveFunction3D = Union{WaveFunctionReal3D, WaveFunctionComplex3D}
 
-dim(psi::WaveFunctionReal1D) = 1
-dim(psi::WaveFunctionReal2D) = 2
-dim(psi::WaveFunctionReal3D) = 3
-dim(psi::WaveFunctionComplex1D) = 1
-dim(psi::WaveFunctionComplex2D) = 2
-dim(psi::WaveFunctionComplex3D) = 3
-dim(psi::TimeSplittingSpectralMethodReal1D) = 1
-dim(psi::TimeSplittingSpectralMethodReal2D) = 2
-dim(psi::TimeSplittingSpectralMethodReal3D) = 3
-dim(psi::TimeSplittingSpectralMethodComplex1D) = 1
-dim(psi::TimeSplittingSpectralMethodComplex2D) = 2
-dim(psi::TimeSplittingSpectralMethodComplex3D) = 3
+dim(psi::WaveFunction1D) = 1
+dim(psi::WaveFunction2D) = 2
+dim(psi::WaveFunction3D) = 3
+dim(psi::TimeSplittingSpectralMethod1D) = 1
+dim(psi::TimeSplittingSpectralMethod2D) = 2
+dim(psi::TimeSplittingSpectralMethod3D) = 3
 
 
 ## Fourier types ############################################################################
@@ -212,14 +212,70 @@ type WfSchroedingerReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
     m::SchroedingerReal3D{T}
 end
 
+## SchroedingerHermite types ############################################################################
+
+type SchroedingerHermite1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerHermite2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerHermite3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerHermiteReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerHermiteReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerHermiteReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Void}
+end 
+
+type WfSchroedingerHermite1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
+    p::Ptr{Void}
+    m::SchroedingerHermite1D{T}
+end
+
+type WfSchroedingerHermite2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Void}
+    m::SchroedingerHermite2D{T}
+end
+
+type WfSchroedingerHermite3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Void}
+    m::SchroedingerHermite3D{T}
+end
+
+type WfSchroedingerHermiteReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
+    p::Ptr{Void}
+    m::SchroedingerHermiteReal1D{T}
+end
+
+type WfSchroedingerHermiteReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Void}
+    m::SchroedingerHermiteReal2D{T}
+end
+
+type WfSchroedingerHermiteReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Void}
+    m::SchroedingerHermiteReal3D{T}
+end
+
 
 const periodic = 0
 const dirichlet = 1
 const neumann = 2
 
-none_1D(x)=0.0
-none_2D(x,y)=0.0
-none_3D(x,y,z)=0.0
+none_1D(x)=zero(x)
+none_2D(x,y)=zero(x)
+none_3D(x,y,z)=zero(x)
 
 const libtssm = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
                      string("libtssm.", Libdl.dlext))
@@ -268,7 +324,7 @@ T = :Float64
 TSSM_HANDLE = :tssm_handle
 include("tssm_fourier.jl")
 include("tssm_schroedinger.jl")
-#include("tssm_schroedinger_hermite.jl")
+include("tssm_schroedinger_hermite.jl")
 #include("tssm_generalized_laguerre.jl")
 #include("tssm_fourier_bessel.jl")
 include("tssm_common.jl")
@@ -280,7 +336,7 @@ if use_Float128
     TSSM_HANDLE = :tssmq_handle
     include("tssm_fourier.jl")
     include("tssm_schroedinger.jl")
-    #include("tssm_schroedinger_hermite.jl")
+    include("tssm_schroedinger_hermite.jl")
     #include("tssm_generalized_laguerre.jl")
     #include("tssm_fourier_bessel.jl")
     include("tssm_common.jl")

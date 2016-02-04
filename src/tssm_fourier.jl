@@ -1,6 +1,6 @@
 # T , TSSM_HANDLE 
 
-
+println("including tssm_fourier.jl for type ",T)
 for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:Fourier1D, :_fourier_1d, true, 1 ),             
                  (:Fourier2D, :_fourier_2d, true, 2 ),             
@@ -9,6 +9,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:FourierReal2D, :_fourier_real_2d, false, 2 ),
                  (:FourierReal3D, :_fourier_real_3d, false, 3 ),
                 )
+println("    ", METHOD)                 
 if DIM==1
 @eval begin
     function ($METHOD)(T::Type{$T}, nx::Integer, xmin::Real, xmax::Real; 
@@ -84,6 +85,63 @@ end # eval
 end #if
 
 end # if
+
+@eval begin
+    function get_nx(m::($METHOD){$T})
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nx",SUF))), Int32,
+             (Ptr{Void}, ), m.m )
+    end
+
+    function get_xmin(m::($METHOD){$T})
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_xmin",SUF))), ($T),
+             (Ptr{Void}, ), m.m )
+    end
+
+    function get_xmax(m::($METHOD){$T})
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_xmax",SUF))), $T,
+             (Ptr{Void}, ), m.m )
+    end
+end # eval    
+
+if DIM>=2        
+    @eval begin
+    
+        function get_ny(m::($METHOD){$T})
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_ny",SUF))), Int32,
+                 (Ptr{Void}, ), m.m )
+        end
+
+        function get_ymin(m::($METHOD){$T})
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_ymin",SUF))), ($T),
+                 (Ptr{Void}, ), m.m )
+        end
+
+        function get_ymax(m::($METHOD){$T})
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_ymax",SUF))), ($T),
+                 (Ptr{Void}, ), m.m )
+        end
+    end # eval    
+end
+
+if DIM>=3 
+    @eval begin
+        function get_nz(m::($METHOD){$T})
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nz",SUF))), Int32,
+                 (Ptr{Void}, ), m.m )
+        end
+
+        function get_zmin(m::($METHOD){$T})
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_zmin",SUF))), ($T),
+                 (Ptr{Void}, ), m.m )
+        end
+
+        function get_zmax(m::($METHOD){$T})
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_zmax",SUF))), ($T),
+                 (Ptr{Void}, ), m.m )
+        end
+    end # eval    
+end 
+
 
 end # for
 

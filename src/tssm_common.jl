@@ -1,8 +1,10 @@
+println("including tssm_common.jl for type ", T)    
+
 function clone(psi::WaveFunction)
     wave_function(psi.m)
 end
 
-function eigen_function!(psi::Union{WaveFunctionReal1D,WaveFunctionComplex1D}, k)
+function eigen_function!(psi::WaveFunction1D, k)
     to_frequency_space!(psi)
     u=get_data(psi,true)
     u[:]=0.0
@@ -10,7 +12,7 @@ function eigen_function!(psi::Union{WaveFunctionReal1D,WaveFunctionComplex1D}, k
     psi
 end
 
-function eigen_function!(psi::Union{WaveFunctionReal2D,WaveFunctionComplex2D}, k, l)
+function eigen_function!(psi::WaveFunction2D, k, l)
     to_frequency_space!(psi)
     u=get_data(psi,true)
     u[:,:]=0.0
@@ -18,14 +20,13 @@ function eigen_function!(psi::Union{WaveFunctionReal2D,WaveFunctionComplex2D}, k
     psi
 end
 
-function eigen_function!(psi::Union{WaveFunctionReal3D,WaveFunctionComplex3D}, k, l, m)
+function eigen_function!(psi::WaveFunction3D, k, l, m)
     to_frequency_space!(psi)
     u=get_data(psi,true)
     u[:,:,:]=0.0
     u[k,l,m]=1
     psi
 end
-
 
 for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:Fourier1D, :_fourier_1d, true, 1 ),             
@@ -40,10 +41,16 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:SchroedingerReal1D, :_schroedinger_real_1d, false, 1 ), 
                  (:SchroedingerReal2D, :_schroedinger_real_2d, false, 2 ),
                  (:SchroedingerReal3D, :_schroedinger_real_3d, false, 3 ),
+                 (:SchroedingerHermite1D, :_schroedinger_hermite_1d, true, 1 ),             
+                 (:SchroedingerHermite2D, :_schroedinger_hermite_2d, true, 2 ),             
+                 (:SchroedingerHermite3D, :_schroedinger_hermite_3d, true, 3 ),             
+                 (:SchroedingerHermiteReal1D, :_schroedinger_hermite_real_1d, false, 1 ), 
+                 (:SchroedingerHermiteReal2D, :_schroedinger_hermite_real_2d, false, 2 ),
+                 (:SchroedingerHermiteReal3D, :_schroedinger_hermite_real_3d, false, 3 ),
                  
                 )
+    println("    ", METHOD)    
     WF = symbol(:Wf,METHOD)
-println("WF= ", WF, " T= ", T, " common")    
     @eval begin
         # wave function constructor
 
@@ -138,9 +145,7 @@ println("WF= ", WF, " T= ", T, " common")
         @eval begin
 
             function get_nodes(m::($METHOD){$T})
-               println("get_nodes T=", string($T))
                dim =Array(Int32, 1)
-               #np = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nodes",SUF))), Ptr{$T},
                np = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
                n = pointer_to_array(np, dim[1], false)     
@@ -182,63 +187,6 @@ println("WF= ", WF, " T= ", T, " common")
 
           end  
      end
-
-
-    @eval begin
-        function get_nx(m::($METHOD){$T})
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nx",SUF))), Int32,
-                 (Ptr{Void}, ), m.m )
-        end
-
-        function get_xmin(m::($METHOD){$T})
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_xmin",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
-        end
-
-        function get_xmax(m::($METHOD){$T})
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_xmax",SUF))), $T,
-                 (Ptr{Void}, ), m.m )
-        end
-    end # eval    
-
-    if DIM>=2        
-        @eval begin
-        
-            function get_ny(m::($METHOD){$T})
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_ny",SUF))), Int32,
-                     (Ptr{Void}, ), m.m )
-            end
-
-            function get_ymin(m::($METHOD){$T})
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_ymin",SUF))), ($T),
-                     (Ptr{Void}, ), m.m )
-            end
-
-            function get_ymax(m::($METHOD){$T})
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_ymax",SUF))), ($T),
-                     (Ptr{Void}, ), m.m )
-            end
-        end # eval    
-    end
-
-    if DIM>=3 
-        @eval begin
-            function get_nz(m::($METHOD){$T})
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nz",SUF))), Int32,
-                     (Ptr{Void}, ), m.m )
-            end
-
-            function get_zmin(m::($METHOD){$T})
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_zmin",SUF))), ($T),
-                     (Ptr{Void}, ), m.m )
-            end
-
-            function get_zmax(m::($METHOD){$T})
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_zmax",SUF))), ($T),
-                     (Ptr{Void}, ), m.m )
-            end
-        end # eval    
-    end 
 
 
     if COMPLEX_METHOD
