@@ -310,9 +310,10 @@ const libtssmq = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
 
 __use_Float128 = false
 try
-   Libdl.dlopen(libtssmq);
+   h=Libdl.dlopen(libtssmq);
    using Quadmath
    __use_Float128 = true
+   Libdl.dlclose(h);
 end   
 const use_Float128 = __use_Float128                     
 
@@ -323,13 +324,15 @@ function __init__()
     end
 
     global tssm_handle
-    tssm_handle = Libdl.dlopen(libtssm);
-    ccall( Libdl.dlsym(tssm_handle, "c_initialize_tssm"), Void, ())
+    tssm_handle = Libdl.dlopen(libtssm) #, Libdl.RTLD_LAZY|Libdl.RTLD_DEEPBIND|Libdl.RTLD_LOCAL);
+    ccall( Libdl.dlsym(tssm_handle, "tssm_initialize"), Void, ())
+    ccall( Libdl.dlsym(tssm_handle, "tssm_fourier_initialize"), Void, ())
 
     global tssmq_handle 
     if use_Float128
-        tssmq_handle = Libdl.dlopen(libtssmq);
-        ccall( Libdl.dlsym(tssmq_handle, "c_initialize_tssm"), Void, ())
+        tssmq_handle = Libdl.dlopen(libtssmq) # , Libdl.RTLD_LAZY|Libdl.RTLD_DEEPBIND|Libdl.RTLD_LOCAL);
+        ccall( Libdl.dlsym(tssmq_handle, "tssmq_initialize"), Void, ())
+        ccall( Libdl.dlsym(tssmq_handle, "tssmq_fourier_initialize"), Void, ())
     end    
     set_fftw_planning_rigor(FFTW.ESTIMATE)
 end
@@ -339,15 +342,16 @@ function set_fftw_planning_rigor(flag::Integer=FFTW.ESTIMATE)
    if !(flag in [ FFTW.ESTIMATE, FFTW.PATIENT, FFTW.MEASURE])
        error("wrong planning rigor flag")
    end
-   ccall( Libdl.dlsym(tssm_handle, "c_set_fftw_planning_rigor"), Void, (Int32,), flag )
+   ccall( Libdl.dlsym(tssm_handle, "tssm_set_fftw_planning_rigor"), Void, (Int32,), flag )
     if use_Float128
-       ccall( Libdl.dlsym(tssmq_handle, "c_set_fftw_planning_rigor"), Void, (Int32,), flag )
+       ccall( Libdl.dlsym(tssmq_handle, "tssmq_set_fftw_planning_rigor"), Void, (Int32,), flag )
    end
 end
 
 
 T = :Float64
 TSSM_HANDLE = :tssm_handle
+PRE = :tssm_
 include("tssm_fourier.jl")
 include("tssm_fourier_bessel.jl")
 include("tssm_schroedinger.jl")
@@ -360,6 +364,7 @@ include("tssm_schroedinger_common.jl")
 if use_Float128
     T = :Float128
     TSSM_HANDLE = :tssmq_handle
+    PRE = :tssmq_
     include("tssm_fourier.jl")
     include("tssm_fourier_bessel.jl")
     include("tssm_schroedinger.jl")
@@ -368,7 +373,6 @@ if use_Float128
     include("tssm_common.jl")
     include("tssm_schroedinger_common.jl")
 end    
-
 
 
 

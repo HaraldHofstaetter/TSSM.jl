@@ -9,22 +9,25 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:SchroedingerHermiteReal3D, :_schroedinger_hermite_real_3d, false, 3 ),
                 )
 println("    ", METHOD) 
+if T == :Float128
+    SUF = symbol(SUF, "_wf128")
+end
+
 if DIM==1
 @eval begin
     function ($METHOD)(T::Type{$T}, nx::Integer, omega_x; 
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_1D,
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
-        ccall( Libdl.dlsym(($TSSM_HANDLE), "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_1D
         V_c = cfunction(potential, ($T), (($T),))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_new",SUF))), Ptr{Void}, 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
                    nx, omega_x, 
                    hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string("c_finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
        m
     end
 end # eval
@@ -47,17 +50,16 @@ elseif DIM==2
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
-        ccall( Libdl.dlsym(($TSSM_HANDLE), "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_2D
         V_c = cfunction(potential, ($T), (($T),($T)))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_new",SUF))), Ptr{Void}, 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), Int32, ($T), 
                    ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
                    nx, omega_x, ny, omega_y, 
                    hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string("c_finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
         m
     end
 end # eval
@@ -82,17 +84,16 @@ elseif DIM==3
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
-        ccall( Libdl.dlsym(($TSSM_HANDLE), "c_initialize_tssm_fourier"), Void, ())
         with_potential = potential!=none_3D
         V_c = cfunction(potential, ($T), (($T),($T),($T)))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_new",SUF))), Ptr{Void}, 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), Int32, ($T), Int32, ($T), ($T), 
                    ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
                    nx, omega_x, ny, omega_y, nz, omega_z,  
                    hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string("c_finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
         m
     end
 end # eval
@@ -115,12 +116,12 @@ end # if
 
 @eval begin
     function get_nx(m::($METHOD){$T})
-       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nx",SUF))), Int32,
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nx",SUF))), Int32,
              (Ptr{Void}, ), m.m )
     end
 
     function get_omega_x(m::($METHOD){$T})
-       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_omega_x",SUF))), ($T),
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_omega_x",SUF))), ($T),
              (Ptr{Void}, ), m.m )
     end
 end # eval    
@@ -129,12 +130,12 @@ if DIM>=2
     @eval begin
     
         function get_ny(m::($METHOD){$T})
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_ny",SUF))), Int32,
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ny",SUF))), Int32,
                  (Ptr{Void}, ), m.m )
         end
 
         function get_omega_y(m::($METHOD){$T})
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_omega_y",SUF))), ($T),
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_omega_y",SUF))), ($T),
                  (Ptr{Void}, ), m.m )
         end
     end # eval    
@@ -143,12 +144,12 @@ end
 if DIM>=3 
     @eval begin
         function get_nz(m::($METHOD){$T})
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nz",SUF))), Int32,
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nz",SUF))), Int32,
                  (Ptr{Void}, ), m.m )
         end
 
         function get_omega_z(m::($METHOD){$T})
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_omega_z",SUF))), ($T),
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_omega_z",SUF))), ($T),
                  (Ptr{Void}, ), m.m )
         end
     end # eval    
@@ -159,7 +160,7 @@ if DIM==1
 
         function get_weights(m::($METHOD){$T})
            dim =Array(Int32, 1)
-           np = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_weights",SUF))), Ptr{$T},
+           np = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_weights",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
            n = pointer_to_array(np, dim[1], false)     
            copy(n)
@@ -167,7 +168,7 @@ if DIM==1
 
         function get_H(m::($METHOD){$T}, unsafe_access::Bool=false)
            dims =Array(Int32, 2)
-           Hp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_h",SUF))), Ptr{$T},
+           Hp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 1 )
            H = pointer_to_array(Hp1, (dims[1], dims[2]), false)  
            if unsafe_access
@@ -183,10 +184,10 @@ elseif DIM==2
 
         function get_weights(m::($METHOD){$T})
            dim =Array(Int32, 1)
-           np1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_weights",SUF))), Ptr{$T},
+           np1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_weights",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
            n1 = pointer_to_array(n1p, dim[1], false)     
-           np2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_weights",SUF))), Ptr{$T},
+           np2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_weights",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
            n2 = pointer_to_array(n2p, dim[1], false)     
            copy(n1), copy(n2)
@@ -194,10 +195,10 @@ elseif DIM==2
 
         function get_H(m::($METHOD){$T}, unsafe_access::Bool=false)
            dims =Array(Int32, 2)
-           Hp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_h",SUF))), Ptr{$T},
+           Hp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 1 )
            H1 = pointer_to_array(Hp1, (dims[1], dims[2]), false)  
-           Hp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_h",SUF))), Ptr{$T},
+           Hp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 2 )
            H2 = pointer_to_array(Hp2, (dims[1], dims[2]), false)  
            if unsafe_access
@@ -213,13 +214,13 @@ elseif DIM==2
 
         function get_weights(m::($METHOD){$T})
            dim =Array(Int32, 1)
-           np1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_weights",SUF))), Ptr{$T},
+           np1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_weights",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
            n1 = pointer_to_array(n1p, dim[1], false)     
-           np2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_weights",SUF))), Ptr{$T},
+           np2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_weights",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
            n2 = pointer_to_array(n2p, dim[1], false)     
-           np3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_weights",SUF))), Ptr{$T},
+           np3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_weights",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 3 )
            n3 = pointer_to_array(n3p, dim[1], false)     
            copy(n1), copy(n2), copy(n3)
@@ -227,13 +228,13 @@ elseif DIM==2
 
         function get_H(m::($METHOD){$T}, unsafe_access::Bool=false)
            dims =Array(Int32, 2)
-           Hp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_h",SUF))), Ptr{$T},
+           Hp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 1 )
            H1 = pointer_to_array(Hp1, (dims[1], dims[2]), false)  
-           Hp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_h",SUF))), Ptr{$T},
+           Hp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 2 )
            H2 = pointer_to_array(Hp2, (dims[1], dims[2]), false)  
-           Hp3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_h",SUF))), Ptr{$T},
+           Hp3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 3 )
            H3 = pointer_to_array(Hp3, (dims[1], dims[2]), false)  
            if unsafe_access
