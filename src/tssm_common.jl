@@ -28,25 +28,29 @@ function eigen_function!(psi::WaveFunction3D, k, l, m)
     psi
 end
 
-for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
-                 (:Fourier1D, :_fourier_1d, true, 1 ),             
-                 (:Fourier2D, :_fourier_2d, true, 2 ),             
-                 (:Fourier3D, :_fourier_3d, true, 3 ),             
-                 (:FourierReal1D, :_fourier_real_1d, false, 1 ), 
-                 (:FourierReal2D, :_fourier_real_2d, false, 2 ),
-                 (:FourierReal3D, :_fourier_real_3d, false, 3 ),
-                 (:Schroedinger1D, :_schroedinger_1d, true, 1 ),             
-                 (:Schroedinger2D, :_schroedinger_2d, true, 2 ),             
-                 (:Schroedinger3D, :_schroedinger_3d, true, 3 ),             
-                 (:SchroedingerReal1D, :_schroedinger_real_1d, false, 1 ), 
-                 (:SchroedingerReal2D, :_schroedinger_real_2d, false, 2 ),
-                 (:SchroedingerReal3D, :_schroedinger_real_3d, false, 3 ),
-                 (:SchroedingerHermite1D, :_schroedinger_hermite_1d, true, 1 ),             
-                 (:SchroedingerHermite2D, :_schroedinger_hermite_2d, true, 2 ),             
-                 (:SchroedingerHermite3D, :_schroedinger_hermite_3d, true, 3 ),             
-                 (:SchroedingerHermiteReal1D, :_schroedinger_hermite_real_1d, false, 1 ), 
-                 (:SchroedingerHermiteReal2D, :_schroedinger_hermite_real_2d, false, 2 ),
-                 (:SchroedingerHermiteReal3D, :_schroedinger_hermite_real_3d, false, 3 ),
+#COORDINATES: 0=cartesian, 1=polar/cylindrical, 2=spherical
+
+for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
+                 (:Fourier1D, :_fourier_1d, true, 1, 0 ),             
+                 (:Fourier2D, :_fourier_2d, true, 2, 0 ),             
+                 (:Fourier3D, :_fourier_3d, true, 3, 0 ),             
+                 (:FourierReal1D, :_fourier_real_1d, false, 1, 0 ), 
+                 (:FourierReal2D, :_fourier_real_2d, false, 2, 0 ),
+                 (:FourierReal3D, :_fourier_real_3d, false, 3, 0 ),
+                 (:FourierBessel2D, :_fourier_bessel_2d, true, 2, 1 ),             
+                 (:FourierBesselReal2D, :_fourier_bessel_real_2d, false, 2, 1 ),
+                 (:Schroedinger1D, :_schroedinger_1d, true, 1, 0 ),             
+                 (:Schroedinger2D, :_schroedinger_2d, true, 2, 0 ),             
+                 (:Schroedinger3D, :_schroedinger_3d, true, 3, 0 ),             
+                 (:SchroedingerReal1D, :_schroedinger_real_1d, false, 1, 0 ), 
+                 (:SchroedingerReal2D, :_schroedinger_real_2d, false, 2, 0 ),
+                 (:SchroedingerReal3D, :_schroedinger_real_3d, false, 3, 0 ),
+                 (:SchroedingerHermite1D, :_schroedinger_hermite_1d, true, 1, 0 ),             
+                 (:SchroedingerHermite2D, :_schroedinger_hermite_2d, true, 2, 0 ),             
+                 (:SchroedingerHermite3D, :_schroedinger_hermite_3d, true, 3, 0 ),             
+                 (:SchroedingerHermiteReal1D, :_schroedinger_hermite_real_1d, false, 1, 0 ), 
+                 (:SchroedingerHermiteReal2D, :_schroedinger_hermite_real_2d, false, 2, 0 ),
+                 (:SchroedingerHermiteReal3D, :_schroedinger_hermite_real_3d, false, 3, 0 ),
                  
                 )
     println("    ", METHOD)    
@@ -126,7 +130,6 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (Ptr{Void}, ), psi.p )
         end
 
-
         function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
            dim =Array(Int32, 1)
            evp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_eigenvalues",SUF))), Ptr{$T},
@@ -140,6 +143,88 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
         end
 
     end #eval
+
+    if COORDINATES==0 # cartesian
+        if DIM==1
+            @eval begin
+                function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
+                   dim =Array(Int32, 1)
+                   evp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_eigenvalues",SUF))), Ptr{$T},
+                         (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
+                   ev = pointer_to_array(evp, dim[1], false)   
+                   if unsafe_access
+                       return ev
+                   else    
+                       return copy(ev)
+                   end
+                end
+
+            end
+        elseif DIM==2
+            @eval begin
+               function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
+                   dim =Array(Int32, 1)
+                   evp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_eigenvalues",SUF))), Ptr{$T},
+                         (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
+                   ev1 = pointer_to_array(evp, dim[1], false)   
+                   evp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_eigenvalues",SUF))), Ptr{$T},
+                         (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
+                   ev2 = pointer_to_array(evp, dim[1], false)   
+                   if unsafe_access
+                       return ev1, ev2
+                   else    
+                       return copy(ev1), copy(ev2)
+                   end
+                end
+
+            end
+        elseif DIM==3
+            @eval begin
+               function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
+                   dim =Array(Int32, 1)
+                   evp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_eigenvalues",SUF))), Ptr{$T},
+                         (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
+                   ev1 = pointer_to_array(evp, dim[1], false)   
+                   evp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_eigenvalues",SUF))), Ptr{$T},
+                         (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
+                   ev2 = pointer_to_array(evp, dim[1], false)   
+                   evp3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_eigenvalues",SUF))), Ptr{$T},
+                         (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 3 )
+                   ev3 = pointer_to_array(evp, dim[1], false)   
+                   if unsafe_access
+                       return ev1, ev2, ev3
+                   else    
+                       return copy(ev1), copy(ev2), copy(ev3)
+                   end
+                end
+
+            end
+        end
+    elseif COORDINATES==1 # polar/cylindrical
+        if DIM==2
+            @eval begin
+                function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
+                   dim =Array(Int32, 2)
+                   evp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_eigenvalues",SUF))), Ptr{$T},
+                         (Ptr{Void}, Ptr{Int32}), m.m, dim )
+                   ev = pointer_to_array(evp, (dim[1], dim[2]), false)   
+                   if unsafe_access
+                       return ev
+                   else    
+                       return copy(ev)
+                   end
+                end
+            
+            end
+        elseif DIM==3
+            # tbd
+        end
+    elseif COORDINATES==2 # spherical
+        if DIM==3
+            # tbd
+        end
+    end
+
 
     if DIM==1
         @eval begin
@@ -160,28 +245,28 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                dim =Array(Int32, 1)
                np1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-               n1 = pointer_to_array(n1p, dim[1], false)     
+               n1 = pointer_to_array(np1, dim[1], false)     
                np2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
-               n2 = pointer_to_array(n2p, dim[1], false)     
+               n2 = pointer_to_array(np2, dim[1], false)     
                copy(n1), copy(n2)
             end
 
         end  
-    elseif DIM==2
+    elseif DIM==3
         @eval begin
 
             function get_nodes(m::($METHOD){$T})
                dim =Array(Int32, 1)
                np1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-               n1 = pointer_to_array(n1p, dim[1], false)     
+               n1 = pointer_to_array(np1, dim[1], false)     
                np2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
-               n2 = pointer_to_array(n2p, dim[1], false)     
+               n2 = pointer_to_array(np2, dim[1], false)     
                np3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 3 )
-               n3 = pointer_to_array(n3p, dim[1], false)     
+               n3 = pointer_to_array(np3, dim[1], false)     
                copy(n1), copy(n2), copy(n3)
             end
 

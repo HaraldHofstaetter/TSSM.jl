@@ -38,7 +38,7 @@ export GeneralizedLaguerreHermite3D, WfGeneralizedLaguerreHermite3D
 export GeneralizedLaguerreReal2D, WfGeneralizedLaguerreReal2D
 export GeneralizedLaguerreHermiteReal3D, WfGeneralizedLaguerreHermiteReal3D
 
-#export gauss, radau, lobatto
+export gauss, radau, lobatto
 
 export FourierBessel2D, WfFourierBessel2D 
 export FourierBesselReal2D, WfFourierBesselReal2D
@@ -155,6 +155,26 @@ end
 type WfFourierReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
     p::Ptr{Void}
     m::FourierReal3D{T}
+end
+
+## FourierBessel types ###########################################################################
+
+type FourierBessel2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Void}
+end 
+
+type FourierBesselReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Void}
+end 
+
+type WfFourierBessel2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Void}
+    m::FourierBessel2D{T}
+end
+
+type WfFourierBesselReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Void}
+    m::FourierBesselReal2D{T}
 end
 
 ## Schroedinger types ############################################################################
@@ -274,6 +294,11 @@ const periodic = 0
 const dirichlet = 1
 const neumann = 2
 
+const gauss = 1
+const radau = 2
+const lobatto = 3
+
+
 none_1D(x)=zero(x)
 none_2D(x,y)=zero(x)
 none_3D(x,y,z)=zero(x)
@@ -324,10 +349,10 @@ end
 T = :Float64
 TSSM_HANDLE = :tssm_handle
 include("tssm_fourier.jl")
+include("tssm_fourier_bessel.jl")
 include("tssm_schroedinger.jl")
 include("tssm_schroedinger_hermite.jl")
 #include("tssm_generalized_laguerre.jl")
-#include("tssm_fourier_bessel.jl")
 include("tssm_common.jl")
 include("tssm_schroedinger_common.jl")
 
@@ -336,10 +361,10 @@ if use_Float128
     T = :Float128
     TSSM_HANDLE = :tssmq_handle
     include("tssm_fourier.jl")
+    include("tssm_fourier_bessel.jl")
     include("tssm_schroedinger.jl")
     include("tssm_schroedinger_hermite.jl")
     #include("tssm_generalized_laguerre.jl")
-    #include("tssm_fourier_bessel.jl")
     include("tssm_common.jl")
     include("tssm_schroedinger_common.jl")
 end    
