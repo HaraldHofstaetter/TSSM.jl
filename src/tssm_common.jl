@@ -232,35 +232,36 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                          this.p, other.p, factor)
             end
 
-            function set!(psi::($WF){$T}, f::Function)
-               try
-                   f_c = cfunction(f, ($T), (($T),))
-                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_rset_wf",SUF))), Void,
-                         (Ptr{Void}, Ptr{Void}), psi.p, f_c )
-               catch
-                   f_c = cfunction(f, Complex{$T}, (($T),))
-                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_wf",SUF))), Void,
-                         (Ptr{Void}, Ptr{Void}), psi.p, f_c )
-               end      
-            end
-    
-            function set!(psi::($WF){$T}, f::Function, t::Real)
-               try
-                   f_c = cfunction(f, ($T), (($T), ($T),))
-                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_rset_t_wf",SUF))), Void,
-                         (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
-               catch
-                   f_c = cfunction(f, Complex{$T}, (($T), ($T),))
-                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_t_wf",SUF))), Void,
-                         (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
-               end      
-            end
         end # eval    
             
 
         if DIM==1
             @eval begin
 
+                function set!(psi::($WF){$T}, f::Function)
+                   try
+                       f_c = cfunction(f, ($T), (($T),))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_rset_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                   catch
+                       f_c = cfunction(f, Complex{$T}, (($T),))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                   end      
+                end
+        
+                function set!(psi::($WF){$T}, f::Function, t::Real)
+                   try
+                       f_c = cfunction(f, ($T), (($T), ($T),))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_rset_t_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                   catch
+                       f_c = cfunction(f, Complex{$T}, (($T), ($T),))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_t_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                   end      
+                end
+            
                 function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
                    dims =Array(Int32, 1)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_data_wf",SUF))), Ptr{Complex{$T}},
@@ -277,7 +278,31 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
         elseif DIM==2
             @eval begin
 
-               function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
+                function set!(psi::($WF){$T}, f::Function)
+                   try
+                       f_c = cfunction(f, ($T), (($T),($T)))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_rset_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                   catch
+                       f_c = cfunction(f, Complex{$T}, (($T),($T)))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                   end      
+                end
+        
+                function set!(psi::($WF){$T}, f::Function, t::Real)
+                   try
+                       f_c = cfunction(f, ($T), (($T), ($T),($T)))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_rset_t_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                   catch
+                       f_c = cfunction(f, Complex{$T}, (($T), ($T),($T)))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_t_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                   end      
+                end
+
+                function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
                    dims =Array(Int32, 2)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_data_wf",SUF))), Ptr{Complex{$T}},
                          (Ptr{Void}, Ptr{Int32}), psi.p, dims )
@@ -292,6 +317,30 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             end # eval    
         elseif DIM==3
             @eval begin
+
+                function set!(psi::($WF){$T}, f::Function)
+                   try
+                       f_c = cfunction(f, ($T), (($T),($T),($T)))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_rset_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                   catch
+                       f_c = cfunction(f, Complex{$T}, (($T),($T),($T)))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                   end      
+                end
+        
+                function set!(psi::($WF){$T}, f::Function, t::Real)
+                   try
+                       f_c = cfunction(f, ($T), (($T), ($T),($T),($T)))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_rset_t_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                   catch
+                       f_c = cfunction(f, Complex{$T}, (($T), ($T),($T),($T)))
+                       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_t_wf",SUF))), Void,
+                             (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                   end      
+                end
 
                function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
                    dims =Array(Int32, 3)
@@ -355,22 +404,22 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                          this.p, other.p, factor)
             end
 
-            function set!(psi::($WF){$T}, f::Function)
-               f_c = cfunction(f, ($T), (($T),))
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_wf",SUF))), Void,
-                     (Ptr{Void}, Ptr{Void}), psi.p, f_c )
-            end
-    
-            function set!(psi::($WF){$T}, f::Function, t::Real)
-               f_c = cfunction(f, ($T), (($T), ($T),))
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_t_wf",SUF))), Void,
-                     (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
-            end
-
         end # eval    
 
         if DIM==1
             @eval begin
+
+                function set!(psi::($WF){$T}, f::Function)
+                   f_c = cfunction(f, ($T), (($T),))
+                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_wf",SUF))), Void,
+                         (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                end
+    
+                function set!(psi::($WF){$T}, f::Function, t::Real)
+                   f_c = cfunction(f, ($T), (($T), ($T),))
+                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_t_wf",SUF))), Void,
+                         (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                end
 
                 function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
                    dims =Array(Int32, 1)
@@ -388,7 +437,19 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
         elseif DIM==2
             @eval begin
 
-               function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
+                function set!(psi::($WF){$T}, f::Function)
+                   f_c = cfunction(f, ($T), (($T),($T)))
+                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_wf",SUF))), Void,
+                         (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                end
+    
+                function set!(psi::($WF){$T}, f::Function, t::Real)
+                   f_c = cfunction(f, ($T), (($T), ($T),($T)))
+                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_t_wf",SUF))), Void,
+                         (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                end
+
+                function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
                    dims =Array(Int32, 2)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_data_wf",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}), psi.p, dims )
@@ -404,7 +465,19 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
         elseif DIM==3
             @eval begin
 
-               function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
+                function set!(psi::($WF){$T}, f::Function)
+                   f_c = cfunction(f, ($T), (($T),($T),($T)))
+                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_wf",SUF))), Void,
+                         (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                end
+    
+                function set!(psi::($WF){$T}, f::Function, t::Real)
+                   f_c = cfunction(f, ($T), (($T), ($T),($T),($T)))
+                   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_set_t_wf",SUF))), Void,
+                         (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                end
+            
+                function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
                    dims =Array(Int32, 3)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string("c_get_data_wf",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}), psi.p, dims )
