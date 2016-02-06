@@ -7,7 +7,14 @@ import Base.copy!
 import Base.scale!
 import Base.norm
 
-export WaveFunction, WaveFunction1D, WaveFunction2D, WaveFunction3D, TimeSplittingSpectralMethod
+export WaveFunction, WaveFunction1D, WaveFunction2D, WaveFunction3D
+export WaveFunctionComplex, WaveFunctionComplex1D, WaveFunctionComplex2D, WaveFunctionComplex3D
+export WaveFunctionReal, WaveFunctionReal1D, WaveFunctionReal2D, WaveFunctionReal3D
+
+export TimeSplittinSpectralMethod, TimeSplittinSpectralMethod1D, TimeSplittinSpectralMethod2D, TimeSplittinSpectralMethod3D
+export TimeSplittinSpectralMethodComplex, TimeSplittinSpectralMethodComplex1D, TimeSplittinSpectralMethodComplex2D, TimeSplittinSpectralMethodComplex3D
+export TimeSplittinSpectralMethodReal, TimeSplittinSpectralMethodReal1D, TimeSplittinSpectralMethodReal2D, TimeSplittinSpectralMethodReal3D
+
 export dim
 
 export periodic, dirichlet, neumann

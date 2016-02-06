@@ -61,7 +61,8 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
     @eval begin
         # wave function constructor
 
-        function ($WF){($T)}( m::($METHOD){($T)} )
+        #function ($WF){($T)}( m::($METHOD){($T)} )
+        function ($WF)( m::($METHOD){($T)} )
             wf = ($WF){($T)}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new_wf",SUF))), Ptr{Void}, (Ptr{Void},), m.m) , m)   
             finalizer(wf, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"finalize_wf",SUF))), Void, (Ptr{Ptr{Void}},), &x.p) )
             wf
