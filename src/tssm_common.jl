@@ -474,7 +474,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
             end
 
             function scale!(psi::($WF){$T}, factor::Number)
-               ccall(  Libdl.dlsym(($TSSM_HANDLE), $(string(:c_scale_wf,SUF))) , Void,
+               ccall(  Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"scale_wf",SUF))) , Void,
                      (Ptr{Void}, ($T) ), psi.p, factor )
             end
     
