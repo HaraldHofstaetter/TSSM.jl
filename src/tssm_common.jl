@@ -282,17 +282,17 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
         @eval begin
 
             function propagate_A!(psi::($WF){$T}, dt::Number)
-                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_a_wf",SUF))), Void,
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_wf",SUF))), Void,
                         (Ptr{Void}, Complex{$T},), psi.p, dt)
             end
     
             function propagate_B!(psi::($WF){$T}, dt::Number)
-                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_b_wf",SUF))), Void,
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_B_wf",SUF))), Void,
                         (Ptr{Void}, Complex{$T},), psi.p, dt)
             end
     
             function propagate_C!(psi::($WF){$T}, dt::Number)
-                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_c_wf",SUF))), Void,
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_C_wf",SUF))), Void,
                         (Ptr{Void}, Complex{$T},), psi.p, dt)
             end
     
@@ -301,7 +301,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                if this.m ≠ other.m
                    error("this and other must belong to the same method")
                end
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_a_wf",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_A_wf",SUF))), Void,
                         (Ptr{Void}, Ptr{Void}, Complex{$T}), 
                          this.p, other.p, coefficient)
             end
@@ -449,17 +449,17 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
     else    
         @eval begin
             function propagate_A!(psi::($WF){$T}, dt::Number)
-                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_a_wf",SUF))), Void,
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_wf",SUF))), Void,
                         (Ptr{Void}, ($T),), psi.p, dt)
             end
     
             function propagate_B!(psi::($WF){$T}, dt::Number)
-                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_b_wf",SUF))), Void,
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_B_wf",SUF))), Void,
                         (Ptr{Void}, ($T),), psi.p, dt)
             end
     
             function propagate_C!(psi::($WF){$T}, dt::Number)
-                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_c_wf",SUF))), Void,
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_C_wf",SUF))), Void,
                         (Ptr{Void}, ($T),), psi.p, dt)
             end
 
@@ -468,15 +468,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                if this.m ≠ other.m
                    error("this and other must belong to the same method")
                end
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_a_wf",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_A_wf",SUF))), Void,
                         (Ptr{Void}, Ptr{Void}, ($T)), 
                          this.p, other.p, coefficient)
             end
-
-            #function scale!(psi::($WF){$T}, factor::Number)
-            #   ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"scale_wf",SUF))), Void,
-            #         (Ptr{Void}, ($T) ), psi.p, factor )
-            #end
 
             function scale!(psi::($WF){$T}, factor::Number)
                ccall(  Libdl.dlsym(($TSSM_HANDLE), $(string(:c_scale_wf,SUF))) , Void,

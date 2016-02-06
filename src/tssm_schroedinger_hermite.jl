@@ -168,7 +168,7 @@ if DIM==1
 
         function get_H(m::($METHOD){$T}, unsafe_access::Bool=false)
            dims =Array(Int32, 2)
-           Hp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
+           Hp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_H",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 1 )
            H = pointer_to_array(Hp1, (dims[1], dims[2]), false)  
            if unsafe_access
@@ -195,10 +195,10 @@ elseif DIM==2
 
         function get_H(m::($METHOD){$T}, unsafe_access::Bool=false)
            dims =Array(Int32, 2)
-           Hp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
+           Hp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_H",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 1 )
            H1 = pointer_to_array(Hp1, (dims[1], dims[2]), false)  
-           Hp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
+           Hp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_H",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 2 )
            H2 = pointer_to_array(Hp2, (dims[1], dims[2]), false)  
            if unsafe_access
@@ -228,13 +228,13 @@ elseif DIM==2
 
         function get_H(m::($METHOD){$T}, unsafe_access::Bool=false)
            dims =Array(Int32, 2)
-           Hp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
+           Hp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_H",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 1 )
            H1 = pointer_to_array(Hp1, (dims[1], dims[2]), false)  
-           Hp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
+           Hp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_H",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 2 )
            H2 = pointer_to_array(Hp2, (dims[1], dims[2]), false)  
-           Hp3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_h",SUF))), Ptr{$T},
+           Hp3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_H",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dims, 3 )
            H3 = pointer_to_array(Hp3, (dims[1], dims[2]), false)  
            if unsafe_access

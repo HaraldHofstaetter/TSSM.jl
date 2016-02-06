@@ -69,7 +69,7 @@ end # if
 
     function get_L(m::($METHOD){$T}, unsafe_access::Bool=false)
        dims =Array(Int32, 3)
-       Lp = ccall( dlsym(tssm_handle, $(string(PRE,"get_l",SUF))), Ptr{$T},
+       Lp = ccall( dlsym(tssm_handle, $(string(PRE,"get_L",SUF))), Ptr{$T},
              (Ptr{Void}, Ptr{Int32}), m.m, dims )
        L = pointer_to_array(Lp, (dims[1], dims[2], dims[3]), false)  
        if unsafe_access

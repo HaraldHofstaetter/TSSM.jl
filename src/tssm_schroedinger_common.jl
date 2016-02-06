@@ -79,12 +79,12 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
     if COMPLEX_METHOD
         @eval begin
             function imaginary_time_propagate_A!(psi::($WF){$T}, dt::Number)
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_a_wf",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_A_wf",SUF))), Void,
                                 (Ptr{Void}, Complex{($T)},), psi.p, dt)
             end
 
             function imaginary_time_propagate_B!(psi::($WF){$T}, dt::Number, method_for_B::Integer=0)
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_b_wf",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_B_wf",SUF))), Void,
                                 (Ptr{Void}, Complex{($T)}, Int32), psi.p, dt, method_for_B)
             end
 
@@ -93,7 +93,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                if this.m ≠ other.m
                    error("this and other must belong to the same method")
                end
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_b_wf",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_B_wf",SUF))), Void,
                                 (Ptr{Void}, Ptr{Void}, Complex{($T)}), 
                                  this.p, other.p, coefficient)
             end
@@ -108,12 +108,12 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
     else
         @eval begin
             function imaginary_time_propagate_A!(psi::($WF){$T}, dt::Real)
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_a_wf",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_A_wf",SUF))), Void,
                                 (Ptr{Void}, ($T),), psi.p, dt)
             end
 
             function imaginary_time_propagate_B!(psi::($WF){$T}, dt::Real, method_for_B::Integer=0)
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_b_wf",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_B_wf",SUF))), Void,
                                 (Ptr{Void}, ($T), Int32), psi.p, dt, method_for_B)
             end
 
@@ -122,7 +122,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                if this.m ≠ other.m
                    error("this and other must belong to the same method")
                end
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_b_wf",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_B_wf",SUF))), Void,
                                 (Ptr{Void}, Ptr{Void}, ($T)), 
                                  this.p, other.p, coefficient)
             end
