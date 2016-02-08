@@ -19,8 +19,10 @@ end
 
 if searchindex(readall(`uname -a`), "juliabox")>0
     run(`make -C TSSM/OPENMP JULIABOX_BUILD=1 all`)
+    run(`make -C TSSM/QUADPREC_OPENMP JULIABOX_BUILD=1 all`)
 else    
     run(`make -C TSSM/OPENMP all`)
+    run(`make -C TSSM/QUADPREC_OPENMP all`)
 end
 
 if (!ispath("usr"))
@@ -31,4 +33,5 @@ if (!ispath("usr/lib"))
 end
 
 run(`mv TSSM/OPENMP/libtssm.$(Libdl.dlext) usr/lib`)
+run(`mv TSSM/QUADPREC_OPENMP/libtssmq.$(Libdl.dlext) usr/lib`)
 
