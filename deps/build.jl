@@ -7,8 +7,8 @@ if (!ispath("usr/lib"))
     run(`mkdir usr/lib`)
 end
 
-if (   !ispath("fftw-3.3.4/usr/lib/libfftw3q.so.3.4.4")
-    && !ispath("fftw-3.3.4/usr/lib/libfftw3q_omp.so.3.4.4"))
+if (   !ispath("usr/lib/libfftw3q.so.3.4.4")
+    || !ispath("usr/lib/libfftw3q_omp.so.3.4.4"))
     if (!ispath("fftw-3.3.4"))
         download("http://www.fftw.org/fftw-3.3.4.tar.gz","fftw3.tgz")
         run(`tar xzf fftw3.tgz`)
