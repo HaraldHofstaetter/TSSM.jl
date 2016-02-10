@@ -312,6 +312,8 @@ none_3D(x,y,z)=zero(x)
 
 const libtssm = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
                      string("libtssm.", Libdl.dlext))
+const libtssm_debug = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
+                     string("libtssm_debug.", Libdl.dlext))
 const libtssmq = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
                      string("libtssmq.", Libdl.dlext))
 
@@ -331,13 +333,18 @@ function __init__()
     end
 
     global tssm_handle
-    tssm_handle = Libdl.dlopen(libtssm) #, Libdl.RTLD_LAZY|Libdl.RTLD_DEEPBIND|Libdl.RTLD_LOCAL);
+    if "TSSM_DEBUG" in keys(ENV) && ENV["TSSM_DEBUG"]=="1"
+        warn("using TSSM debug version")
+        tssm_handle = Libdl.dlopen(libtssm_debug) 
+    else
+        tssm_handle = Libdl.dlopen(libtssm) 
+    end    
     ccall( Libdl.dlsym(tssm_handle, "tssm_initialize"), Void, ())
     ccall( Libdl.dlsym(tssm_handle, "tssm_fourier_initialize"), Void, ())
 
     global tssmq_handle 
     if use_Float128
-        tssmq_handle = Libdl.dlopen(libtssmq) # , Libdl.RTLD_LAZY|Libdl.RTLD_DEEPBIND|Libdl.RTLD_LOCAL);
+        tssmq_handle = Libdl.dlopen(libtssmq) 
         ccall( Libdl.dlsym(tssmq_handle, "tssmq_initialize"), Void, ())
         ccall( Libdl.dlsym(tssmq_handle, "tssmq_fourier_initialize"), Void, ())
     end    
