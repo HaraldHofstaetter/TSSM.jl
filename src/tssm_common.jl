@@ -365,7 +365,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
                 function evaluate(psi::($WF){$T}, x::Real)
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"evaluate_wf",SUF))), Complex{$T},
-                             (($T), ), x)
+                             (Ptr{Void}, ($T)), psi.p, x)
                 end
                 
 
@@ -411,7 +411,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
                 function evaluate(psi::($WF){$T}, x::Real, y::Real)
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"evaluate_wf",SUF))), Complex{$T},
-                             (($T),($T)), x, y)
+                             (Ptr{Void}, ($T),($T)), psi.p, x, y)
                 end
 
             end # eval    
@@ -456,7 +456,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
                 function evaluate(psi::($WF){$T}, x::Real, y::Real, z::Real)
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"evaluate_wf",SUF))), Complex{$T},
-                             (($T),($T),($T)), x, y,z)
+                             (Ptr{Void}, ($T),($T),($T)), psi.p, x, y,z)
                 end
             
             end # eval    
@@ -535,7 +535,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
                 function evaluate(psi::($WF){$T}, x::Real)
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"evaluate_wf",SUF))), ($T),
-                             (($T),), x)
+                             (Ptr{Void}, ($T)), psi.p, x)
                 end
 
             end # eval    
@@ -568,7 +568,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
                 function evaluate(psi::($WF){$T}, x::Real, y::Real)
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"evaluate_wf",SUF))), ($T),
-                             (($T),($T)), x, y)
+                             (Ptr{Void}, ($T),($T)), psi.p, x, y)
                 end
 
             end # eval    
@@ -601,7 +601,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
                 function evaluate(psi::($WF){$T}, x::Real, y::Real, z::Real)
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"evaluate_wf",SUF))), ($T),
-                             (($T),($T),($T)), x, y, z)
+                             (Ptr{Void}, ($T),($T),($T)), psi.p, x, y, z)
                 end
             
             end # eval    
