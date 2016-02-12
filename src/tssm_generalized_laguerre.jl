@@ -607,22 +607,22 @@ end
 ## method: norm ###################################################################################
 
 function norm(psi::WfGeneralizedLaguerre2D)
-   ccall( dlsym(tssm_handle, "c_norm2_wf_gen_laguerre_2d"), Float64,
+   ccall( dlsym(tssm_handle, "c_norm_wf_gen_laguerre_2d"), Float64,
          (Ptr{Void}, ), psi.p )
 end
 
 function norm(psi::WfGeneralizedLaguerreHermite3D)
-   ccall( dlsym(tssm_handle, "c_norm2_wf_gen_laguerre_hermite_3d"), Float64,
+   ccall( dlsym(tssm_handle, "c_norm_wf_gen_laguerre_hermite_3d"), Float64,
          (Ptr{Void}, ), psi.p )
 end
 
 function norm(psi::WfGeneralizedLaguerreReal2D)
-   ccall( dlsym(tssm_handle, "c_norm2_wf_gen_laguerre_real_2d"), Float64,
+   ccall( dlsym(tssm_handle, "c_norm_wf_gen_laguerre_real_2d"), Float64,
          (Ptr{Void}, ), psi.p )
 end
 
 function norm(psi::WfGeneralizedLaguerreHermiteReal3D)
-   ccall( dlsym(tssm_handle, "c_norm2_wf_gen_laguerre_hermite_real_2d"), Float64,
+   ccall( dlsym(tssm_handle, "c_norm_wf_gen_laguerre_hermite_real_2d"), Float64,
          (Ptr{Void}, ), psi.p )
 end
 
@@ -653,22 +653,22 @@ end
 ## method: norm_in_frequency_space ################################################################
 
 function norm_in_frequency_space(psi::WfGeneralizedLaguerre2D)
-   ccall( dlsym(tssm_handle, "c_norm2_in_frequency_space_wf_gen_laguerre_2d"), Float64,
+   ccall( dlsym(tssm_handle, "c_norm_in_frequency_space_wf_gen_laguerre_2d"), Float64,
          (Ptr{Void}, ), psi.p )
 end
 
 function norm_in_frequency_space(psi::WfGeneralizedLaguerreHermite3D)
-   ccall( dlsym(tssm_handle, "c_norm2_in_frequency_space_wf_gen_laguerre_hermite_3d"), Float64,
+   ccall( dlsym(tssm_handle, "c_norm_in_frequency_space_wf_gen_laguerre_hermite_3d"), Float64,
          (Ptr{Void}, ), psi.p )
 end
 
 function norm_in_frequency_space(psi::WfGeneralizedLaguerreReal2D)
-   ccall( dlsym(tssm_handle, "c_norm2_in_frequency_space_wf_gen_laguerre_real_2d"), Float64,
+   ccall( dlsym(tssm_handle, "c_norm_in_frequency_space_wf_gen_laguerre_real_2d"), Float64,
          (Ptr{Void}, ), psi.p )
 end
 
 function norm_in_frequency_space(psi::WfGeneralizedLaguerreHermiteReal3D)
-   ccall( dlsym(tssm_handle, "c_norm2_in_frequency_space_wf_gen_laguerre_hermite_real_2d"), Float64,
+   ccall( dlsym(tssm_handle, "c_norm_in_frequency_space_wf_gen_laguerre_hermite_real_2d"), Float64,
          (Ptr{Void}, ), psi.p )
 end
 

@@ -112,7 +112,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
         end
         
         function norm(psi::($WF){$T})
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"norm2_wf",SUF))), ($T),
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"norm_wf",SUF))), ($T),
                  (Ptr{Void}, ), psi.p )
         end
 
