@@ -126,7 +126,6 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
 #           to_recompute_groundstate(psi, extrapolation_order=2)al_space(psi1)
 #           psi1%u = real(psi1%u, prec)
 #endif 
-println(norm(psi1))
            normalize!(psi1)
            E_mu1, E_dev1 = get_energy_expectation_deviation(psi1)
            E1 = E_mu1 - interaction_energy(psi1)

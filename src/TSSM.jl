@@ -49,6 +49,8 @@ export gauss, radau, lobatto
 
 export FourierBessel2D, WfFourierBessel2D 
 export FourierBesselReal2D, WfFourierBesselReal2D
+export BesselRotSym1D, WfBesselRotSym1D 
+export BesselRotSymReal1D, WfBesselRotSymReal1D 
 
 export wave_function, clone
 export is_real_space, is_frequency_space, to_real_space!, to_frequency_space!
@@ -174,6 +176,14 @@ type FourierBesselReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{
     m::Ptr{Void}
 end 
 
+type BesselRotSym1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
+    m::Ptr{Void}
+end 
+
+type BesselRotSymReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
+    m::Ptr{Void}
+end 
+
 type WfFourierBessel2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
     p::Ptr{Void}
     m::FourierBessel2D{T}
@@ -182,6 +192,16 @@ end
 type WfFourierBesselReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
     p::Ptr{Void}
     m::FourierBesselReal2D{T}
+end
+
+type WfBesselRotSym1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
+    p::Ptr{Void}
+    m::BesselRotSym1D{T}
+end
+
+type WfBesselRotSymReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
+    p::Ptr{Void}
+    m::BesselRotSymReal1D{T}
 end
 
 ## Schroedinger types ############################################################################
