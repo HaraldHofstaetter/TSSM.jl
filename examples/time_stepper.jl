@@ -301,7 +301,49 @@ function global_orders(psi::WaveFunction, reference_solution::WaveFunction,
     tab
 end
 
-function local_orders(psi::WaveFunction, get_reference_solution, 
+function local_orders(psi::WaveFunction, t0::Real, dt::Real; 
+                      scheme::Tuple=Strang, operator_sequence="AB", 
+                      reference_scheme::Tuple=scheme, reference_operator_sequence=operator_sequence,
+                      reference_steps=10,
+                      rows=8)
+    tab = Array(Float64, rows, 3)
+
+    wf_save_initial_value = clone(psi)
+    psi_ref = clone(psi)
+    copy!(wf_save_initial_value, psi)
+
+    dt1 = dt
+    err_old = 0.0
+    println("             dt         err      p")
+    println("-----------------------------------")
+    for row=1:rows
+        step!(psi, dt1, scheme, operator_sequence)
+        copy!(psi_ref,wf_save_initial_value)
+        for k=1:reference_steps
+            step!(psi_ref, dt1/reference_steps, reference_scheme, reference_operator_sequence)
+        end    
+        err = distance(psi, psi_ref)
+        if (row==1) then
+            @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
+            tab[row,1] = dt1
+            tab[row,2] = err
+            tab[row,3] = 0 
+        else
+            p = log(err_old/err)/log(2.0);
+            @printf("%3i%12.3e%12.3e%7.2f\n", row, Float64(dt1), Float64(err), Float64(p))
+            tab[row,1] = dt1
+            tab[row,2] = err
+            tab[row,3] = p 
+        end
+        err_old = err
+        dt1 = 0.5*dt1
+        copy!(psi,wf_save_initial_value)
+    end
+    tab
+end
+
+
+function local_orders(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
                        scheme::Tuple=Strang, operator_sequence="AB", rows=8)
     tab = Array(Float64, rows, 3)
@@ -337,7 +379,7 @@ function local_orders(psi::WaveFunction, get_reference_solution,
 end
 
 
-function local_orders_0(psi::WaveFunction, get_reference_solution, 
+function local_orders_0(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
                        scheme1, scheme2, operator_sequence="AB", rows=8)
     tab = Array(Float64, rows, 5)
@@ -387,14 +429,14 @@ function local_orders_0(psi::WaveFunction, get_reference_solution,
     tab
 end
 
-function local_orders(psi::WaveFunction, get_reference_solution, 
+function local_orders(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
                        embedded_scheme::EmbeddedScheme, operator_sequence="AB", rows=8)
     local_orders_0(psi, get_reference_solution, t0, dt,  embedded_scheme.scheme1, embedded_scheme.scheme2,
                  operator_sequence, rows)
 end   
 
-function local_orders(psi::WaveFunction, get_reference_solution, 
+function local_orders(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
                        palindromic_scheme::PalindromicScheme, operator_sequence="AB", rows=8)
     local_orders_0(psi, get_reference_solution, t0, dt,  palindromic_scheme.scheme, "palindromic",
