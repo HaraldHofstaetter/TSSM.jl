@@ -1,5 +1,5 @@
 
-Strang = (0.5, 10.0, 0.5)
+Strang = (0.5, 1.0, 0.5)
 
 function step!(psi::WaveFunction, dt::Real, scheme=Strang, operator_sequence="AB")
     for k = 1:length(scheme)
@@ -138,7 +138,7 @@ function Base.next(tsi::AdaptiveTimeStepperIterator, state::AdaptiveTimeStepperS
         dt = dt*min(facmax, max(facmin, fac*(1.0/err)^(1.0/(tsi.order+1))))
         if err>=1.0
            copy!(tsi.psi, tsi.psi0)
-           @printf("t=%17.9e  err=%17.8e  dt=%17.8e  rejected...\n", state.t, err, dt)
+           @printf("t=%17.9e  err=%17.8e  dt=%17.8e  rejected...\n", Float64(state.t), Float64(err), Float64(dt))
         end   
     end
     state.t + dt0, AdaptiveTimeStepperState(state.t+dt0, dt)
@@ -210,7 +210,7 @@ function Base.next(tsi::AdaptiveTimeStepper2Iterator, state::AdaptiveTimeStepper
         end
         if err>=1.0
            copy!(tsi.psi, tsi.psi0)
-           @printf("t=%17.9e  err=%17.8e  dt=%17.8e  rejected...\n", state.t, err, dt)
+           @printf("t=%17.9e  err=%17.8e  dt=%17.8e  rejected...\n", Float64(state.t), Float64(err), Float64(dt))
         end   
     end
     state.t + dt0, AdaptiveTimeStepper2State(state.t+dt0, dt, dt_old, err)
@@ -273,6 +273,7 @@ function global_orders(psi::WaveFunction, reference_solution::WaveFunction,
 
     steps = floor((tend-t0)/dt)
     dt1 = dt
+    err_old = 0.0
     println("             dt         err      p")
     println("-----------------------------------")
     for row=1:rows
@@ -281,13 +282,13 @@ function global_orders(psi::WaveFunction, reference_solution::WaveFunction,
         end   
         err = distance(psi, reference_solution)
         if (row==1) then
-            @printf("%3i%12.3e%12.3e\n", row, dt1, err)
+            @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
             tab[row,1] = dt1
             tab[row,2] = err
             tab[row,3] = 0 
         else
             p = log(err_old/err)/log(2.0);
-            @printf("%3i%12.3e%12.3e%7.2f\n", row, dt1, err, p)
+            @printf("%3i%12.3e%12.3e%7.2f\n", row, Float64(dt1), Float64(err), Float64(p))
             tab[row,1] = dt1
             tab[row,2] = err
             tab[row,3] = p 
@@ -317,13 +318,13 @@ function local_orders(psi::WaveFunction, get_reference_solution,
         set!(reference_solution, get_reference_solution, t0+dt1)
         err = distance(psi, reference_solution)
         if (row==1) then
-            @printf("%3i%12.3e%12.3e\n", row, dt1, err)
+            @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
             tab[row,1] = dt1
             tab[row,2] = err
             tab[row,3] = 0 
         else
             p = log(err_old/err)/log(2.0);
-            @printf("%3i%12.3e%12.3e%7.2f\n", row, dt1, err, p)
+            @printf("%3i%12.3e%12.3e%7.2f\n", row, Float64(dt1), Float64(err), Float64(p))
             tab[row,1] = dt1
             tab[row,2] = err
             tab[row,3] = p 
@@ -361,7 +362,7 @@ function local_orders_0(psi::WaveFunction, get_reference_solution,
         err1 = distance(psi, reference_solution)
         err2 = distance(psi2, reference_solution)
         if (row==1) then
-            @printf("%3i%12.3e%12.3e        %12.3e\n", row, dt1, err1, err2)
+            @printf("%3i%12.3e%12.3e        %12.3e\n", row, Float64(dt1), Float64(err1), Float64(err2))
             tab[row,1] = dt1
             tab[row,2] = err1
             tab[row,3] = 0 
@@ -370,7 +371,7 @@ function local_orders_0(psi::WaveFunction, get_reference_solution,
         else
             p1 = log(err_old1/err1)/log(2.0);
             p2 = log(err_old2/err2)/log(2.0);
-            @printf("%3i%12.3e%12.3e%7.2fe%12.3e%7.2f\n", row, dt1, err1, p1, err2, p2)
+            @printf("%3i%12.3e%12.3e%7.2fe%12.3e%7.2f\n", row, Float64(dt1), Float64(err1), Float64(p1), Float64(err2), Float64(p2))
             tab[row,1] = dt1
             tab[row,2] = err1
             tab[row,3] = p1

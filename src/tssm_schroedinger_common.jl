@@ -78,6 +78,11 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
 
     if COMPLEX_METHOD
         @eval begin
+            function propagate_B!(psi::($WF){$T}, dt::Number)
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_B_wf",SUF))), Void,
+                        (Ptr{Void}, Complex{$T},), psi.p, dt)
+            end
+
             function imaginary_time_propagate_A!(psi::($WF){$T}, dt::Number)
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_A_wf",SUF))), Void,
                                 (Ptr{Void}, Complex{($T)},), psi.p, dt)
@@ -107,6 +112,11 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
          end #eval   
     else
         @eval begin
+            function propagate_B!(psi::($WF){$T}, dt::Real)
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_B_wf",SUF))), Void,
+                        (Ptr{Void}, ($T),), psi.p, dt)
+            end
+        
             function imaginary_time_propagate_A!(psi::($WF){$T}, dt::Real)
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_A_wf",SUF))), Void,
                                 (Ptr{Void}, ($T),), psi.p, dt)

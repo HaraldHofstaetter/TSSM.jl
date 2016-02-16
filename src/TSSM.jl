@@ -21,7 +21,7 @@ export periodic, dirichlet, neumann
 
 export Fourier1D, WfFourier1D 
 export Fourier2D, WfFourier2D 
-export Fourier3D, WfFourier3D 
+export Fourier3D, WfFourier3D
 export FourierReal1D, WfFourierReal1D 
 export FourierReal2D, WfFourierReal2D 
 export FourierReal3D, WfFourierReal3D 
@@ -108,6 +108,11 @@ dim(psi::WaveFunction3D) = 3
 dim(psi::TimeSplittingSpectralMethod1D) = 1
 dim(psi::TimeSplittingSpectralMethod2D) = 2
 dim(psi::TimeSplittingSpectralMethod3D) = 3
+
+
+# Dummy propagators, to be overloaded
+propagate_B!(psi::WaveFunction, dt::Number) = psi
+propagate_C!(psi::WaveFunction, dt::Number) = psi
 
 
 ## Fourier types ############################################################################
