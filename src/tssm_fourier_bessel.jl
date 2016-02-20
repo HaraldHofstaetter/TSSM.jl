@@ -94,7 +94,7 @@ end # if
     end
 
     function save(m::($METHOD){$T}, filename::ASCIIString)
-       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save_coeffs",SUF))), Void,
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save",SUF))), Void,
              (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
     end          
 
