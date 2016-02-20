@@ -66,6 +66,7 @@ export get_zmin, get_zmax
 export get_omega_x,  get_omega_y,  get_omega_z
 export get_H
 export get_L, get_Omega 
+export get_nr, get_nfr, get_ntheta
 
 export get_hbar, get_mass, get_cubic_coupling
 export set_potential!, get_potential, load_potential!, save_potential

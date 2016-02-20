@@ -24,6 +24,14 @@ end
                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
         m
     end
+
+    function ($METHOD)(T::Type{$T}, filename::ASCIIString)
+        m = ($METHOD){$T}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new_from_file",SUF))), 
+                       Ptr{Void}, (Ptr{UInt8}, Int32,), filename, length(filename) ))
+        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+        m
+    end
 end # eval
 if T == :Float64
 @eval begin
@@ -36,6 +44,11 @@ if T == :Float64
                   boundary_conditions=boundary_conditions,
                   quadrature_rule=quadrature_rule)
     end      
+
+    function ($METHOD)(filename::ASCIIString)
+        ($METHOD)(($T), filename)
+    end
+
 end # eval
 end # if
 
@@ -70,7 +83,7 @@ end # if
 
     function get_L(m::($METHOD){$T}, unsafe_access::Bool=false)
        dims =Array(Int32, 3)
-       Lp = ccall( dlsym(tssm_handle, $(string(PRE,"get_L",SUF))), Ptr{$T},
+       Lp = ccall( Libdl.dlsym(tssm_handle, $(string(PRE,"get_L",SUF))), Ptr{$T},
              (Ptr{Void}, Ptr{Int32}), m.m, dims )
        L = pointer_to_array(Lp, (dims[1], dims[2], dims[3]), false)  
        if unsafe_access
@@ -79,6 +92,11 @@ end # if
            return copy(L)
        end
     end
+
+    function save(m::($METHOD){$T}, filename::ASCIIString)
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save_coeffs",SUF))), Void,
+             (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
+    end          
 
 end # eval
 
