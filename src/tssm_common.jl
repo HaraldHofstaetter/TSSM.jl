@@ -99,7 +99,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                     (Ptr{Void}, $T,), psi.p, t)
         end
 
-        function get_time!(psi::($WF){$T}, t::Number)
+        function get_time(psi::($WF){$T}, t::Number)
             ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_time_wf",SUF))), ($T),
                     (Ptr{Void}, $T,), psi.p, t)
         end
