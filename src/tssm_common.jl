@@ -94,6 +94,20 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                     (Ptr{Void},), psi.p)
         end
 
+        function set_time!(psi::($WF){$T}, t::Number)
+            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_time_wf",SUF))), Void,
+                    (Ptr{Void}, $T,), psi.p, t)
+        end
+
+        function get_time!(psi::($WF){$T}, t::Number)
+            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_time_wf",SUF))), ($T),
+                    (Ptr{Void}, $T,), psi.p, t)
+        end
+
+        function propagate_time!(psi::($WF){$T}, dt::Number)
+            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_time_wf",SUF))), Void,
+                    (Ptr{Void}, $T,), psi.p, dt)
+        end
         
         function save(psi::($WF){$T}, filename::ASCIIString)
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save_wf",SUF))), Void,

@@ -10,6 +10,8 @@ function step!(psi::WaveFunction, dt::Real, scheme=Strang, operator_sequence="AB
             propagate_B!(psi, dt*scheme[k]) 
         elseif which_operator == 'C'
             propagate_C!(psi, dt*scheme[k]) 
+        elseif which_operator == 'T'
+            propagate_time!(psi, dt*scheme[k]) 
         else
             # TODO! Error or Warning
         end

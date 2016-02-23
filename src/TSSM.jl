@@ -54,6 +54,7 @@ export BesselRotSymReal1D, WfBesselRotSymReal1D
 
 export wave_function, clone
 export is_real_space, is_frequency_space, to_real_space!, to_frequency_space!
+export set_time!, get_time, propagate_time!
 export propagate_A!, propagate_B!, add_apply_A!
 export norm, norm_in_frequency_space, normalize!, distance, scale!, axpy! 
 export inner_product, eigen_function!, evaluate
