@@ -13,6 +13,126 @@ if T == :Float128
     SUF = symbol(SUF, "_wf128")
 end
 
+if COMPLEX_METHOD
+
+if DIM==1
+@eval begin
+    function ($METHOD)(T::Type{$T}, nx::Integer, xmin::Real, xmax::Real; 
+                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_1D,
+                       potential_t::Function=none_2D,
+                       cubic_coupling::Real=0.0,
+                       boundary_conditions::Integer=periodic)
+        with_potential = potential!=none_1D
+        with_potential_t = potential!=none_2D
+        V_c = cfunction(potential, ($T), (($T),))
+        V_t_c = cfunction(potential_t, ($T), (($T),($T)))
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
+                   (Int32, ($T), ($T), ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
+                   nx, xmin, xmax, 
+                   hbar, mass, V_c, with_potential, V_t_c, with_potential_t,
+                   cubic_coupling, boundary_conditions) 
+        m = ($METHOD){$T}(c)
+        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+       m
+    end
+end # eval
+if T == :Float64
+@eval begin
+    function ($METHOD)(nx::Integer, xmin::Real, xmax::Real; 
+                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_1D,
+                       potential_t::Function=none_2D,
+                       cubic_coupling::Real=0.0,
+                       boundary_conditions::Integer=periodic)
+        ($METHOD)(($T), nx, xmin, xmax,
+                       hbar=hbar, mass=mass, potential=potential, potential_t=potential_t, 
+                       cubic_coupling=cubic_coupling, boundary_conditions=boundary_conditions)
+    end      
+end # eval
+end #if
+elseif DIM==2
+@eval begin
+    function ($METHOD)(T::Type{($T)}, nx::Integer, xmin::Real, xmax::Real,
+                                      ny::Integer, ymin::Real, ymax::Real; 
+                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
+                       potential_t::Function=none_3D,
+                       cubic_coupling::Real=0.0,
+                       boundary_conditions::Integer=periodic)
+        with_potential = potential!=none_2D
+        with_potential_t = potential!=none_3D
+        V_c = cfunction(potential, ($T), (($T),($T)))
+        V_t_c = cfunction(potential_t, ($T), (($T),($T),($T)))
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
+                   (Int32, ($T), ($T), Int32, ($T), ($T), 
+                   ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
+                   nx, xmin, xmax, ny, ymin, ymax, 
+                   hbar, mass, V_c, with_potential, V_t_c, with_potential_t,
+                   cubic_coupling, boundary_conditions) 
+        m = ($METHOD){$T}(c)
+        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+        m
+    end
+end # eval
+if T == :Float64
+@eval begin
+    function ($METHOD)(nx::Integer, xmin::Real, xmax::Real, 
+                       ny::Integer, ymin::Real, ymax::Real;
+                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
+                       potential_t::Function=none_3D,
+                       cubic_coupling::Real=0.0,
+                       boundary_conditions::Integer=periodic)
+        ($METHOD)(($T), nx, xmin, xmax,  ny, ymin, ymax,
+                       hbar=hbar, mass=mass, potential=potential, potential_t=potential_t,
+                       cubic_coupling=cubic_coupling, boundary_conditions=boundary_conditions)
+    end      
+end # eval
+end #if
+elseif DIM==3
+@eval begin
+    function ($METHOD)(T::Type{($T)}, nx::Integer, xmin::Real, xmax::Real,
+                                      ny::Integer, ymin::Real, ymax::Real, 
+                                      nz::Integer, zmin::Real, zmax::Real; 
+                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
+                       potential_t::Function=none_4D,
+                       cubic_coupling::Real=0.0,
+                       boundary_conditions::Integer=periodic)
+        with_potential = potential!=none_3D
+        with_potential_t = potential!=none_4D
+        V_c = cfunction(potential, ($T), (($T),($T),($T)))
+        V_t_c = cfunction(potential_t, ($T), (($T),($T),($T),($T)))
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
+                   (Int32, ($T), ($T), Int32, ($T), ($T), Int32, ($T), ($T), 
+                   ($T), ($T), Ptr{Void}, Bool,  Ptr{Void}, Bool, ($T), Int32), 
+                   nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax,  
+                   hbar, mass, V_c, with_potential, V_t_c, with_potential_t,
+                   cubic_coupling, boundary_conditions) 
+        m = ($METHOD){$T}(c)
+        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+        m
+    end
+end # eval
+if T == :Float64
+@eval begin
+    function ($METHOD)(nx::Integer, xmin::Real, xmax::Real, 
+                       ny::Integer, ymin::Real, ymax::Real,
+                       nz::Integer, zmin::Real, zmax::Real;
+                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
+                       potential_t::Function=none_4D,
+                       cubic_coupling::Real=0.0,
+                       boundary_conditions::Integer=periodic)
+        ($METHOD)(($T), nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax,
+                       hbar=hbar, mass=mass, potential=potential, potential_t=potential_t,
+                       cubic_coupling=cubic_coupling, boundary_conditions=boundary_conditions)
+    end      
+end # eval
+end #if
+
+end # if
+
+else # !COMPLEX_METHOD
+
 if DIM==1
 @eval begin
     function ($METHOD)(T::Type{$T}, nx::Integer, xmin::Real, xmax::Real; 
@@ -24,7 +144,8 @@ if DIM==1
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
                    nx, xmin, xmax, 
-                   hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) 
+                   hbar, mass, V_c, with_potential,
+                   cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
                         $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
@@ -38,15 +159,15 @@ if T == :Float64
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
         ($METHOD)(($T), nx, xmin, xmax,
-                       hbar=hbar, mass=mass, potential=potential, cubic_coupling=cubic_coupling,
-                       boundary_conditions=boundary_conditions)
+                       hbar=hbar, mass=mass, potential=potential,  
+                       cubic_coupling=cubic_coupling, boundary_conditions=boundary_conditions)
     end      
 end # eval
 end #if
 elseif DIM==2
 @eval begin
     function ($METHOD)(T::Type{($T)}, nx::Integer, xmin::Real, xmax::Real,
-                                       ny::Integer, ymin::Real, ymax::Real; 
+                                      ny::Integer, ymin::Real, ymax::Real; 
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
@@ -56,7 +177,8 @@ elseif DIM==2
                    (Int32, ($T), ($T), Int32, ($T), ($T), 
                    ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, 
-                   hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) 
+                   hbar, mass, V_c, with_potential, 
+                   cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
                         $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
@@ -71,16 +193,16 @@ if T == :Float64
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
         ($METHOD)(($T), nx, xmin, xmax,  ny, ymin, ymax,
-                       hbar=hbar, mass=mass, potential=potential, cubic_coupling=cubic_coupling,
-                       boundary_conditions=boundary_conditions)
+                       hbar=hbar, mass=mass, potential=potential,
+                       cubic_coupling=cubic_coupling, boundary_conditions=boundary_conditions)
     end      
 end # eval
 end #if
 elseif DIM==3
 @eval begin
     function ($METHOD)(T::Type{($T)}, nx::Integer, xmin::Real, xmax::Real,
-                                       ny::Integer, ymin::Real, ymax::Real, 
-                                       nz::Integer, zmin::Real, zmax::Real; 
+                                      ny::Integer, ymin::Real, ymax::Real, 
+                                      nz::Integer, zmin::Real, zmax::Real; 
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
@@ -90,7 +212,8 @@ elseif DIM==3
                    (Int32, ($T), ($T), Int32, ($T), ($T), Int32, ($T), ($T), 
                    ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax,  
-                   hbar, mass, V_c, with_potential, cubic_coupling, boundary_conditions) 
+                   hbar, mass, V_c, with_potential,
+                   cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
                         $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
@@ -106,13 +229,15 @@ if T == :Float64
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
         ($METHOD)(($T), nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax,
-                       hbar=hbar, mass=mass, potential=potential, cubic_coupling=cubic_coupling,
-                       boundary_conditions=boundary_conditions)
+                       hbar=hbar, mass=mass, potential=potential, 
+                       cubic_coupling=cubic_coupling, boundary_conditions=boundary_conditions)
     end      
 end # eval
 end #if
 
 end # if
+
+end # if !COMPLEX_METHOD
 
 @eval begin
     function get_nx(m::($METHOD){$T})

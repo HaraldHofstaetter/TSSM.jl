@@ -336,6 +336,7 @@ const lobatto = 3
 none_1D(x)=zero(x)
 none_2D(x,y)=zero(x)
 none_3D(x,y,z)=zero(x)
+none_4D(x,y,z,t)=zero(x)
 
 const libtssm = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
                      string("libtssm.", Libdl.dlext))

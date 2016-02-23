@@ -153,6 +153,12 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                      (Ptr{Void}, Ptr{Void}), m.m, f_c )
             end
 
+            function set_potential_t!(m::($METHOD){($T)}, f::Function)
+               f_c = cfunction(f, ($T), (($T),($T)))
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
+                     (Ptr{Void}, Ptr{Void}), m.m, f_c )
+            end
+
             function get_potential(m::($METHOD){($T)}, unsafe_access::Bool=false)
                dims =Array(Int32, 1)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential",SUF))), Ptr{($T)},
@@ -177,6 +183,12 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             function set_potential!(m::($METHOD){($T)}, f::Function)
                f_c = cfunction(f, ($T), (($T), ($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential",SUF))), Void,
+                     (Ptr{Void}, Ptr{Void}), m.m, f_c )
+            end
+
+            function set_potential_t!(m::($METHOD){($T)}, f::Function)
+               f_c = cfunction(f, ($T), (($T),($T),($T)))
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}), m.m, f_c )
             end
             
@@ -204,6 +216,12 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             function set_potential!(m::($METHOD){($T)}, f::Function)
                f_c = cfunction(f, ($T), (($T), ($T), ($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential",SUF))), Void,
+                     (Ptr{Void}, Ptr{Void}), m.m, f_c )
+            end
+
+            function set_potential_t!(m::($METHOD){($T)}, f::Function)
+               f_c = cfunction(f, ($T), (($T),($T),($T)($T)))
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}), m.m, f_c )
             end
 
