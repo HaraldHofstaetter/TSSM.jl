@@ -163,6 +163,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                dims =Array(Int32, 1)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential",SUF))), Ptr{($T)},
                      (Ptr{Void}, Ptr{Int32}), m.m, dims )
+               if Vp==C_NULL
+                   return zeros(($T), dims[1])
+               end
                V = pointer_to_array(Vp, dims[1], false)   
                if unsafe_access
                   return V 
@@ -190,6 +193,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                dims =Array(Int32, 1)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
                      (Ptr{Void}, ($T), Ptr{Int32}), m.m, t, dims )
+               if Vp==C_NULL
+                   return zeros(($T), dims[1])
+               end
                V = pointer_to_array(Vp, dims[1], false)   
                return copy(V)
             end
@@ -208,6 +214,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                dims =Array(Int32, 2)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential",SUF))), Ptr{($T)},
                      (Ptr{Void}, Ptr{Int32}), m.m, dims )
+               if Vp==C_NULL
+                   return zeros(($T), dims[1], dims[2])
+               end
                V = pointer_to_array(Vp, dims[1], dims[2], false)   
                if unsafe_access
                   return V 
@@ -235,6 +244,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                dims =Array(Int32, 2)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
                      (Ptr{Void}, ($T), Ptr{Int32}), m.m, t, dims )
+               if Vp==C_NULL
+                   return zeros(($T), dims[1], dims[2])
+               end
                V = pointer_to_array(Vp, dims[2], false)   
                return copy(V)
             end
@@ -253,6 +265,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                dims =Array(Int32, 3)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential",SUF))), Ptr{($T)},
                      (Ptr{Void}, Ptr{Int32}), m.m, dims )
+               if Vp==C_NULL
+                   return zeros(($T), dims[1], dims[2], dims[3])
+               end
                V = pointer_to_array(Vp, dims[1], dims[2], dims[3], false)   
                if unsafe_access
                   return V 
@@ -280,6 +295,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                dims =Array(Int32, 3)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
                      (Ptr{Void}, ($T), Ptr{Int32}), m.m, t, dims )
+               if Vp==C_NULL
+                   return zeros(($T), dims[1], dims[2], dims[3])
+               end
                V = pointer_to_array(Vp, dims[3], false)   
                return copy(V)
             end 
