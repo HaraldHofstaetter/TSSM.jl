@@ -265,7 +265,7 @@ end
 
 
 function global_orders(psi::WaveFunction, reference_solution::WaveFunction, 
-                       t0::Real, tend::Real, dt::Real, 
+                       t0::Real, tend::Real, dt::Real;
                        scheme::Tuple=Strang, operator_sequence="AB", rows=8)
     @assert psi.m==reference_solution.m
     tab = Array(Float64, rows, 3)
@@ -346,7 +346,7 @@ end
 
 
 function local_orders(psi::WaveFunction, get_reference_solution::Function, 
-                       t0::Real, dt::Real, 
+                       t0::Real, dt::Real; 
                        scheme::Tuple=Strang, operator_sequence="AB", rows=8)
     tab = Array(Float64, rows, 3)
 
