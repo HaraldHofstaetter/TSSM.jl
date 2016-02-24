@@ -23,7 +23,7 @@ if DIM==1
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
         with_potential = potential!=none_1D
-        with_potential_t = potential!=none_2D
+        with_potential_t = potential_t!=none_2D
         V_c = cfunction(potential, ($T), (($T),))
         V_t_c = cfunction(potential_t, ($T), (($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
@@ -59,7 +59,7 @@ elseif DIM==2
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
         with_potential = potential!=none_2D
-        with_potential_t = potential!=none_3D
+        with_potential_t = potential_t!=none_3D
         V_c = cfunction(potential, ($T), (($T),($T)))
         V_t_c = cfunction(potential_t, ($T), (($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
@@ -98,7 +98,7 @@ elseif DIM==3
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
         with_potential = potential!=none_3D
-        with_potential_t = potential!=none_4D
+        with_potential_t = potential_t!=none_4D
         V_c = cfunction(potential, ($T), (($T),($T),($T)))
         V_t_c = cfunction(potential_t, ($T), (($T),($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
