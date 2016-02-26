@@ -88,6 +88,15 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                         (Ptr{Void}, Complex{$T},), psi.p, dt)
             end
 
+            function propagate_b_derivative!(this::($WF){$T}, other::($WF){$T}, dt::Number)
+               if this.m ≠ other.m
+                   error("this and other must belong to the same method")
+               end
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_B_derivative_wf",SUF))), Void,
+                                (Ptr{Void}, Ptr{Void}, Complex{($T)}), 
+                                 this.p, other.p, coefficient)
+            end
+
             function imaginary_time_propagate_A!(psi::($WF){$T}, dt::Number)
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_A_wf",SUF))), Void,
                                 (Ptr{Void}, Complex{($T)},), psi.p, dt)
