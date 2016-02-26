@@ -74,6 +74,16 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
         wave_function(m::($METHOD){($T)}) = ($WF)(m) 
 
+        function set_propagate_time_together_with_A!(m::($METHOD){$T}, flag::Bool)
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_propagate_time_together_with_A",SUF))), Void,
+               (Ptr{Void}, Int32), m.m, flag) 
+        end
+
+        function get_propagate_time_together_with_A(m::($METHOD){$T})
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_propagate_time_together_with_A",SUF))), Int32,
+               (Ptr{Void},), m.m) == 1
+        end
+
         function is_real_space(psi::($WF){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"is_real_space_wf",SUF))), Int32,
                (Ptr{Void},), psi.p) == 1
@@ -94,21 +104,6 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                     (Ptr{Void},), psi.p)
         end
 
-        function set_time!(psi::($WF){$T}, t::Number)
-            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_time_wf",SUF))), Void,
-                    (Ptr{Void}, $T,), psi.p, t)
-        end
-
-        function get_time(psi::($WF){$T}, t::Number)
-            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_time_wf",SUF))), ($T),
-                    (Ptr{Void}, $T,), psi.p, t)
-        end
-
-        function propagate_time!(psi::($WF){$T}, dt::Number)
-            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_time_wf",SUF))), Void,
-                    (Ptr{Void}, $T,), psi.p, dt)
-        end
-        
         function save(psi::($WF){$T}, filename::ASCIIString)
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save_wf",SUF))), Void,
                  (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
@@ -297,6 +292,21 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
     if COMPLEX_METHOD
         @eval begin
 
+            function set_time!(psi::($WF){$T}, t::Number)
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_time_wf",SUF))), Void,
+                        (Ptr{Void}, Complex{$T},), psi.p, t)
+            end
+
+            function get_time(psi::($WF){$T}, t::Number)
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_time_wf",SUF))), ($T),
+                        (Ptr{Void}, Complex{$T},), psi.p, t)
+            end
+
+            function propagate_time!(psi::($WF){$T}, dt::Number)
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_time_wf",SUF))), Void,
+                        (Ptr{Void}, Complex{$T},), psi.p, dt)
+            end
+
             function propagate_A!(psi::($WF){$T}, dt::Number)
                 ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_wf",SUF))), Void,
                         (Ptr{Void}, Complex{$T},), psi.p, dt)
@@ -470,6 +480,22 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
     else    
         @eval begin
+
+            function set_time!(psi::($WF){$T}, t::Real)
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_time_wf",SUF))), Void,
+                        (Ptr{Void}, $T,), psi.p, t)
+            end
+
+            function get_time(psi::($WF){$T}, t::Real)
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_time_wf",SUF))), ($T),
+                        (Ptr{Void}, $T,), psi.p, t)
+            end
+
+            function propagate_time!(psi::($WF){$T}, dt::Real)
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_time_wf",SUF))), Void,
+                        (Ptr{Void}, $T,), psi.p, dt)
+            end
+        
             function propagate_A!(psi::($WF){$T}, dt::Real)
                 ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_wf",SUF))), Void,
                         (Ptr{Void}, ($T),), psi.p, dt)
