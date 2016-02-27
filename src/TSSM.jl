@@ -56,7 +56,8 @@ export wave_function, clone
 export is_real_space, is_frequency_space, to_real_space!, to_frequency_space!
 export set_time!, get_time, propagate_time!
 export set_propagate_time_together_with_A!, get_propagate_time_together_with_A
-export propagate_A!, propagate_B!, add_apply_A!
+export propagate_A!, propagate_B!, add_apply_A!, add_apply_B!
+export propagate_A_derivative!, propagate_B_derivative!
 export norm, norm_in_frequency_space, normalize!, distance, scale!, axpy! 
 export inner_product, eigen_function!, evaluate
 export save, load!, get_data, set!, copy!
@@ -73,7 +74,7 @@ export get_nr, get_nfr, get_ntheta
 export get_hbar, get_mass, get_cubic_coupling, set_cubic_coupling
 export set_potential!, get_potential, load_potential!, save_potential
 export set_potential_t!, get_potential_t
-export imaginary_time_propagate_A!, imaginary_time_propagate_B!, add_apply_B!
+export imaginary_time_propagate_A!, imaginary_time_propagate_B!
 export kinetic_energy, potential_energy, interaction_energy, observable
 export get_energy_expectation_deviation, get_realspace_observables
 export selfconsistent_nonlinear_step!

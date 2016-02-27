@@ -55,6 +55,8 @@ function step_embedded!(psi1::WaveFunction, psi2::WaveFunction, dt::Real, scheme
             propagate_B!(psi1, dt*scheme1[k]) 
         elseif which_operator == 'C'
             propagate_C!(psi1, dt*scheme1[k]) 
+        elseif which_operator == 'T'
+            propagate_time!(psi1, dt*scheme[k]) 
         else
             # TODO! Error or Warning
         end
@@ -71,6 +73,8 @@ function step_embedded!(psi1::WaveFunction, psi2::WaveFunction, dt::Real, scheme
             propagate_B!(psi2, dt*scheme2[k]) 
         elseif which_operator == 'C'
             propagate_C!(psi2, dt*scheme2[k]) 
+        elseif which_operator == 'T'
+            propagate_time!(psi2, dt*scheme[k]) 
         else
             # TODO! Error or Warning
         end
@@ -81,6 +85,35 @@ function step_palindromic!(psi1::WaveFunction, psi2::WaveFunction, dt::Real, sch
     copy!(psi2, psi1)
     step!(psi1, dt, scheme, operator_sequence)
     step!(psi2, dt, scheme, reverse(operator_sequence))
+end
+
+function step_defect_based!(psi::WaveFunction, h::WaveFunction, dt::Real, scheme, operator_sequence="AB")
+    set!(h, 0.0)
+    if operator_sequence=="AB"
+        for k = 1:length(scheme)
+            which_operator = operator_sequence[mod(k-1, length(operator_sequence)) + 1]
+            if which_operator == 'A'
+                add_apply_A!(psi, h, scheme[k])
+                propagate_A_derivative!(psi, h, dt*scheme[k])
+            else # if which_operator == 'B'
+                propagate_B_derivative!(psi, h, dt*scheme[k])
+                add_apply_B!(psi, h, (k==length(scheme) ? scheme[k]-1.0 : scheme[k]))
+            end
+        end
+    else if operator_sequence=="BA"
+        for k = 1:length(scheme)
+            which_operator = operator_sequence[mod(k-1, length(operator_sequence)) + 1]
+            if which_operator == 'B'
+                add_apply_B!(psi, h, scheme[k])
+                propagate_B_derivative!(psi, h, dt*scheme[k])
+            else # if which_operator == 'A'
+                propagate_A_derivative!(psi, h, dt*scheme[k])
+                add_apply_A!(psi, h, (k==length(scheme) ? scheme[k]-1.0 : scheme[k]))
+            end
+        end
+    else
+        # TODO! Error or Warning
+    end
 end
  
 
@@ -133,6 +166,9 @@ function Base.next(tsi::AdaptiveTimeStepperIterator, state::AdaptiveTimeStepperS
         if tsi.scheme2=="palindromic"
            step_palindromic!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.operator_sequence)
            err = 0.5*distance(tsi.psi, tsi.psi2)/tsi.tol
+        elseif tsi.scheme2=="defect_based"
+           step_defect_based!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.operator_sequence)
+           err = dt*norm(tsi.psi2)/(tsi.order+1)/tsi.tol
         else
            step_embedded!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.scheme2, tsi.operator_sequence)
            err = distance(tsi.psi, tsi.psi2)/tsi.tol
@@ -201,6 +237,9 @@ function Base.next(tsi::AdaptiveTimeStepper2Iterator, state::AdaptiveTimeStepper
         if tsi.scheme2=="palindromic"
            step_palindromic!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.operator_sequence)
            err = 0.5*distance(tsi.psi, tsi.psi2)/tsi.tol
+        elseif tsi.scheme2=="defect_based"
+           step_defect_based!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.operator_sequence)
+           err = dt*norm(tsi.psi2)/(tsi.order+1)/tsi.tol
         else
            step_embedded!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.scheme2, tsi.operator_sequence)
            err = distance(tsi.psi, tsi.psi2)/tsi.tol
@@ -232,6 +271,11 @@ immutable PalindromicScheme
     order :: Integer
 end
 
+immutable DefectBasedScheme
+    scheme
+    order :: Integer
+end
+
 function adaptive_time_stepper(psi::WaveFunction, t0::Real, tend::Real, 
                          dt::Real, tol::Real, es::EmbeddedScheme, 
                          operator_sequence="AB")
@@ -244,7 +288,14 @@ function adaptive_time_stepper(psi::WaveFunction, t0::Real, tend::Real,
                          operator_sequence="AB")
     adaptive_time_stepper(psi, t0, tend, dt, tol, ps.scheme, "palindromic", ps.order,
                          operator_sequence)
-end                          
+end           
+
+function adaptive_time_stepper(psi::WaveFunction, t0::Real, tend::Real, 
+                         dt::Real, tol::Real, ds::DefectBasedScheme, 
+                         operator_sequence="AB")
+    adaptive_time_stepper(psi, t0, tend, dt, tol, ds.scheme, "defect_based", ps.order,
+                         operator_sequence)
+end    
 
 
 function adaptive_time_stepper2(psi::WaveFunction, t0::Real, tend::Real, 
@@ -259,7 +310,15 @@ function adaptive_time_stepper2(psi::WaveFunction, t0::Real, tend::Real,
                          operator_sequence="AB")
     adaptive_time_stepper2(psi, t0, tend, dt, tol, ps.scheme, "palindromic", ps.order,
                          operator_sequence)
-end                          
+end         
+
+function adaptive_time_stepper2(psi::WaveFunction, t0::Real, tend::Real, 
+                         dt::Real, tol::Real, ds::DefectBasedScheme, 
+                         operator_sequence="AB")
+    adaptive_time_stepper2(psi, t0, tend, dt, tol, ds.scheme, "defect_based", ps.order,
+                         operator_sequence)
+end    
+                 
 
 ########################################################################
 
@@ -383,7 +442,7 @@ end
 
 function local_orders_0(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
-                       scheme1, scheme2, operator_sequence="AB", rows=8)
+                       scheme1, scheme2; operator_sequence="AB", rows=8, order=0)
     tab = Array(Float64, rows, 5)
 
     wf_save_initial_value = clone(psi)
@@ -399,6 +458,9 @@ function local_orders_0(psi::WaveFunction, get_reference_solution::Function,
             step_palindromic!(psi, psi2, dt1, scheme1, operator_sequence)
             axpy!(psi2, psi, 1.0)
             scale!(psi2, 0.5)
+        elseif scheme2=="defect_based"
+            step_palindromic!(psi, psi2, dt1, scheme1, operator_sequence)
+            scale!(psi2, dt1/(order+1))
         else
             step_embedded!(psi, psi2, dt1, scheme1, scheme2 , operator_sequence)
         end
@@ -435,12 +497,19 @@ function local_orders(psi::WaveFunction, get_reference_solution::Function,
                        t0::Real, dt::Real, 
                        embedded_scheme::EmbeddedScheme, operator_sequence="AB", rows=8)
     local_orders_0(psi, get_reference_solution, t0, dt,  embedded_scheme.scheme1, embedded_scheme.scheme2,
-                 operator_sequence, rows)
+                   operator_sequence=operator_sequence, rows=rows)
 end   
 
 function local_orders(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
                        palindromic_scheme::PalindromicScheme, operator_sequence="AB", rows=8)
     local_orders_0(psi, get_reference_solution, t0, dt,  palindromic_scheme.scheme, "palindromic",
-                 operator_sequence, rows)
+                   operator_sequence=operator_sequence, rows=rows)
+end    
+
+function local_orders(psi::WaveFunction, get_reference_solution::Function, 
+                       t0::Real, dt::Real, 
+                       defect_based_scheme::DefectBasedScheme, operator_sequence="AB", rows=8)
+    local_orders_0(psi, get_reference_solution, t0, dt, defect_based_scheme.scheme, "palindromic",
+                   operator_sequence=operator_sequence, rows=rows, order=defect_based_scheme.order)
 end    

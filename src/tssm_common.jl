@@ -311,6 +311,16 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                 ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_wf",SUF))), Void,
                         (Ptr{Void}, Complex{$T},), psi.p, dt)
             end
+
+            function propagate_A_derivative!(this::($WF){$T}, other::($WF){$T},
+                                 dt::Number)
+               if this.m ≠ other.m
+                   error("this and other must belong to the same method")
+               end
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_derivative",SUF))), Void,
+                        (Ptr{Void}, Ptr{Void}, Complex{$T}), 
+                         this.p, other.p, dt)
+            end
     
             function add_apply_A!(this::($WF){$T}, other::($WF){$T},
                                  coefficient::Number=1.0)
@@ -342,6 +352,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
         if DIM==1
             @eval begin
+                function set!(psi::($WF){$T}, x::Number)
+                    u = get_data(psi, true)
+                    u[:] = x
+                end
 
                 function set!(psi::($WF){$T}, f::Function)
                    try
@@ -389,6 +403,11 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
         elseif DIM==2
             @eval begin
 
+                function set!(psi::($WF){$T}, x::Number)
+                    u = get_data(psi, true)
+                    u[:,:] = x
+                end
+
                 function set!(psi::($WF){$T}, f::Function)
                    try
                        f_c = cfunction(f, ($T), (($T),($T)))
@@ -433,6 +452,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
             end # eval    
         elseif DIM==3
             @eval begin
+                function set!(psi::($WF){$T}, x::Number)
+                    u = get_data(psi, true)
+                    u[:,:,:] = x
+                end
 
                 function set!(psi::($WF){$T}, f::Function)
                    try
@@ -500,6 +523,16 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                 ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_wf",SUF))), Void,
                         (Ptr{Void}, ($T),), psi.p, dt)
             end
+
+            function propagate_A_derivative!(this::($WF){$T}, other::($WF){$T},
+                                 dt::Real)
+               if this.m ≠ other.m
+                   error("this and other must belong to the same method")
+               end
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_derivative",SUF))), Void,
+                        (Ptr{Void}, Ptr{Void}, ($T)), 
+                         this.p, other.p, dt)
+            end
     
             function add_apply_A!(this::($WF){$T}, other::($WF){$T},
                                  coefficient::Real=1.0)
@@ -530,6 +563,11 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
         if DIM==1
             @eval begin
+
+                function set!(psi::($WF){$T}, x::Real)
+                    u = get_data(psi, true)
+                    u[:] = x
+                end
 
                 function set!(psi::($WF){$T}, f::Function)
                    f_c = cfunction(f, ($T), (($T),))
@@ -563,6 +601,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
             end # eval    
         elseif DIM==2
             @eval begin
+                function set!(psi::($WF){$T}, x::Real)
+                    u = get_data(psi, true)
+                    u[:,:] = x
+                end
 
                 function set!(psi::($WF){$T}, f::Function)
                    f_c = cfunction(f, ($T), (($T),($T)))
@@ -596,6 +638,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
             end # eval    
         elseif DIM==3
             @eval begin
+                function set!(psi::($WF){$T}, x::Real)
+                    u = get_data(psi, true)
+                    u[:,:,:] = x
+                end
 
                 function set!(psi::($WF){$T}, f::Function)
                    f_c = cfunction(f, ($T), (($T),($T),($T)))
