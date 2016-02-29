@@ -94,7 +94,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                end
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_B_derivative_wf",SUF))), Void,
                                 (Ptr{Void}, Ptr{Void}, Complex{($T)}), 
-                                 this.p, other.p, coefficient)
+                                 this.p, other.p, dt)
             end
 
             function imaginary_time_propagate_A!(psi::($WF){$T}, dt::Number)
@@ -190,13 +190,30 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             function set_potential_t!(m::($METHOD){($T)}, f::Function)
                f_c = cfunction(f, ($T), (($T),($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
-                     (Ptr{Void}, Ptr{Void}), m.m, f_c )
+                     (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, false )
+            end
+
+            function set_potential_t_derivative!(m::($METHOD){($T)}, f::Function)
+               f_c = cfunction(f, ($T), (($T),($T)))
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
+                     (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, true )
             end
 
             function get_potential_t(m::($METHOD){($T)}, t::Real)
                dims =Array(Int32, 1)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
-                     (Ptr{Void}, ($T), Ptr{Int32}), m.m, t, dims )
+                     (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, false, dims )
+               if Vp==C_NULL
+                   return zeros(($T), dims[1])
+               end
+               V = pointer_to_array(Vp, dims[1], false)   
+               return copy(V)
+            end
+
+            function get_potential_t_derivative(m::($METHOD){($T)}, t::Real)
+               dims =Array(Int32, 1)
+               Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
+                     (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, true, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1])
                end
@@ -241,19 +258,37 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             function set_potential_t!(m::($METHOD){($T)}, f::Function)
                f_c = cfunction(f, ($T), (($T),($T),($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
-                     (Ptr{Void}, Ptr{Void}), m.m, f_c )
+                     (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, false )
+            end
+
+            function set_potential_t_derivative!(m::($METHOD){($T)}, f::Function)
+               f_c = cfunction(f, ($T), (($T),($T),($T)))
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
+                     (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, true )
             end
 
             function get_potential_t(m::($METHOD){($T)}, t::Real)
                dims =Array(Int32, 2)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
-                     (Ptr{Void}, ($T), Ptr{Int32}), m.m, t, dims )
+                     (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, false, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1], dims[2])
                end
                V = pointer_to_array(Vp, dims[2], false)   
                return copy(V)
             end
+
+            function get_potential_t_derivative(m::($METHOD){($T)}, t::Real)
+               dims =Array(Int32, 2)
+               Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
+                     (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, true, dims )
+               if Vp==C_NULL
+                   return zeros(($T), dims[1], dims[2])
+               end
+               V = pointer_to_array(Vp, dims[2], false)   
+               return copy(V)
+            end
+            
             
         end #eval
         end #if
@@ -292,19 +327,37 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             function set_potential_t!(m::($METHOD){($T)}, f::Function)
                f_c = cfunction(f, ($T), (($T),($T),($T)($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
-                     (Ptr{Void}, Ptr{Void}), m.m, f_c )
+                     (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, false )
+            end
+
+            function set_potential_t_derivative!(m::($METHOD){($T)}, f::Function)
+               f_c = cfunction(f, ($T), (($T),($T),($T)($T)))
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
+                     (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, true )
             end
 
             function get_potential_t(m::($METHOD){($T)}, t::Real)
                dims =Array(Int32, 3)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
-                     (Ptr{Void}, ($T), Ptr{Int32}), m.m, t, dims )
+                     (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, false, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1], dims[2], dims[3])
                end
                V = pointer_to_array(Vp, dims[3], false)   
                return copy(V)
             end 
+
+            function get_potential_t_derivative(m::($METHOD){($T)}, t::Real)
+               dims =Array(Int32, 3)
+               Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
+                     (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, true, dims )
+               if Vp==C_NULL
+                   return zeros(($T), dims[1], dims[2], dims[3])
+               end
+               V = pointer_to_array(Vp, dims[3], false)   
+               return copy(V)
+            end 
+            
 
         end #eval
         end #if

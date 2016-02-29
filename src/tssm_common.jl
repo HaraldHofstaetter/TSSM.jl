@@ -317,7 +317,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                if this.m ≠ other.m
                    error("this and other must belong to the same method")
                end
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_derivative",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_derivative_wf",SUF))), Void,
                         (Ptr{Void}, Ptr{Void}, Complex{$T}), 
                          this.p, other.p, dt)
             end
@@ -529,7 +529,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                if this.m ≠ other.m
                    error("this and other must belong to the same method")
                end
-               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_derivative",SUF))), Void,
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_A_derivative_wf",SUF))), Void,
                         (Ptr{Void}, Ptr{Void}, ($T)), 
                          this.p, other.p, dt)
             end
