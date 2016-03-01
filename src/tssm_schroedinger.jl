@@ -28,7 +28,7 @@ if DIM==1
         with_potential_t_derivative = potential_t_derivative!=none_2D
         V_c = cfunction(potential, ($T), (($T),))
         V_t_c = cfunction(potential_t, ($T), (($T),($T)))
-        V_t_derivative_c = cfunction(potential_t, ($T), (($T),($T)))
+        V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
                    nx, xmin, xmax, 
@@ -70,7 +70,7 @@ elseif DIM==2
         with_potential_t_derivative = potential_t_derivative!=none_3D
         V_c = cfunction(potential, ($T), (($T),($T)))
         V_t_c = cfunction(potential_t, ($T), (($T),($T),($T)))
-        V_t_derivative_c = cfunction(potential_t, ($T), (($T),($T),($T)))
+        V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), 
                    ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
@@ -115,7 +115,7 @@ elseif DIM==3
         with_potential_t_derivative = potential_t_derivative!=none_4D
         V_c = cfunction(potential, ($T), (($T),($T),($T)))
         V_t_c = cfunction(potential_t, ($T), (($T),($T),($T),($T)))
-        V_t_derivative_c = cfunction(potential_t, ($T), (($T),($T),($T),($T)))
+        V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), Int32, ($T), ($T), 
                    ($T), ($T), Ptr{Void}, Bool,  Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 

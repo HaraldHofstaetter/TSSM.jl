@@ -74,6 +74,7 @@ export get_nr, get_nfr, get_ntheta
 export get_hbar, get_mass, get_cubic_coupling, set_cubic_coupling
 export set_potential!, get_potential, load_potential!, save_potential
 export set_potential_t!, get_potential_t
+export set_potential_t_derivative!, get_potential_t_derivative
 export imaginary_time_propagate_A!, imaginary_time_propagate_B!
 export kinetic_energy, potential_energy, interaction_energy, observable
 export get_energy_expectation_deviation, get_realspace_observables
