@@ -88,29 +88,39 @@ function step_palindromic!(psi1::WaveFunction, psi2::WaveFunction, dt::Real, sch
 end
 
 function step_defect_based!(psi::WaveFunction, h::WaveFunction, dt::Real, scheme, operator_sequence="AB")
-    set!(h, 0.0)
+    set!(h, 0.0) #TODO: set is_real_space=false for AB, true for BA
+    set_time!(h, 0.0)
+    s = length(scheme)
     if operator_sequence=="AB"
-        for k = 1:length(scheme)
-            which_operator = operator_sequence[mod(k-1, length(operator_sequence)) + 1]
+        for k = 1:s
+            which_operator = operator_sequence[mod(k-1, 2) + 1]
             if which_operator == 'A'
                 add_apply_A!(psi, h, scheme[k])
                 propagate_A_derivative!(psi, h, dt*scheme[k])
             else # if which_operator == 'B'
                 propagate_B_derivative!(psi, h, dt*scheme[k])
-                add_apply_B!(psi, h, (k==length(scheme) ? scheme[k]-1.0 : scheme[k]))
+                add_apply_B!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
             end
         end
-    else if operator_sequence=="BA"
-        for k = 1:length(scheme)
-            which_operator = operator_sequence[mod(k-1, length(operator_sequence)) + 1]
+        if isodd(s)
+            add_apply_B!(psi, h, -1.0)
+        end    
+        add_apply_A!(psi, h, -1.0)
+    elseif operator_sequence=="BA"
+        for k = 1:s
+            which_operator = operator_sequence[mod(k-1, 2) + 1]
             if which_operator == 'B'
                 add_apply_B!(psi, h, scheme[k])
                 propagate_B_derivative!(psi, h, dt*scheme[k])
             else # if which_operator == 'A'
                 propagate_A_derivative!(psi, h, dt*scheme[k])
-                add_apply_A!(psi, h, (k==length(scheme) ? scheme[k]-1.0 : scheme[k]))
+                add_apply_A!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
             end
         end
+        if isodd(s)
+            add_apply_A!(psi, h, -1.0)
+        end    
+        add_apply_B!(psi, h, -1.0)
     else
         # TODO! Error or Warning
     end
@@ -451,16 +461,19 @@ function local_orders_0(psi::WaveFunction, get_reference_solution::Function,
     copy!(wf_save_initial_value, psi)
 
     dt1 = dt
-    println("             dt         err       p         err      p")
-    println("-------------------------------------------------------")
+    err_old1 = 0.0 
+    err_old2 = 0.0
+    println("             dt         err      p         err      p")
+    println("------------------------------------------------------")
     for row=1:rows
         if scheme2=="palindromic"
             step_palindromic!(psi, psi2, dt1, scheme1, operator_sequence)
             axpy!(psi2, psi, 1.0)
             scale!(psi2, 0.5)
         elseif scheme2=="defect_based"
-            step_palindromic!(psi, psi2, dt1, scheme1, operator_sequence)
-            scale!(psi2, dt1/(order+1))
+            step_defect_based!(psi, psi2, dt1, scheme1, operator_sequence)
+            scale!(psi2, -dt1/(order+1))
+            axpy!(psi2, psi, +1.0)
         else
             step_embedded!(psi, psi2, dt1, scheme1, scheme2 , operator_sequence)
         end
@@ -468,7 +481,7 @@ function local_orders_0(psi::WaveFunction, get_reference_solution::Function,
         err1 = distance(psi, reference_solution)
         err2 = distance(psi2, reference_solution)
         if (row==1) then
-            @printf("%3i%12.3e%12.3e        %12.3e\n", row, Float64(dt1), Float64(err1), Float64(err2))
+            @printf("%3i%12.3e%12.3e       %12.3e\n", row, Float64(dt1), Float64(err1), Float64(err2))
             tab[row,1] = dt1
             tab[row,2] = err1
             tab[row,3] = 0 
@@ -477,7 +490,7 @@ function local_orders_0(psi::WaveFunction, get_reference_solution::Function,
         else
             p1 = log(err_old1/err1)/log(2.0);
             p2 = log(err_old2/err2)/log(2.0);
-            @printf("%3i%12.3e%12.3e%7.2fe%12.3e%7.2f\n", row, Float64(dt1), Float64(err1), Float64(p1), Float64(err2), Float64(p2))
+            @printf("%3i%12.3e%12.3e%7.2f%12.3e%7.2f\n", row, Float64(dt1), Float64(err1), Float64(p1), Float64(err2), Float64(p2))
             tab[row,1] = dt1
             tab[row,2] = err1
             tab[row,3] = p1
@@ -495,21 +508,21 @@ end
 
 function local_orders(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
-                       embedded_scheme::EmbeddedScheme, operator_sequence="AB", rows=8)
+                       embedded_scheme::EmbeddedScheme; operator_sequence="AB", rows=8)
     local_orders_0(psi, get_reference_solution, t0, dt,  embedded_scheme.scheme1, embedded_scheme.scheme2,
                    operator_sequence=operator_sequence, rows=rows)
 end   
 
 function local_orders(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
-                       palindromic_scheme::PalindromicScheme, operator_sequence="AB", rows=8)
+                       palindromic_scheme::PalindromicScheme; operator_sequence="AB", rows=8)
     local_orders_0(psi, get_reference_solution, t0, dt,  palindromic_scheme.scheme, "palindromic",
                    operator_sequence=operator_sequence, rows=rows)
 end    
 
 function local_orders(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
-                       defect_based_scheme::DefectBasedScheme, operator_sequence="AB", rows=8)
-    local_orders_0(psi, get_reference_solution, t0, dt, defect_based_scheme.scheme, "palindromic",
+                       defect_based_scheme::DefectBasedScheme; operator_sequence="AB", rows=8)
+    local_orders_0(psi, get_reference_solution, t0, dt, defect_based_scheme.scheme, "defect_based",
                    operator_sequence=operator_sequence, rows=rows, order=defect_based_scheme.order)
 end    
