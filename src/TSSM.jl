@@ -40,10 +40,10 @@ export SchroedingerHermiteReal1D, WfSchroedingerHermiteReal1D
 export SchroedingerHermiteReal2D, WfSchroedingerHermiteReal2D 
 export SchroedingerHermiteReal3D, WfSchroedingerHermiteReal3D 
 
-export GeneralizedLaguerre2D, WfGeneralizedLaguerre2D
-export GeneralizedLaguerreHermite3D, WfGeneralizedLaguerreHermite3D
-export GeneralizedLaguerreReal2D, WfGeneralizedLaguerreReal2D
-export GeneralizedLaguerreHermiteReal3D, WfGeneralizedLaguerreHermiteReal3D
+export SchroedingerGeneralizedLaguerre2D, WfSchroedingerGeneralizedLaguerre2D
+export SchroedingerGeneralizedLaguerreHermite3D, WfSchroedingerGeneralizedLaguerreHermite3D
+export SchroedingerGeneralizedLaguerreReal2D, WfSchroedingerGeneralizedLaguerreReal2D
+export SchroedingerGeneralizedLaguerreHermiteReal3D, WfSchroedingerGeneralizedLaguerreHermiteReal3D
 
 export gauss, radau, lobatto
 
@@ -61,14 +61,13 @@ export propagate_A_derivative!, propagate_B_derivative!
 export norm, norm_in_frequency_space, normalize!, distance, scale!, axpy! 
 export inner_product, eigen_function!, evaluate
 export save, load!, get_data, set!, copy!
-export get_eigenvalues, get_nodes, get_weights
+export get_eigenvalues, get_nodes, get_weights, get_transformation_matrices
 export get_nx, get_ny, get_nz
 export get_xmin, get_xmax
 export get_ymin, get_ymax
 export get_zmin, get_zmax
 export get_omega_x,  get_omega_y,  get_omega_z
-export get_H
-export get_L, get_Omega 
+export get_omega_r, get_Omega 
 export get_nr, get_nfr, get_ntheta
 
 export get_hbar, get_mass, get_cubic_coupling, set_cubic_coupling
@@ -327,6 +326,46 @@ type WfSchroedingerHermiteReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
     m::SchroedingerHermiteReal3D{T}
 end
 
+## SchroedingerGeneralizedLaguerre(Hermite) types ########################################################
+
+
+type SchroedingerGeneralizedLaguerre2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerGeneralizedLaguerreHermite3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerGeneralizedLaguerreReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerGeneralizedLaguerreHermiteReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Void}
+end 
+
+type WfSchroedingerGeneralizedLaguerre2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Void}
+    m::SchroedingerGeneralizedLaguerre2D{T}
+end
+
+type WfSchroedingerGeneralizedLaguerreHermite3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Void}
+    m::SchroedingerGeneralizedLaguerreHermite3D{T}
+end
+
+type WfSchroedingerGeneralizedLaguerreReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Void}
+    m::SchroedingerGeneralizedLaguerreReal2D{T}
+end
+
+type WfSchroedingerGeneralizedLaguerreHermiteReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Void}
+    m::SchroedingerGeneralizedLaguerreHermiteReal3D{T}
+end
+
+
 
 const periodic = 0
 const dirichlet = 1
@@ -349,14 +388,15 @@ const libtssm_debug = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
 const libtssmq = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
                      string("libtssmq.", Libdl.dlext))
 
-__use_Float128 = false
-try
-   h=Libdl.dlopen(libtssmq);
-   using Quadmath
-   __use_Float128 = true
-   Libdl.dlclose(h);
-end   
-const use_Float128 = __use_Float128                     
+#__use_Float128 = false
+#try
+#   h=Libdl.dlopen(libtssmq);
+#   using Quadmath
+#   __use_Float128 = true
+#   Libdl.dlclose(h);
+#end   
+#const use_Float128 = __use_Float128                     
+const use_Float128 = false 
 
 function __init__()
     if searchindex(readall(`uname -a`), "juliabox")>0
@@ -402,7 +442,7 @@ include("tssm_fourier.jl")
 include("tssm_fourier_bessel.jl")
 include("tssm_schroedinger.jl")
 include("tssm_schroedinger_hermite.jl")
-#include("tssm_generalized_laguerre.jl")
+include("tssm_schroedinger_generalized_laguerre.jl")
 include("tssm_common.jl")
 include("tssm_schroedinger_common.jl")
 
@@ -415,7 +455,7 @@ if use_Float128
     include("tssm_fourier_bessel.jl")
     include("tssm_schroedinger.jl")
     include("tssm_schroedinger_hermite.jl")
-    #include("tssm_generalized_laguerre.jl")
+    include("tssm_schroedinger_generalized_laguerre.jl")
     include("tssm_common.jl")
     include("tssm_schroedinger_common.jl")
 end    

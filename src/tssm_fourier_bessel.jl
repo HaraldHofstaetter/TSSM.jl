@@ -81,7 +81,7 @@ end # if
        copy(n)
     end
 
-    function get_L(m::($METHOD){$T}, unsafe_access::Bool=false)
+    function get_transformation_matrices(m::($METHOD){$T}, unsafe_access::Bool=false)
        dims =Array(Int32, 3)
        Lp = ccall( Libdl.dlsym(tssm_handle, $(string(PRE,"get_L",SUF))), Ptr{$T},
              (Ptr{Void}, Ptr{Int32}), m.m, dims )
@@ -151,7 +151,7 @@ end # if
        copy(n)
     end
 
-    function get_L(m::($METHOD){$T}, unsafe_access::Bool=false)
+    function get_transformation_matrices(m::($METHOD){$T}, unsafe_access::Bool=false)
        dims =Array(Int32, 2)
        Lp = ccall( dlsym(tssm_handle, $(string(PRE,"get_L",SUF))), Ptr{$T},
              (Ptr{Void}, Ptr{Int32}), m.m, dims )
