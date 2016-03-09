@@ -12,6 +12,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:SchroedingerHermiteReal1D, :_schroedinger_hermite_real_1d, false, 1 ), 
                  (:SchroedingerHermiteReal2D, :_schroedinger_hermite_real_2d, false, 2 ),
                  (:SchroedingerHermiteReal3D, :_schroedinger_hermite_real_3d, false, 3 ),
+                 (:SchroedingerGeneralizedLaguerre2D, :_schroedinger_gen_laguerre_2d, true, 2 ),             
+                 (:SchroedingerGeneralizedLaguerreHermite3D, :_schroedinger_gen_laguerre_hermite_3d, true, 3 ),             
+                 (:SchroedingerGeneralizedLaguerreReal2D, :_schroedinger_gen_laguerre_real_2d, false, 2 ),
+                 (:SchroedingerGeneralizedLaguerreHermiteReal3D, :_schroedinger_gen_laguerre_hermite_real_3d, false, 3 ),                 
                 )
     println("    ", METHOD)   
     if T == :Float128

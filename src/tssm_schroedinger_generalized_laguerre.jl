@@ -14,22 +14,24 @@ end
 if DIM==2
   @eval begin
     function ($METHOD)(T::Type{($T)}, ntheta::Integer, nfr::Integer,
-                                      omega_r::Real, Omega::Real,
-                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
-                       potential_t::Function=none_4D,
-                       cubic_coupling::Real=0.0,
-                       boundary_conditions::Integer=periodic)
-        with_potential = potential!=none_3D
-        with_potential_t = potential_t!=none_4D
+                                      omega_r::Real, Omega::Real;
+                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
+                       potential_t::Function=none_3D,
+                       potential_t_derivative::Function=none_3D,
+                       cubic_coupling::Real=0.0)
+        with_potential = potential!=none_2D
+        with_potential_t = potential_t!=none_3D
+        with_potential_t_derivative = potential_t_derivative!=none_3D
         V_c = cfunction(potential, ($T), (($T),($T)))
         V_t_c = cfunction(potential_t, ($T), (($T),($T),($T)))
+        V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, Int32, ($T), ($T), 
-                   ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
+                   ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T)), 
                    ntheta, nfr, omega_r, Omega,  
                    hbar, mass, V_c, with_potential, 
-                   V_t_c, with_potential_t,
-                   cubic_coupling, boundary_conditions) 
+                   V_t_c, with_potential_t, V_t_derivative_c, with_potential_t_derivative,
+                   cubic_coupling) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
                         $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
@@ -39,16 +41,15 @@ if DIM==2
   if T == :Float64
   @eval begin
     function ($METHOD)(ntheta::Integer, nfr::Integer,
-                       omega_r::Real, Omega::Real,
-                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
-                       potential_t::Function=none_4D,
-                       cubic_coupling::Real=0.0,
-                       boundary_conditions::Integer=periodic)
+                       omega_r::Real, Omega::Real;
+                       hbar::Real=1.0, mass::Real=1.0, potential::Function=none_2D,
+                       potential_t::Function=none_3D,
+                       potential_t_derivative::Function=none_3D,
+                       cubic_coupling::Real=0.0)
         ($METHOD)(($T), ntheta, nfr, omega_r, Omega,
                        hbar=hbar, mass=mass, potential=potential,
-                       potential_t=potential_t,
-                       cubic_coupling=cubic_coupling,
-                       boundary_conditions=boundary_conditions)
+                       potential_t=potential_t, potential_t_derivative=potential_t_derivative,
+                       cubic_coupling=cubic_coupling)
     end      
   end # eval
   end # if
@@ -60,19 +61,21 @@ elseif DIM==3
                                       nz::Integer, omega_z::Real; 
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
                        potential_t::Function=none_4D,
-                       cubic_coupling::Real=0.0,
-                       boundary_conditions::Integer=periodic)
+                       potential_t_derivative::Function=none_4D,
+                       cubic_coupling::Real=0.0)
         with_potential = potential!=none_3D
         with_potential_t = potential_t!=none_4D
+        with_potential_t_derivative = potential_t_derivative!=none_4D
         V_c = cfunction(potential, ($T), (($T),($T),($T)))
         V_t_c = cfunction(potential_t, ($T), (($T),($T),($T),($T)))
+        V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, Int32, ($T), ($T), Int32, ($T), 
-                   ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
+                   ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
                    ntheta, nfr, omega_r, Omega, nz, omega_z,  
                    hbar, mass, V_c, with_potential, 
-                   V_t_c, with_potential_t,
-                   cubic_coupling, boundary_conditions) 
+                   V_t_c, with_potential_t, V_t_derivative_c, with_potential_t_derivative,
+                   cubic_coupling) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
                         $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
@@ -86,13 +89,12 @@ elseif DIM==3
                        nz::Integer, omega_z::Real;
                        hbar::Real=1.0, mass::Real=1.0, potential::Function=none_3D,
                        potential_t::Function=none_4D,
-                       cubic_coupling::Real=0.0,
-                       boundary_conditions::Integer=periodic)
+                       potential_t_derivative::Function=none_4D,
+                       cubic_coupling::Real=0.0)
         ($METHOD)(($T), ntheta, nfr, omega_r, Omega, nz, omega_z,
                        hbar=hbar, mass=mass, potential=potential,
-                       potential_t=potential_t,
-                       cubic_coupling=cubic_coupling,
-                       boundary_conditions=boundary_conditions)
+                       potential_t=potential_t, potential_t_derivative=potential_t_derivative,
+                       cubic_coupling=cubic_coupling)
     end      
   end # eval
   end #if

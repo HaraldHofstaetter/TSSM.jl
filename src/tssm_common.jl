@@ -28,9 +28,9 @@ function eigen_function!(psi::WaveFunction3D, k, l, m)
     psi
 end
 
-#COORDINATES: 0=cartesian, 1=polar/cylindrical, 2=spherical
+#NONSEPARATED_EIGENVALUES 0=cartesian, 1=polar/cylindrical, 2=spherical
 
-for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
+for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                  (:Fourier1D, :_fourier_1d, true, 1, 0 ),             
                  (:Fourier2D, :_fourier_2d, true, 2, 0 ),             
                  (:Fourier3D, :_fourier_3d, true, 3, 0 ),             
@@ -53,7 +53,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                  (:SchroedingerHermiteReal1D, :_schroedinger_hermite_real_1d, false, 1, 0 ), 
                  (:SchroedingerHermiteReal2D, :_schroedinger_hermite_real_2d, false, 2, 0 ),
                  (:SchroedingerHermiteReal3D, :_schroedinger_hermite_real_3d, false, 3, 0 ),
-                 
+                 (:SchroedingerGeneralizedLaguerre2D, :_schroedinger_gen_laguerre_2d, true, 2, 0 ),             
+                 (:SchroedingerGeneralizedLaguerreHermite3D, :_schroedinger_gen_laguerre_hermite_3d, true, 3, 0 ),             
+                 (:SchroedingerGeneralizedLaguerreReal2D, :_schroedinger_gen_laguerre_real_2d, false, 2, 0 ),
+                 (:SchroedingerGeneralizedLaguerreHermiteReal3D, :_schroedinger_gen_laguerre_hermite_real_3d, false, 3, 0 ),
                 )
     println("    ", METHOD)
     if T == :Float128
@@ -159,7 +162,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
     end #eval
 
-    if COORDINATES==0 # cartesian
+    if NONSEPARATED_EIGENVALUES==0 # cartesian
         if DIM==1
             @eval begin
                 function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
@@ -181,10 +184,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                    dim =Array(Int32, 1)
                    evp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-                   ev1 = pointer_to_array(evp, dim[1], false)   
+                   ev1 = pointer_to_array(evp1, dim[1], false)   
                    evp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
-                   ev2 = pointer_to_array(evp, dim[1], false)   
+                   ev2 = pointer_to_array(evp2, dim[1], false)   
                    if unsafe_access
                        return ev1, ev2
                    else    
@@ -199,13 +202,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
                    dim =Array(Int32, 1)
                    evp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-                   ev1 = pointer_to_array(evp, dim[1], false)   
+                   ev1 = pointer_to_array(evp1, dim[1], false)   
                    evp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
-                   ev2 = pointer_to_array(evp, dim[1], false)   
+                   ev2 = pointer_to_array(evp2, dim[1], false)   
                    evp3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 3 )
-                   ev3 = pointer_to_array(evp, dim[1], false)   
+                   ev3 = pointer_to_array(evp3, dim[1], false)   
                    if unsafe_access
                        return ev1, ev2, ev3
                    else    
@@ -215,7 +218,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
 
             end
         end
-    elseif COORDINATES==1 # polar/cylindrical
+    elseif NONSEPARATED_EIGENVALUES==1 # polar/cylindrical
         if DIM==2
             @eval begin
                 function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
@@ -234,7 +237,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, COORDINATES) in (
         elseif DIM==3
             # tbd
         end
-    elseif COORDINATES==2 # spherical
+    elseif NONSEPARATED_EIGENVALUES==2 # spherical 
         if DIM==3
             # tbd
         end
