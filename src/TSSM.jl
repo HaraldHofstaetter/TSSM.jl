@@ -33,6 +33,9 @@ export SchroedingerReal1D, WfSchroedingerReal1D
 export SchroedingerReal2D, WfSchroedingerReal2D 
 export SchroedingerReal3D, WfSchroedingerReal3D 
 
+export SchroedingerRotating2D, WfSchroedingerRotating2D 
+export SchroedingerRotating3D, WfSchroedingerRotating3D 
+
 export SchroedingerHermite1D, WfSchroedingerHermite1D 
 export SchroedingerHermite2D, WfSchroedingerHermite2D 
 export SchroedingerHermite3D, WfSchroedingerHermite3D 
@@ -54,10 +57,13 @@ export BesselRotSymReal1D, WfBesselRotSymReal1D
 
 export wave_function, clone
 export is_real_space, is_frequency_space, to_real_space!, to_frequency_space!
+export is_real_space_x, is_frequency_space_x, to_real_space_x!, to_frequency_space_x!
+export is_real_space_y, is_frequency_space_y, to_real_space_y!, to_frequency_space_y!
+export is_real_space_z, is_frequency_space_z, to_real_space_z!, to_frequency_space_z!
 export set_time!, get_time, propagate_time!
 export set_propagate_time_together_with_A!, get_propagate_time_together_with_A
-export propagate_A!, propagate_B!, add_apply_A!, add_apply_B!
-export propagate_A_derivative!, propagate_B_derivative!
+export propagate_A!, propagate_B!, propagate_C!, add_apply_A!, add_apply_B!, add_apply_C!
+export propagate_A_derivative!, propagate_B_derivative!, poropagate_C_derivative!
 export norm, norm_in_frequency_space, normalize!, distance, scale!, axpy! 
 export inner_product, eigen_function!, evaluate
 export save, load!, get_data, set!, copy!
@@ -270,6 +276,26 @@ type WfSchroedingerReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
     m::SchroedingerReal3D{T}
 end
 
+## SchroedingerRotating types ############################################################################
+
+type SchroedingerRotating2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerRotating3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Void}
+end 
+
+type WfSchroedingerRotating2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Void}
+    m::SchroedingerRotating2D{T}
+end
+
+type WfSchroedingerRotating3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Void}
+    m::SchroedingerRotating3D{T}
+end
+
 ## SchroedingerHermite types ############################################################################
 
 type SchroedingerHermite1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
@@ -441,6 +467,7 @@ PRE = :tssm_
 include("tssm_fourier.jl")
 include("tssm_fourier_bessel.jl")
 include("tssm_schroedinger.jl")
+include("tssm_schroedinger_rotating.jl")
 include("tssm_schroedinger_hermite.jl")
 include("tssm_schroedinger_generalized_laguerre.jl")
 include("tssm_common.jl")
@@ -454,6 +481,7 @@ if use_Float128
     include("tssm_fourier.jl")
     include("tssm_fourier_bessel.jl")
     include("tssm_schroedinger.jl")
+    include("tssm_schroedinger_rotating.jl")
     include("tssm_schroedinger_hermite.jl")
     include("tssm_schroedinger_generalized_laguerre.jl")
     include("tssm_common.jl")
