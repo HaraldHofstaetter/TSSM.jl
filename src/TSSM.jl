@@ -414,15 +414,15 @@ const libtssm_debug = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
 const libtssmq = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
                      string("libtssmq.", Libdl.dlext))
 
-#__use_Float128 = false
-#try
-#   h=Libdl.dlopen(libtssmq);
-#   using Quadmath
-#   __use_Float128 = true
-#   Libdl.dlclose(h);
-#end   
-#const use_Float128 = __use_Float128                     
-const use_Float128 = false 
+__use_Float128 = false
+try
+   h=Libdl.dlopen(libtssmq);
+   using Quadmath
+   __use_Float128 = true
+   Libdl.dlclose(h);
+end   
+const use_Float128 = __use_Float128                     
+#const use_Float128 = false 
 
 function __init__()
     if searchindex(readall(`uname -a`), "juliabox")>0
