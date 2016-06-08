@@ -325,7 +325,7 @@ end
 function adaptive_time_stepper2(psi::WaveFunction, t0::Real, tend::Real, 
                          dt::Real, tol::Real, ds::DefectBasedScheme, 
                          operator_sequence="AB")
-    adaptive_time_stepper2(psi, t0, tend, dt, tol, ds.scheme, "defect_based", ps.order,
+    adaptive_time_stepper2(psi, t0, tend, dt, tol, ds.scheme, "defect_based", ds.order,
                          operator_sequence)
 end    
                  
