@@ -117,7 +117,7 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
        if mod(k, k_check)==0
            copy!(psi1, this)
 
-           if extrapolation_order==1 then
+           if extrapolation_order==1 
                step_imaginary_time!(psi1, 0.5*dt, scheme, operator_sequence)
            else
                step_imaginary_time_extrapolated!(psi1, 0.5*dt, extrapolation_order, operator_sequence, psi2, psi3,)
@@ -132,7 +132,7 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
            err1 = E_dev1/E1
        end 
 
-       if extrapolation_order==1 then
+       if extrapolation_order==1 
            step_imaginary_time!(this, dt, scheme, operator_sequence)
        else
            step_imaginary_time_extrapolated!(this, dt, extrapolation_order, operator_sequence, psi2, psi3,)
@@ -149,10 +149,10 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
 
        ddd = distance(this, psi_old)
        calc_time = time() - time0
-       if mod(k,k_check)==0 then
+       if mod(k,k_check)==0 
            @printf("%5i%24.15e%24.15e%12.3e%12.3e%12.3e%10.2f%24.15e%12.3e%12.3e\n",
                     k, E, E_mu,  E_old-E, err, ddd, calc_time, E1, E_old-E1, err1)
-           if err1<err then
+           if err1<err 
                @printf("changed step size, old:%24.15e  new:%24.15e\n", dt, 0.5*dt)
                  
                dt = 0.5*dt

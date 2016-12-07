@@ -6,6 +6,7 @@ push!(LOAD_PATH, dirname(@__FILE__))
 import Base.copy!
 import Base.scale!
 import Base.norm
+import Base.normalize!
 
 export WaveFunction, WaveFunction1D, WaveFunction2D, WaveFunction3D
 export WaveFunctionComplex, WaveFunctionComplex1D, WaveFunctionComplex2D, WaveFunctionComplex3D
@@ -425,7 +426,7 @@ const use_Float128 = __use_Float128
 #const use_Float128 = false 
 
 function __init__()
-    if searchindex(readall(`uname -a`), "juliabox")>0
+    if searchindex(readstring(`uname -a`), "juliabox")>0
         # In JuliaBox only 8 out of 16 cores are available.
         ENV["OMP_NUM_THREADS"] = "8"
     end
