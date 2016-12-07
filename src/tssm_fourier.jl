@@ -22,7 +22,7 @@ if DIM==1
             Ptr{Void}, (Int32, ($T), ($T), Int32), nx, xmin, xmax, boundary_conditions)
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
        m
     end
 end # eval
@@ -43,7 +43,7 @@ elseif DIM==2
                         Ptr{Void}, (Int32, ($T), ($T), Int32, ($T), ($T), Int32), 
                         nx, xmin, xmax, ny, ymin, ymax, boundary_conditions))
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
     end
 end # eval
@@ -69,7 +69,7 @@ elseif DIM==3
                         nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax, 
                         boundary_conditions))
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
     end
 end # eval

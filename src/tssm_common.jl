@@ -71,7 +71,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
         #function ($WF){($T)}( m::($METHOD){($T)} )
         function ($WF)( m::($METHOD){($T)} )
             wf = ($WF){($T)}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new_wf",SUF))), Ptr{Void}, (Ptr{Void},), m.m) , m)   
-            finalizer(wf, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"finalize_wf",SUF))), Void, (Ptr{Ptr{Void}},), &x.p) )
+            finalizer(wf, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"finalize_wf",SUF))), Void, (Ptr{Void},), x.p) )
             wf
         end
      end

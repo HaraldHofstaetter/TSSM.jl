@@ -21,7 +21,7 @@ end
                        Ptr{Void}, (Int32, Int32, Int32, ($T), Int32, Int32), 
                        ntheta, nr, nfr, rmax, boundary_conditions, quadrature_rule))
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
     end
 
@@ -29,7 +29,7 @@ end
         m = ($METHOD){$T}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new_from_file",SUF))), 
                        Ptr{Void}, (Ptr{UInt8}, Int32,), filename, length(filename) ))
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
     end
 end # eval
@@ -119,7 +119,7 @@ end
                        Ptr{Void}, (Int32, ($T), Int32), 
                        nr,  rmax, boundary_conditions))
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
     end
 end # eval

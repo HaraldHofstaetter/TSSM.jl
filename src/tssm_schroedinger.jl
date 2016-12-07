@@ -37,7 +37,7 @@ if DIM==1
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
        m
     end
 end # eval
@@ -80,7 +80,7 @@ elseif DIM==2
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
     end
 end # eval
@@ -125,7 +125,7 @@ elseif DIM==3
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
     end
 end # eval
@@ -166,7 +166,7 @@ if DIM==1
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
        m
     end
 end # eval
@@ -199,7 +199,7 @@ elseif DIM==2
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
     end
 end # eval
@@ -234,7 +234,7 @@ elseif DIM==3
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Ptr{Void}},), &x.m) )
+                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
     end
 end # eval
