@@ -38,6 +38,37 @@ function Base.next(MF::MultiFor, k::Array{Int,1})
     end            
 end
 
+
+function find_xxx(v::Vector{Int}, lena::Int, slater_exchange)
+    res = Tuple{Int,Int,Float64}[]
+    for i=1:lena
+        for j=1:lena
+            if v==slater_exchange[i,j][1]
+                push!(res, (i,j, slater_exchange[i,j][2]))
+            end
+        end
+    end
+    res
+end
+
+function add_xxx!(d::Dict{Tuple{Int,Int}, Float64}, v::Tuple{Int,Int,Float64})
+    key = (v[1],v[2])
+    f = get!(d, key, 0.0) + v[3]
+    if f==0
+        delete!(d, key)
+    else
+        d[key] = f
+    end
+    d
+end
+
+function add_xxx!(d::Dict{Tuple{Int,Int}, Float64}, v::Vector{Tuple{Int,Int,Float64}})
+    for x in v
+        add_xxx!(d, x)
+    end
+    d
+end
+
 function init_mctdhf_combinatorics(f::Int, N::Int)
     slater_indices = collect(Combinatorics.Combinations(1:N, f))
     
@@ -92,7 +123,7 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
     end        
     
     lena = binomial(N,f)
-    slater_rules = [(Int[], 1) for j=1:lena, l=1:lena]
+    slater_exchange = [(Int[], 1) for j=1:lena, l=1:lena]
     # entry = (exchange_index_pairs, sign)
     for j=1:lena
         for l=1:lena
@@ -101,7 +132,7 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
                 i1 = findfirst(slater_indices[j], u[1])
                 i2 = findfirst(slater_indices[l], u[2])
                 s = (-1)^(i1+i2)
-                slater_rules[j,l] = (u, s)
+                slater_exchange[j,l] = (u, s)
             elseif length(u)==4
                 u = [u[1], u[3], u[2], u[4]]
                 i1 = findfirst(slater_indices[j], u[1])
@@ -109,12 +140,47 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
                 i3 = findfirst(slater_indices[j], u[3])
                 i4 = findfirst(slater_indices[l], u[4])
                 s = (-1)^(i1+i2+i3+i4)
-                slater_rules[j,l] = (u, s)
+                slater_exchange[j,l] = (u, s)
+            end
+        end
+    end    
+    
+    res = [Dict{Tuple{Int,Int},Float64}([]) for p=1:N, q=1:N, r=1:N, s=1:N]
+    for p=1:N
+        for q=1:N
+            for r=1:N
+                for s=1:N
+                    if p==q && r==s && p!=r
+                        for j=1:lena
+                            add_xxx!(res[p,q,r,s], (j,j, 0.5))
+                        end
+                    end
+                    if p==s && r==q && p!=r
+                        for j=1:lena
+                            add_xxx!(res[p,q,r,s], (j,j, -0.5)) 
+                        end
+                    end
+                    if p==q && r!=s 
+                        v = find_xxx([s,r], lena, slater_exchange)
+                        add_xxx!(res[p,q,r,s], v)
+                    end
+                    if q==r && s!=p 
+                        v0 = find_xxx([s,p], lena, slater_exchange)
+                        v = [(j,k,-sigma) for (j,k, sigma) in v0]
+                        add_xxx!(res[p,q,r,s], v)     
+                    end     
+                    v = find_xxx([s,r,q,p], lena, slater_exchange)
+                    add_xxx!(res[p,q,r,s], v)
+                    v0 = find_xxx([s,p,q,r], lena, slater_exchange)
+                    v = [(j,k,-sigma) for (j,k, sigma) in v0]
+                    add_xxx!(res[p,q,r,s], v)
+                end
             end
         end
     end
+    slater_rules = [[(key[1],key[2],val) for (key,val) in res[p,q,r,s]] for p=1:N, q=1:N, r=1:N, s=1:N]
     
-    slater_indices, density_rules, density2_rules, slater_rules
+    slater_indices, density_rules, density2_rules, slater_exchange, slater_rules
 end
 
 
@@ -125,17 +191,18 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     lena::Int # number of (independent) coefficients
     slater_indices
     density_rules 
-    density2_rules 
+    density2_rules
+    slater_exchange
     slater_rules
 
     function MCTDHF1D(f::Integer, N::Integer, 
                       nx::Integer, xmin::Real, xmax::Real)
         m = Schroedinger1D(nx, xmin, xmax)
         lena = binomial(N,f)
-        slater_indices, density_rules, density2_rules, slater_rules = 
+        slater_indices, density_rules, density2_rules, slater_exchange, slater_rules = 
               init_mctdhf_combinatorics(f, N)
         new(m, f, N, lena, slater_indices, density_rules, 
-                           density2_rules, slater_rules)
+            density2_rules, slater_exchange, slater_rules)
     end
 end
 

@@ -426,7 +426,7 @@ const use_Float128 = __use_Float128
 #const use_Float128 = false 
 
 function __init__()
-    if searchindex(readstring(`uname -a`), "juliabox")>0
+    if searchindex(readall(`uname -a`), "juliabox")>0
         # In JuliaBox only 8 out of 16 cores are available.
         ENV["OMP_NUM_THREADS"] = "8"
     end
