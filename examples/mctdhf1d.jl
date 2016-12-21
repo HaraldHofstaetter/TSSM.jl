@@ -143,7 +143,21 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
                 slater_exchange[j,l] = (u, s)
             end
         end
-    end    
+    end 
+    
+    res = [Dict{Tuple{Int,Int},Float64}([]) for p=1:N, q=1:N]
+    for p=1:N
+        for q=1:N
+            if p==q 
+                for j=1:lena
+                   add_xxx!(res[p,q], (j,j, 1.0))
+                end
+            end
+            v = find_xxx([q,p], lena, slater_exchange)
+            add_xxx!(res[p,q], v)
+        end
+    end
+    slater1_rules = [[(key[1],key[2],val) for (key,val) in res[p,q]] for p=1:N, q=1:N]
     
     res = [Dict{Tuple{Int,Int},Float64}([]) for p=1:N, q=1:N, r=1:N, s=1:N]
     for p=1:N
@@ -178,9 +192,15 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
             end
         end
     end
-    slater_rules = [[(key[1],key[2],val) for (key,val) in res[p,q,r,s]] for p=1:N, q=1:N, r=1:N, s=1:N]
+    slater2_rules = [[(key[1],key[2],val) for (key,val) in res[p,q,r,s]] for p=1:N, q=1:N, r=1:N, s=1:N]
     
-    slater_indices, density_rules, density2_rules, slater_exchange, slater_rules
+    slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules
+end
+
+
+function init_Vee(x::Vector{Float64})
+    n = length(x)
+    1./(sqrt(kron(x',ones(n)) - kron(x,ones(1,n)))+1)    
 end
 
 
@@ -189,20 +209,28 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     f::Int # number of electrond
     N::Int # number of orbitals
     lena::Int # number of (independent) coefficients
+    
     slater_indices
     density_rules 
     density2_rules
     slater_exchange
-    slater_rules
+    slater1_rules
+    slater2_rules
+
+    Vee
+    density_matrix
+    density2_tensor
 
     function MCTDHF1D(f::Integer, N::Integer, 
                       nx::Integer, xmin::Real, xmax::Real)
         m = Schroedinger1D(nx, xmin, xmax)
         lena = binomial(N,f)
-        slater_indices, density_rules, density2_rules, slater_exchange, slater_rules = 
+        slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules = 
               init_mctdhf_combinatorics(f, N)
+        Vee = init_Vee(get_nodes(m))
         new(m, f, N, lena, slater_indices, density_rules, 
-            density2_rules, slater_exchange, slater_rules)
+            density2_rules, slater_exchange, slater1_rules, slater2_rules, Vee,
+            zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N) )
     end
 end
 
@@ -222,9 +250,9 @@ function TSSM.wave_function(m::MCTDHF1D )
 end
 
 
-function density_matrix(psi::WfMCTDHF1D)
+function gen_density_matrix(psi::WfMCTDHF1D)
     N = psi.m.N
-    rho = zeros(N, N)
+    rho = psi.m.density_matrix
     for j=1:N
         for l=1:N
             for (u, v, s) in psi.m.density_rules[j,l]
@@ -235,13 +263,13 @@ function density_matrix(psi::WfMCTDHF1D)
             end    
         end
     end
-    rho
+    nothing
 end
 
 
-function density2_tensor(psi::WfMCTDHF1D)
+function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=true)
     N = psi.m.N
-    rho = zeros(N, N, N, N)
+    rho = psi.m.density2_tensor
     for j=1:N
         for l=j:N
             for p=1:N
@@ -256,6 +284,113 @@ function density2_tensor(psi::WfMCTDHF1D)
             end    
         end
     end
-    rho
+    if mult_inverse_density_matrix
+        for p=1:N
+            for q=q:N
+                rho[:,:,p,q] = psi.m.density_matrix \ rho[:,:,p,q]
+            end
+        end
+    end
+    nothing
+end
+
+
+function norm(psi::WfMCTDHF1D)
+    m = psi.m
+    res = 0
+    for p=1:m.N
+        for q=1:m.N
+            h = inner_product(psi.phi[p], psi.phi[q])
+            for (j,l,f) in m.slater1_rules[p,q]
+                res += h*f*conj(psi.a[j])*psi.a[l]
+            end
+        end
+    end
+    res    
+end
+
+
+function to_real_space!(psi::WfMCTDHF1D)
+    for j=1:psi.m.N
+        to_real_space!(psi.phi[j])
+    end
+end
+
+
+function to_fourier_space!(psi::WfMCTDHF1D)
+    for j=1:psi.m.N
+        to_fourier_space!(psi.phi[j])
+    end
+end
+
+
+function set_zero!(psi::WfMCTDHF1D)
+    for j=1:psi.m.N 
+        get_data(psi.phi[j], unsafe_access=true)[:] = 0.0
+    end
+    psi.a[:] = 0.0
+end
+
+
+
+function gen_rhs1(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, b::Bool=true)
+    m = rhs.m
+    if m ≠ psi.m
+        error("rhs and psi must belong to the same method")
+    end
+    n = size(m.Vee, 1)
+    u_save = zeros(n)    
+    for q=1:m.N
+        to_real_space!(rhs.phi[q])
+        u_save[:] = get_data(rhs.phi[q], unsafe_access=false)
+        u = get_data(rhs.phi[q], unsafe_access=true)  
+        u[:] = 0.0
+        if A
+            add_apply_A!(rhs.phi[q], psi.phi[q])
+        end
+        if B
+            add_apply_B!(rhs.phi[q], psi.phi[q])
+        end    
+        to_real_space!(rhs.phi[q])
+        for p=1:m.N
+            h = inner_product(psi.phi[p], rhs.phi[q])
+            for (j,l,f) in m.slater1_rules[p,q]
+                rhs.a[j] += h*f*psi.a[l] 
+            end
+        end
+        u += u_save        
+    end
+end
+
+
+
+function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
+    m = rhs.m
+    if m ≠ psi.m
+        error("rhs and psi must belong to the same method")
+    end
+    n = size(m.Vee, 1)
+    u_pq = zeros(n)
+    u_pqs = zeros(n)
+    to_real_space!(psi)
+    to_real_space!(rhs)
+    for p=1:m.N
+        for q=1:m.N
+            u_pq[:] = m.Vee * (conj(get_data(psi.phi[p], unsafe_access=true)).*get_data(psi.phi[q], unsafe_access=true))
+            for s=1:m.N
+                u_pqs[:] = u_pq .* get_data(psi.phi[s], unsafe_access=true)
+                for r=1:m.N
+                    u = get_data(rhs.phi[r], unsafe_access=true)
+                    u += (m.density2_tensor[s,r,p,q]*(m.f-1)) * u_pqs                
+                    h = get_data(psi.phi[r], unsafe_access=true)' * u_pqs # inner product...
+                    # maybe factor 1/f! or something similar necessary...
+                    for (j,l,f) in m.slater2_rules[p,q,r,s]
+                        rhs.a[j] += h*f*psi.a[l] 
+                    end
+                end
+            end
+        end
+    end
+    #TODO: projection (1-P) ...
 end
 
