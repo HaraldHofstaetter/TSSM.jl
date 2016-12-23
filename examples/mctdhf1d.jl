@@ -194,13 +194,32 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
     end
     slater2_rules = [[(key[1],key[2],val) for (key,val) in res[p,q,r,s]] for p=1:N, q=1:N, r=1:N, s=1:N]
     
-    slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules
+    orthogonalization_rules = [Tuple{Int,Int,Int}[] for p=1:N, q=1:N]
+    for p=1:N
+        for j=1:lena
+            k = findfirst(slater_indices[j], p)
+            if k>0
+                for q=1:p-1
+                    J = copy(slater_indices[j])
+                    J[k] = q
+                    J1 = sort(J)
+                    l = findfirst(slater_indices, J1)
+                    if l>0
+                        s = sign(J)*sign(J1)
+                        push!(orthogonalization_rules[p,q], (j,l, s))
+                    end
+                end
+            end
+        end
+    end    
+    
+    slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules
 end
 
 
 function init_Vee(x::Vector{Float64})
     n = length(x)
-    1./(sqrt(kron(x',ones(n)) - kron(x,ones(1,n)))+1)    
+    1./sqrt(( kron(x',ones(n)) - kron(x,ones(1,n)) ).^2 + 1)    
 end
 
 
@@ -216,6 +235,7 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     slater_exchange
     slater1_rules
     slater2_rules
+    orthogonalization_rules
 
     Vee
     density_matrix
@@ -225,11 +245,11 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
                       nx::Integer, xmin::Real, xmax::Real)
         m = Schroedinger1D(nx, xmin, xmax)
         lena = binomial(N,f)
-        slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules = 
+        slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules = 
               init_mctdhf_combinatorics(f, N)
         Vee = init_Vee(get_nodes(m))
         new(m, f, N, lena, slater_indices, density_rules, 
-            density2_rules, slater_exchange, slater1_rules, slater2_rules, Vee,
+            density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules, Vee,
             zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N) )
     end
 end
@@ -326,14 +346,14 @@ end
 
 function set_zero!(psi::WfMCTDHF1D)
     for j=1:psi.m.N 
-        get_data(psi.phi[j], unsafe_access=true)[:] = 0.0
+        get_data(psi.phi[j], true)[:] = 0.0
     end
     psi.a[:] = 0.0
 end
 
 
 
-function gen_rhs1(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, b::Bool=true)
+function gen_rhs1(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, B::Bool=true)
     m = rhs.m
     if m ≠ psi.m
         error("rhs and psi must belong to the same method")
@@ -342,8 +362,8 @@ function gen_rhs1(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, b::Bool=true)
     u_save = zeros(n)    
     for q=1:m.N
         to_real_space!(rhs.phi[q])
-        u_save[:] = get_data(rhs.phi[q], unsafe_access=false)
-        u = get_data(rhs.phi[q], unsafe_access=true)  
+        u_save[:] = get_data(rhs.phi[q], false)
+        u = get_data(rhs.phi[q], true)  
         u[:] = 0.0
         if A
             add_apply_A!(rhs.phi[q], psi.phi[q])
@@ -358,7 +378,7 @@ function gen_rhs1(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, b::Bool=true)
                 rhs.a[j] += h*f*psi.a[l] 
             end
         end
-        u += u_save        
+        u[:] += u_save        
     end
 end
 
@@ -376,13 +396,13 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     to_real_space!(rhs)
     for p=1:m.N
         for q=1:m.N
-            u_pq[:] = m.Vee * (conj(get_data(psi.phi[p], unsafe_access=true)).*get_data(psi.phi[q], unsafe_access=true))
+            u_pq[:] = m.Vee * (conj(get_data(psi.phi[p], true)).*get_data(psi.phi[q], true))
             for s=1:m.N
-                u_pqs[:] = u_pq .* get_data(psi.phi[s], unsafe_access=true)
+                u_pqs[:] = u_pq .* get_data(psi.phi[s], true)
                 for r=1:m.N
-                    u = get_data(rhs.phi[r], unsafe_access=true)
-                    u += (m.density2_tensor[s,r,p,q]*(m.f-1)) * u_pqs                
-                    h = get_data(psi.phi[r], unsafe_access=true)' * u_pqs # inner product...
+                    u = get_data(rhs.phi[r], true)
+                    u[:] += (m.density2_tensor[s,r,p,q]*(m.f-1)) * u_pqs                
+                    h = get_data(psi.phi[r], true)' * u_pqs # inner product...
                     # maybe factor 1/f! or something similar necessary...
                     for (j,l,f) in m.slater2_rules[p,q,r,s]
                         rhs.a[j] += h*f*psi.a[l] 
@@ -392,5 +412,52 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
         end
     end
     #TODO: projection (1-P) ...
+end
+
+
+function expand_slater_determinants!(psi2::WfSchroedinger2D, psi::WfMCTDHF1D)
+    m = psi.m
+    @assert m.f==2
+    m2 = psi2.m
+    u2 = get_data(psi2, true)
+    u2[:,:] = 0.0
+    f = 1/sqrt(2)
+    for j = 1:m.lena # eval slater determinants
+        J = m.slater_indices[j]
+        s = sign(J)
+        v1 = get_data(psi.phi[J[1]], true)
+        v2 = get_data(psi.phi[J[2]], true)
+        u2[:,:] += (s*f*psi.a[j])*(v1*v2.' - v2*v1.')
+    end    
+    psi2
+end
+
+
+function orthonormalize!(psi::WfMCTDHF1D)
+    m = psi.m
+    g = zeros(m.N)
+    for p = 1:m.N
+        a1 = zeros(m.lena)
+        for q=1:p-1
+            g[q] = inner_product(psi.phi[q], psi.phi[p])
+        end
+        for q=1:p-1
+            axpy!(psi.phi[p], psi.phi[q], -g[q])
+            for (j, l, s) in m.orthogonalization_rules[p,q]
+                a1[l] += s*g[q]*psi.a[j]
+            end
+        end
+        f = TSSM.norm(psi.phi[p])
+        scale!(psi.phi[p],1/f)
+        for j=1:m.lena
+            if p in m.slater_indices[j]
+                a1[j] += f*psi.a[j]
+            else
+                a1[j] += psi.a[j]
+            end
+        end
+        psi.a[:] = a1
+    end
+    psi
 end
 
