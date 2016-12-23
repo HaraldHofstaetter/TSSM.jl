@@ -150,7 +150,9 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
         for q=1:N
             if p==q 
                 for j=1:lena
-                   add_xxx!(res[p,q], (j,j, 1.0))
+                    if p in slater_indices[j]
+                       add_xxx!(res[p,q], (j,j, 1.0))
+                    end
                 end
             end
             v = find_xxx([q,p], lena, slater_exchange)
@@ -315,20 +317,8 @@ function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=
 end
 
 
-function norm(psi::WfMCTDHF1D)
-    m = psi.m
-    res = 0
-    for p=1:m.N
-        for q=1:m.N
-            h = inner_product(psi.phi[p], psi.phi[q])
-            for (j,l,f) in m.slater1_rules[p,q]
-                res += h*f*conj(psi.a[j])*psi.a[l]
-            end
-        end
-    end
-    res    
-end
-
+norm(psi::WfMCTDHF1D) = Base.norm(psi.a)
+#Note, only correct if psi.phi's are ortonormal
 
 function to_real_space!(psi::WfMCTDHF1D)
     for j=1:psi.m.N
@@ -459,5 +449,21 @@ function orthonormalize!(psi::WfMCTDHF1D)
         psi.a[:] = a1
     end
     psi
+end
+
+
+function potential_energy_1(psi::WfMCTDHF1D)
+    m = psi.m
+    dx = (get_xmax(m.m)-get_xmin(m.m))/get_nx(m.m)
+    V = 0
+    for p=1:m.N        
+        for q=1:m.N
+            h = (get_data(psi.phi[p],true)'*(get_potential(m.m,true).*get_data(psi.phi[q], true)))[1,1]*dx                       
+            for (j,l,f) in slater1_rules[p,q]
+                V += h*f*conj(psi.a[j])*psi.a[l]
+            end
+        end
+    end
+    V
 end
 
