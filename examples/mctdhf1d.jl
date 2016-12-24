@@ -227,7 +227,7 @@ end
 
 type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     m::Schroedinger1D
-    f::Int # number of electrond
+    f::Int # number of electrons
     N::Int # number of orbitals
     lena::Int # number of (independent) coefficients
     
@@ -454,12 +454,11 @@ end
 
 function potential_energy_1(psi::WfMCTDHF1D)
     m = psi.m
-    dx = (get_xmax(m.m)-get_xmin(m.m))/get_nx(m.m)
     V = 0
     for p=1:m.N        
         for q=1:m.N
-            h = (get_data(psi.phi[p],true)'*(get_potential(m.m,true).*get_data(psi.phi[q], true)))[1,1]*dx                       
-            for (j,l,f) in slater1_rules[p,q]
+            h = potential_matrix_element(psi.phi[p], psi.phi[q])
+            for (j,l,f) in m.slater1_rules[p,q]
                 V += h*f*conj(psi.a[j])*psi.a[l]
             end
         end
@@ -467,3 +466,17 @@ function potential_energy_1(psi::WfMCTDHF1D)
     V
 end
 
+
+function TSSM.kinetic_energy(psi::WfMCTDHF1D)
+    m = psi.m
+    V = 0
+    for p=1:m.N        
+        for q=1:m.N
+            h = kinetic_matrix_element(psi.phi[p], psi.phi[q])
+            for (j,l,f) in m.slater1_rules[p,q]
+                V += h*f*conj(psi.a[j])*psi.a[l]
+            end
+        end
+    end
+    V
+end

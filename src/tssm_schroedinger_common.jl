@@ -85,6 +85,23 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
            tuple(ans...)
         end
 
+        function kinetic_matrix_element(psi1::($WF){$T}, psi2::($WF){$T})
+           if psi1.m ≠ psi2.m
+               error("psi1 and psi2 must belong to the same method")
+           end
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"kinetic_matrix_element_wf",SUF))), ($T),
+                 (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
+        end
+
+        function potential_matrix_element(psi1::($WF){$T}, psi2::($WF){$T})
+           if psi1.m ≠ psi2.m
+               error("psi1 and psi2 must belong to the same method")
+           end
+           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"potential_matrix_element_wf",SUF))), ($T),
+                 (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
+        end
+        
+
     end #eval
 
     if COMPLEX_METHOD

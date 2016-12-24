@@ -84,6 +84,7 @@ export set_potential_t_derivative!, get_potential_t_derivative
 export imaginary_time_propagate_A!, imaginary_time_propagate_B!
 export kinetic_energy, potential_energy, interaction_energy, observable
 export get_energy_expectation_deviation, get_realspace_observables
+export kinetic_matrix_element, potential_matrix_element
 export selfconsistent_nonlinear_step!
 
 ## abstract types ############################################################################
