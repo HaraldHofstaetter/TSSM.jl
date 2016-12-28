@@ -168,12 +168,16 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
                 for s=1:N
                     if p==q && r==s && p!=r
                         for j=1:lena
-                            add_xxx!(res[p,q,r,s], (j,j, 0.5))
+                            if p in slater_indices[j] && r in slater_indices[j]                       
+                                add_xxx!(res[p,q,r,s], (j,j, 0.5))
+                            end
                         end
                     end
                     if p==s && r==q && p!=r
                         for j=1:lena
-                            add_xxx!(res[p,q,r,s], (j,j, -0.5)) 
+                            if p in slater_indices[j] && r in slater_indices[j]                       
+                                add_xxx!(res[p,q,r,s], (j,j, -0.5)) 
+                            end
                         end
                     end
                     if p==q && r!=s 
@@ -320,16 +324,16 @@ end
 norm(psi::WfMCTDHF1D) = Base.norm(psi.a)
 #Note, only correct if psi.phi's are ortonormal
 
-function to_real_space!(psi::WfMCTDHF1D)
+function TSSM.to_real_space!(psi::WfMCTDHF1D)
     for j=1:psi.m.N
         to_real_space!(psi.phi[j])
     end
 end
 
 
-function to_fourier_space!(psi::WfMCTDHF1D)
+function TSSM.to_frequency_space!(psi::WfMCTDHF1D)
     for j=1:psi.m.N
-        to_fourier_space!(psi.phi[j])
+        to_frequency_space!(psi.phi[j])
     end
 end
 
@@ -417,9 +421,40 @@ function expand_slater_determinants!(psi2::WfSchroedinger2D, psi::WfMCTDHF1D)
         s = sign(J)
         v1 = get_data(psi.phi[J[1]], true)
         v2 = get_data(psi.phi[J[2]], true)
-        u2[:,:] += (s*f*psi.a[j])*(v1*v2.' - v2*v1.')
+        #u2[:,:] += (s*f*psi.a[j])*(v1*v2.' - v2*v1.')
+        for i1=1:size(u2,1)
+            for i2=1:size(u2,2)
+                u2[i1,i2] += (s*f*psi.a[j])*(v1[i1]*v2[i2]-v1[i2]*v2[i1])
+            end
+        end
     end    
     psi2
+end
+
+
+function expand_slater_determinants!(psi3::WfSchroedinger3D, psi::WfMCTDHF1D)
+    m = psi.m
+    @assert m.f==3
+    m3 = psi3.m
+    u3 = get_data(psi3, true)
+    u3[:,:,:] = 0.0
+    f = 1/sqrt(6)
+    for j = 1:m.lena # eval slater determinants
+        J = m.slater_indices[j]
+        s = sign(J)
+        v1 = get_data(psi.phi[J[1]], true)
+        v2 = get_data(psi.phi[J[2]], true)
+        v3 = get_data(psi.phi[J[3]], true)
+        for i1=1:size(u3,1)
+            for i2=1:size(u3,2)
+                for i3=1:size(u3,3)
+                    u3[i1,i2,i3] += (s*f*psi.a[j])*(v1[i1]*v2[i2]*v3[i3] + v1[i2]*v2[i3]*v3[i1] + v1[i3]*v2[i1]*v3[i2]
+                                                   -v1[i3]*v2[i2]*v3[i1] - v1[i1]*v2[i3]*v3[i2] - v1[i2]*v2[i1]*v3[i3])
+                end
+            end
+        end
+    end    
+    psi3
 end
 
 
@@ -463,20 +498,49 @@ function potential_energy_1(psi::WfMCTDHF1D)
             end
         end
     end
-    V
+    real(V)
 end
 
 
 function TSSM.kinetic_energy(psi::WfMCTDHF1D)
     m = psi.m
-    V = 0
+    T = 0
     for p=1:m.N        
         for q=1:m.N
             h = kinetic_matrix_element(psi.phi[p], psi.phi[q])
             for (j,l,f) in m.slater1_rules[p,q]
-                V += h*f*conj(psi.a[j])*psi.a[l]
+                T += h*f*conj(psi.a[j])*psi.a[l]
             end
         end
     end
-    V
+    real(T)
 end
+
+
+function potential_energy_2(psi::WfMCTDHF1D)
+    m = psi.m
+    V = 0
+    n = size(m.Vee, 1)
+    dx = (get_xmax(m.m)-get_xmin(m.m))/get_nx(m.m)
+    u_pq = zeros(Complex{Float64}, n)
+    u_pqs = zeros(Complex{Float64}, n)
+    to_real_space!(psi)
+    for p=1:m.N
+        for q=1:m.N
+            u_pq[:] = m.Vee * (conj(get_data(psi.phi[p], true)).*get_data(psi.phi[q], true))
+            for s=1:m.N
+                u_pqs[:] = u_pq .* get_data(psi.phi[s], true)
+                for r=1:m.N
+                    h = get_data(psi.phi[r], true)' * u_pqs # inner product...                    
+                    for (j,l,f) in m.slater2_rules[p,q,r,s]
+                        V += h*f*conj(psi.a[j])*psi.a[l]
+                    end
+                end
+            end
+        end
+    end
+    V *= dx^2
+    real(V)
+end
+
+TSSM.potential_energy(psi::WfMCTDHF1D) = potential_energy_1(psi) + potential_energy_2(psi)
