@@ -347,32 +347,32 @@ end
 
 
 
-function gen_rhs1(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, B::Bool=true)
+function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, B::Bool=true)
     m = rhs.m
     if m ≠ psi.m
         error("rhs and psi must belong to the same method")
     end
-    n = size(m.Vee, 1)
-    u_save = zeros(n)    
+    #n = get_nx(m.m)
+    #u_save = zeros(Complex{Float64}, n)    
     for q=1:m.N
-        to_real_space!(rhs.phi[q])
-        u_save[:] = get_data(rhs.phi[q], false)
-        u = get_data(rhs.phi[q], true)  
-        u[:] = 0.0
+        #to_real_space!(rhs.phi[q])
+        #u_save[:] = get_data(rhs.phi[q], false)
+        #u = get_data(rhs.phi[q], true)  
+        #u[:] = 0.0
         if A
-            add_apply_A!(rhs.phi[q], psi.phi[q])
+            add_apply_A!(psi.phi[q], rhs.phi[q], 1im)
         end
         if B
-            add_apply_B!(rhs.phi[q], psi.phi[q])
+            add_apply_B!(psi.phi[q], rhs.phi[q], 1im)
         end    
-        to_real_space!(rhs.phi[q])
+        #to_real_space!(rhs.phi[q])
         for p=1:m.N
             h = inner_product(psi.phi[p], rhs.phi[q])
-            for (j,l,f) in m.slater1_rules[p,q]
+            for (j,l,f) in m.slater1_rules[q,p]
                 rhs.a[j] += h*f*psi.a[l] 
             end
         end
-        u[:] += u_save        
+        #u[:] += u_save        
     end
 end
 
@@ -396,9 +396,10 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     if m ≠ psi.m
         error("rhs and psi must belong to the same method")
     end
-    n = size(m.Vee, 1)
-    u_pq = zeros(n)
-    u_pqs = zeros(n)
+    n = get_nx(m.m)
+    dx = (get_xmax(m.m)-get_xmin(m.m))/n
+    u_pq = zeros(Complex{Float64}, n)
+    u_pqs = zeros(Complex{Float64}, n)
     to_real_space!(psi)
     to_real_space!(rhs)
     for p=1:m.N
@@ -409,9 +410,9 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
                 for r=1:m.N
                     u = get_data(rhs.phi[r], true)
                     u[:] += (m.density2_tensor[s,r,p,q]*(m.f-1)) * u_pqs                
-                    h = dot(get_data(psi.phi[r], true), u_pqs)
+                    h = dot(get_data(psi.phi[r], true), u_pqs) * dx^2
                     # maybe factor 1/f! or something similar necessary...
-                    for (j,l,f) in m.slater2_rules[p,q,r,s]
+                    for (j,l,f) in m.slater2_rules[q,p,s,r]
                         rhs.a[j] += h*f*psi.a[l] 
                     end
                 end
@@ -506,13 +507,13 @@ function potential_energy_1(psi::WfMCTDHF1D)
     for p=1:m.N        
         for q=1:m.N
             h = potential_matrix_element(psi.phi[p], psi.phi[q])
-            for (j,l,f) in m.slater1_rules[p,q]
-                #V += h*f*conj(psi.a[j])*psi.a[l]
-                V += h*f*psi.a[j]*conj(psi.a[l])
+            for (j,l,f) in m.slater1_rules[q,p]
+                V += h*f*conj(psi.a[j])*psi.a[l]
+                #V += h*f*psi.a[j]*conj(psi.a[l])
             end
         end
     end
-    V
+    real(V)
 end
 
 
@@ -544,9 +545,9 @@ function TSSM.kinetic_energy(psi::WfMCTDHF1D)
     for p=1:m.N        
         for q=1:m.N
             h = kinetic_matrix_element(psi.phi[p], psi.phi[q])
-            for (j,l,f) in m.slater1_rules[p,q]
-                #T += h*f*conj(psi.a[j])*psi.a[l]
-                T += h*f*psi.a[j]*conj(psi.a[l])
+            for (j,l,f) in m.slater1_rules[q,p]
+                T += h*f*conj(psi.a[j])*psi.a[l]
+                #T += h*f*psi.a[j]*conj(psi.a[l])
             end
         end
     end
@@ -578,8 +579,8 @@ end
 function potential_energy_2(psi::WfMCTDHF1D)
     m = psi.m
     V = 0
-    n = size(m.Vee, 1)
-    dx = (get_xmax(m.m)-get_xmin(m.m))/get_nx(m.m)
+    n = get_nx(m.m)
+    dx = (get_xmax(m.m)-get_xmin(m.m))/n
     u_pq = zeros(Complex{Float64}, n)
     u_pqs = zeros(Complex{Float64}, n)
     to_real_space!(psi)
@@ -590,9 +591,9 @@ function potential_energy_2(psi::WfMCTDHF1D)
                 u_pqs[:] = u_pq .* get_data(psi.phi[s], true)
                 for r=1:m.N
                     h = dot(get_data(psi.phi[r], true), u_pqs)
-                    for (j,l,f) in m.slater2_rules[p,q,r,s]
-                        #V += h*f*conj(psi.a[j])*psi.a[l]
-                        V += h*f*psi.a[j]*conj(psi.a[l])
+                    for (j,l,f) in m.slater2_rules[q,p,s,r]
+                        V += h*f*conj(psi.a[j])*psi.a[l]
+                        #V += h*f*psi.a[j]*conj(psi.a[l])
                     end
                 end
             end
