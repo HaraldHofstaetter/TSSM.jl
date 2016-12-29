@@ -145,14 +145,6 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                  (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
         end
 
-        function inner_product(psi1::($WF){$T}, psi2::($WF){$T})
-           if psi1.m ≠ psi2.m
-               error("psi1 and psi2 must belong to the same method")
-           end
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"inner_product_wf",SUF))), ($T),
-                 (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
-        end
-
         function normalize!(psi::($WF){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"normalize_wf",SUF))), ($T),
                  (Ptr{Void}, ), psi.p )
@@ -358,6 +350,14 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"axpy_wf",SUF))), Void,
                         (Ptr{Void}, Ptr{Void}, Complex{$T}), 
                          this.p, other.p, factor)
+            end
+
+            function inner_product(psi1::($WF){$T}, psi2::($WF){$T})
+                if psi1.m ≠ psi2.m
+                    error("psi1 and psi2 must belong to the same method")
+                end
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"inner_product_wf",SUF))), (Complex{$T}),
+                    (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
             end
 
         end # eval    
@@ -570,6 +570,14 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"axpy_wf",SUF))), Void,
                         (Ptr{Void}, Ptr{Void}, ($T)), 
                          this.p, other.p, factor)
+            end
+
+            function inner_product(psi1::($WF){$T}, psi2::($WF){$T})
+                if psi1.m ≠ psi2.m
+                    error("psi1 and psi2 must belong to the same method")
+                end
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"inner_product_wf",SUF))), ($T),
+                    (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
             end
 
         end # eval    

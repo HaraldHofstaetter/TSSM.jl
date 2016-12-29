@@ -376,6 +376,19 @@ function gen_rhs1(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, B::Bool=true)
     end
 end
 
+function project_out_orbitals!(rhs:: WfMCTDHF1D, psi::WfMCTDHF1D)
+    m = psi.m
+    c = zeros(Complex{Float64},m.N)
+    for p = 1:m.N
+        for q = 1:m.N
+            c[q] = inner_product(psi.phi[q], rhs.phi[p])
+        end
+        for q = 1:m.N
+            axpy!(rhs.phi[p], psi.phi[q], -c[q])
+        end
+    end            
+end
+
 
 
 function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
@@ -396,7 +409,7 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
                 for r=1:m.N
                     u = get_data(rhs.phi[r], true)
                     u[:] += (m.density2_tensor[s,r,p,q]*(m.f-1)) * u_pqs                
-                    h = get_data(psi.phi[r], true)' * u_pqs # inner product...
+                    h = dot(get_data(psi.phi[r], true), u_pqs)
                     # maybe factor 1/f! or something similar necessary...
                     for (j,l,f) in m.slater2_rules[p,q,r,s]
                         rhs.a[j] += h*f*psi.a[l] 
@@ -405,7 +418,7 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
             end
         end
     end
-    #TODO: projection (1-P) ...
+    project_out_orbitals!(rhs, psi)
 end
 
 
@@ -460,9 +473,9 @@ end
 
 function orthonormalize!(psi::WfMCTDHF1D)
     m = psi.m
-    g = zeros(m.N)
+    g = zeros(Complex{Float64}, m.N)
     for p = 1:m.N
-        a1 = zeros(m.lena)
+        a1 = zeros(Complex{Float64}, m.lena)
         for q=1:p-1
             g[q] = inner_product(psi.phi[q], psi.phi[p])
         end
@@ -494,12 +507,35 @@ function potential_energy_1(psi::WfMCTDHF1D)
         for q=1:m.N
             h = potential_matrix_element(psi.phi[p], psi.phi[q])
             for (j,l,f) in m.slater1_rules[p,q]
-                V += h*f*conj(psi.a[j])*psi.a[l]
+                #V += h*f*conj(psi.a[j])*psi.a[l]
+                V += h*f*psi.a[j]*conj(psi.a[l])
+            end
+        end
+    end
+    V
+end
+
+
+function potential_energy_1_A(psi::WfMCTDHF1D)
+    m = psi.m
+    V = 0
+    for p=1:m.N    
+        h = potential_matrix_element(psi.phi[p], psi.phi[p])
+        for (j,l,f) in m.slater1_rules[p,p]
+           #V += real(h*f*conj(psi.a[j])*psi.a[l])
+            V += real(h*f*psi.a[j]*conj(psi.a[l]))
+        end
+        for q=1:p-1
+            h = potential_matrix_element(psi.phi[p], psi.phi[q])
+            for (j,l,f) in m.slater1_rules[p,q]
+                #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
+                V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
             end
         end
     end
     real(V)
 end
+
 
 
 function TSSM.kinetic_energy(psi::WfMCTDHF1D)
@@ -509,11 +545,33 @@ function TSSM.kinetic_energy(psi::WfMCTDHF1D)
         for q=1:m.N
             h = kinetic_matrix_element(psi.phi[p], psi.phi[q])
             for (j,l,f) in m.slater1_rules[p,q]
-                T += h*f*conj(psi.a[j])*psi.a[l]
+                #T += h*f*conj(psi.a[j])*psi.a[l]
+                T += h*f*psi.a[j]*conj(psi.a[l])
             end
         end
     end
-    real(T)
+    real(T)    
+end
+
+
+function kinetic_energy_A(psi::WfMCTDHF1D)
+    m = psi.m
+    V = 0
+    for p=1:m.N    
+        h = kinetic_matrix_element(psi.phi[p], psi.phi[p])
+        for (j,l,f) in m.slater1_rules[p,p]
+           #V += real(h*f*conj(psi.a[j])*psi.a[l])
+            V += real(h*f*psi.a[j]*conj(psi.a[l]))
+        end
+        for q=1:p-1
+            h = kinetic_matrix_element(psi.phi[p], psi.phi[q])
+            for (j,l,f) in m.slater1_rules[p,q]
+                #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
+                V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
+            end
+        end
+    end
+    V
 end
 
 
@@ -531,9 +589,10 @@ function potential_energy_2(psi::WfMCTDHF1D)
             for s=1:m.N
                 u_pqs[:] = u_pq .* get_data(psi.phi[s], true)
                 for r=1:m.N
-                    h = get_data(psi.phi[r], true)' * u_pqs # inner product...                    
+                    h = dot(get_data(psi.phi[r], true), u_pqs)
                     for (j,l,f) in m.slater2_rules[p,q,r,s]
-                        V += h*f*conj(psi.a[j])*psi.a[l]
+                        #V += h*f*conj(psi.a[j])*psi.a[l]
+                        V += h*f*psi.a[j]*conj(psi.a[l])
                     end
                 end
             end
@@ -542,5 +601,6 @@ function potential_energy_2(psi::WfMCTDHF1D)
     V *= dx^2
     real(V)
 end
+
 
 TSSM.potential_energy(psi::WfMCTDHF1D) = potential_energy_1(psi) + potential_energy_2(psi)

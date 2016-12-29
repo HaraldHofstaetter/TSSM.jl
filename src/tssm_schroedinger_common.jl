@@ -85,23 +85,6 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
            tuple(ans...)
         end
 
-        function kinetic_matrix_element(psi1::($WF){$T}, psi2::($WF){$T})
-           if psi1.m ≠ psi2.m
-               error("psi1 and psi2 must belong to the same method")
-           end
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"kinetic_matrix_element_wf",SUF))), ($T),
-                 (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
-        end
-
-        function potential_matrix_element(psi1::($WF){$T}, psi2::($WF){$T})
-           if psi1.m ≠ psi2.m
-               error("psi1 and psi2 must belong to the same method")
-           end
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"potential_matrix_element_wf",SUF))), ($T),
-                 (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
-        end
-        
-
     end #eval
 
     if COMPLEX_METHOD
@@ -145,6 +128,22 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"selfconsistent_nonlinear_step_wf",SUF))), Void,
                           (Ptr{Void}, Complex{($T)}, Complex{($T)}, ($T), Int32), psi.p, dt, dt1, eps, max_itesr)
             end
+
+            function kinetic_matrix_element(psi1::($WF){$T}, psi2::($WF){$T})
+                if psi1.m ≠ psi2.m
+                    error("psi1 and psi2 must belong to the same method")
+                end
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"kinetic_matrix_element_wf",SUF))), (Complex{$T}),
+                    (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
+            end
+
+            function potential_matrix_element(psi1::($WF){$T}, psi2::($WF){$T})
+                if psi1.m ≠ psi2.m
+                    error("psi1 and psi2 must belong to the same method")
+                end
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"potential_matrix_element_wf",SUF))), (Complex{$T}),
+                    (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
+            end
             
          end #eval   
     else
@@ -174,6 +173,23 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"selfconsistent_nonlinear_step_wf",SUF))), Void,
                           (Ptr{Void}, ($T), ($T), ($T), Int32), psi.p, dt, dt1, eps, max_itesr)
             end
+
+            function kinetic_matrix_element(psi1::($WF){$T}, psi2::($WF){$T})
+                if psi1.m ≠ psi2.m
+                    error("psi1 and psi2 must belong to the same method")
+                end
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"kinetic_matrix_element_wf",SUF))), ($T),
+                    (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
+            end
+
+            function potential_matrix_element(psi1::($WF){$T}, psi2::($WF){$T})
+                if psi1.m ≠ psi2.m
+                    error("psi1 and psi2 must belong to the same method")
+                end
+                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"potential_matrix_element_wf",SUF))), ($T),
+                    (Ptr{Void}, Ptr{Void}), psi1.p, psi2.p )
+            end
+
         end #eval   
     end #if
 
