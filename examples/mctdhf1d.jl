@@ -95,7 +95,32 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
         end
     end    
     
-   density2_rules = [Tuple{Int,Int,Int}[] for j=1:N, l=1:N, p=1:N, q=1:N]
+    density2_rules = [Tuple{Int,Int,Int}[] for j=1:N, l=1:N, p=1:N, q=1:N]
+    if f==2
+        for j=1:N
+            for l=j:N
+                for p=1:N
+                    for q=1:N
+                        J1 = vcat(j, p)
+                        J2 = vcat(l, q)
+                        j1 = findfirst(slater_indices, sort(J1))
+                        if j1>0
+                            j2 = findfirst(slater_indices, sort(J2))
+                            if j2>0
+                                s1 = sign(J1)
+                                s2 = sign(J2)
+                                t = (j1, j2, s1*s2)
+                                push!(density2_rules[j,l,p,q], t)
+                                if j!=l
+                                    push!(density2_rules[l,j,q,p], t)
+                                end
+                            end
+                        end
+                    end
+                end
+            end    
+        end        
+    else
     for J = MultiFor([N for j=3:f])
         for j=1:N
             for l=j:N
@@ -120,7 +145,8 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
                 end
             end    
         end
-    end        
+    end
+    end
     
     lena = binomial(N,f)
     slater_exchange = [(Int[], 1) for j=1:lena, l=1:lena]
@@ -246,6 +272,8 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     Vee
     density_matrix
     density2_tensor
+    k1
+    k2
 
     function MCTDHF1D(f::Integer, N::Integer, 
                       nx::Integer, xmin::Real, xmax::Real)
@@ -256,7 +284,7 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
         Vee = init_Vee(get_nodes(m))
         new(m, f, N, lena, slater_indices, density_rules, 
             density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules, Vee,
-            zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N) )
+        zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N), nothing, nothing )
     end
 end
 
@@ -279,6 +307,7 @@ end
 function gen_density_matrix(psi::WfMCTDHF1D)
     N = psi.m.N
     rho = psi.m.density_matrix
+    rho[:,:] = 0.0
     for j=1:N
         for l=1:N
             for (u, v, s) in psi.m.density_rules[j,l]
@@ -296,6 +325,7 @@ end
 function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=true)
     N = psi.m.N
     rho = psi.m.density2_tensor
+    rho[:,:,:,:] = 0.0
     for j=1:N
         for l=j:N
             for p=1:N
@@ -312,7 +342,7 @@ function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=
     end
     if mult_inverse_density_matrix
         for p=1:N
-            for q=q:N
+            for q=1:N
                 rho[:,:,p,q] = psi.m.density_matrix \ rho[:,:,p,q]
             end
         end
@@ -347,7 +377,7 @@ end
 
 
 
-function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, B::Bool=true)
+function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     m = rhs.m
     if m ≠ psi.m
         error("rhs and psi must belong to the same method")
@@ -359,12 +389,12 @@ function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; A::Bool=true, B::Bool=true)
         #u_save[:] = get_data(rhs.phi[q], false)
         #u = get_data(rhs.phi[q], true)  
         #u[:] = 0.0
-        if A
-            add_apply_A!(psi.phi[q], rhs.phi[q], 1im)
-        end
-        if B
+        #if A
+        #    add_apply_A!(psi.phi[q], rhs.phi[q], 1im)
+        #end
+        #if B
             add_apply_B!(psi.phi[q], rhs.phi[q], 1im)
-        end    
+        #end    
         #to_real_space!(rhs.phi[q])
         for p=1:m.N
             h = inner_product(psi.phi[p], rhs.phi[q])
@@ -409,9 +439,8 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
                 u_pqs[:] = u_pq .* get_data(psi.phi[s], true)
                 for r=1:m.N
                     u = get_data(rhs.phi[r], true)
-                    u[:] += (m.density2_tensor[s,r,p,q]*(m.f-1)) * u_pqs                
+                    u[:] += (m.density2_tensor[r,s,p,q]*(m.f-1)*dx) * u_pqs                
                     h = dot(get_data(psi.phi[r], true), u_pqs) * dx^2
-                    # maybe factor 1/f! or something similar necessary...
                     for (j,l,f) in m.slater2_rules[q,p,s,r]
                         rhs.a[j] += h*f*psi.a[l] 
                     end
@@ -419,6 +448,19 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
             end
         end
     end
+end
+
+
+function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
+    m = rhs.m
+    if m ≠ psi.m
+        error("rhs and psi must belong to the same method")
+    end
+    #gen_density_matrix(psi)
+    #gen_density2_tensor(psi)
+    set_zero!(rhs)
+    gen_rhs1!(rhs, psi)
+    #gen_rhs2!(rhs, psi)
     project_out_orbitals!(rhs, psi)
 end
 
@@ -430,6 +472,7 @@ function expand_slater_determinants!(psi2::WfSchroedinger2D, psi::WfMCTDHF1D)
     u2 = get_data(psi2, true)
     u2[:,:] = 0.0
     f = 1/sqrt(2)
+    to_real_space!(psi)
     for j = 1:m.lena # eval slater determinants
         J = m.slater_indices[j]
         s = sign(J)
@@ -453,6 +496,7 @@ function expand_slater_determinants!(psi3::WfSchroedinger3D, psi::WfMCTDHF1D)
     u3 = get_data(psi3, true)
     u3[:,:,:] = 0.0
     f = 1/sqrt(6)
+    to_real_space!(psi)
     for j = 1:m.lena # eval slater determinants
         J = m.slater_indices[j]
         s = sign(J)
@@ -472,7 +516,7 @@ function expand_slater_determinants!(psi3::WfSchroedinger3D, psi::WfMCTDHF1D)
 end
 
 
-function orthonormalize!(psi::WfMCTDHF1D)
+function orthonormalize_orbitals!(psi::WfMCTDHF1D)
     m = psi.m
     g = zeros(Complex{Float64}, m.N)
     for p = 1:m.N
@@ -605,3 +649,69 @@ end
 
 
 TSSM.potential_energy(psi::WfMCTDHF1D) = potential_energy_1(psi) + potential_energy_2(psi)
+
+
+function TSSM.imaginary_time_propagate_A!(psi::WfMCTDHF1D, dt::Real)
+    for j=1:psi.m.N
+        imaginary_time_propagate_A!(psi.phi[j], dt)
+    end
+end
+
+function TSSM.imaginary_time_propagate_B!(psi::WfMCTDHF1D, dt::Real)
+    for j=1:psi.m.N
+        imaginary_time_propagate_B!(psi.phi[j], dt)
+    end
+end
+
+function TSSM.scale!(psi::WfMCTDHF1D, f::Number)
+    for j=1:psi.m.N
+        scale!(psi.phi[j], f)
+    end
+    psi.a[:] *= f
+end
+
+function TSSM.axpy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D, f::Number)
+    for j=1:psi.m.N
+        axpy!(psi1.phi[j], psi2.phi[j], f)
+    end
+    psi1.a[:] += f*psi2.a[:]
+end
+
+function RK2_step!(psi::WfMCTDHF1D, dt::Number)
+    m = psi.m
+    gen_rhs!(m.k1, psi)
+    scale!(m.k1, -0.5im*dt)
+    axpy!(m.k1, psi, 1.0)
+    #orthonormalize_orbitals!(m.k1)
+    gen_rhs!(m.k2, m.k1)
+    axpy!(psi, m.k2, -1im*dt)
+end
+
+
+function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int)
+    m = psi.m
+    m.k1 = wave_function(m)
+    m.k2 = wave_function(m)
+    
+    orthonormalize_orbitals!(psi)
+    for k=1:n
+        imaginary_time_propagate_A!(psi, 0.5*dt)
+        orthonormalize_orbitals!(psi)
+        RK2_step!(psi, -1im*dt)
+        #imaginary_time_propagate_B!(psi, dt)
+        orthonormalize_orbitals!(psi)
+        imaginary_time_propagate_A!(psi, 0.5*dt)
+        orthonormalize_orbitals!(psi)
+        norm_psi = norm(psi)
+        psi.a[:] *= 1/norm_psi
+        
+        E_pot = potential_energy(psi)
+        E_kin = kinetic_energy(psi)
+        E = E_pot + E_kin
+        println("step =", k,"  E_pot =", E_pot, "  E_kin=", E_kin, "  E=", E)                
+    end
+    
+    m.k1 = nothing
+    m.k2 = nothing
+end
+    
