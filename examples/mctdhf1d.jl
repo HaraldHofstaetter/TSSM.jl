@@ -288,20 +288,40 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     end
 end
 
+type Orbital
+    phi::WfSchroedinger1D
+    spin::Int 
+end
+
 type WfMCTDHF1D <: TSSM.WaveFunctionComplex1D
     a::Array{Complex{Float64}, 1}
-    phi::Array{WfSchroedinger1D, 1}
+    o::Array{Orbital, 1}
     m::MCTDHF1D
     function WfMCTDHF1D(m::MCTDHF1D)
         a = zeros(Complex{Float64}, m.lena)
-        phi = [WfSchroedinger1D(m.m) for j=1:m.N]
-        new(a, phi, m)
+        o = [Orbital(WfSchroedinger1D(m.m), 1) for j=1:m.N]
+        new(a, o, m)
     end
 end
 
 function TSSM.wave_function(m::MCTDHF1D )
     WfMCTDHF1D(m) 
 end
+
+Base.norm(o::Orbital) = Base.norm(o.phi)
+inner_product(o1::Orbital, o2::Orbital) = (o1.spin==o2.spin ? TSSM.inner_product(o1.phi, o2.phi) : 0.0im)
+potential_matrix_element(o1::Orbital, o2::Orbital) = (o1.spin==o2.spin ? TSSM.potential_matrix_element(o1.phi, o2.phi) : 0.0im)
+kinetic_matrix_element(o1::Orbital, o2::Orbital) = (o1.spin==o2.spin ? TSSM.kinetic_matrix_element(o1.phi, o2.phi) : 0.0im)
+
+function Base.scale!(o::Orbital, f::Number) 
+    TSSM.scale!(o.phi, f)
+end
+
+function axpy!(o1::Orbital, o2::Orbital, f::Number)
+    TSSM.axpy!(o1.phi, o2.phi, f)
+end
+
+
 
 
 function gen_density_matrix(psi::WfMCTDHF1D)
@@ -352,25 +372,25 @@ end
 
 
 norm(psi::WfMCTDHF1D) = Base.norm(psi.a)
-#Note, only correct if psi.phi's are ortonormal
+#Note, only correct if orbitals are ortonormal
 
 function TSSM.to_real_space!(psi::WfMCTDHF1D)
     for j=1:psi.m.N
-        to_real_space!(psi.phi[j])
+        to_real_space!(psi.o[j].phi)
     end
 end
 
 
 function TSSM.to_frequency_space!(psi::WfMCTDHF1D)
     for j=1:psi.m.N
-        to_frequency_space!(psi.phi[j])
+        to_frequency_space!(psi.o[j].phi)
     end
 end
 
 
 function set_zero!(psi::WfMCTDHF1D)
     for j=1:psi.m.N 
-        get_data(psi.phi[j], true)[:] = 0.0
+        get_data(psi.o[j].phi, true)[:] = 0.0
     end
     psi.a[:] = 0.0
 end
@@ -385,19 +405,19 @@ function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     #n = get_nx(m.m)
     #u_save = zeros(Complex{Float64}, n)    
     for q=1:m.N
-        #to_real_space!(rhs.phi[q])
-        #u_save[:] = get_data(rhs.phi[q], false)
-        #u = get_data(rhs.phi[q], true)  
+        #to_real_space!(rhs.o[q].phi)
+        #u_save[:] = get_data(rhs.o[q].phi, false)
+        #u = get_data(rhs.o[q].phi, true)  
         #u[:] = 0.0
         #if A
-        #    add_apply_A!(psi.phi[q], rhs.phi[q], 1im)
+        #    add_apply_A!(psi.o[q].phi, rhs.o[q].phi, 1im)
         #end
         #if B
-            add_apply_B!(psi.phi[q], rhs.phi[q], 1im)
+            add_apply_B!(psi.o[q].phi, rhs.o[q].phi, 1im)
         #end    
-        #to_real_space!(rhs.phi[q])
+        #to_real_space!(rhs.o.[q].phi)
         for p=1:m.N
-            h = inner_product(psi.phi[p], rhs.phi[q])
+            h = inner_product(psi.o[p], rhs.o[q])
             for (j,l,f) in m.slater1_rules[q,p]
                 rhs.a[j] += h*f*psi.a[l] 
             end
@@ -411,10 +431,10 @@ function project_out_orbitals!(rhs:: WfMCTDHF1D, psi::WfMCTDHF1D)
     c = zeros(Complex{Float64},m.N)
     for p = 1:m.N
         for q = 1:m.N
-            c[q] = inner_product(psi.phi[q], rhs.phi[p])
+            c[q] = inner_product(psi.o[q], rhs.o[p])
         end
         for q = 1:m.N
-            axpy!(rhs.phi[p], psi.phi[q], -c[q])
+            axpy!(rhs.o[p], psi.o[q], -c[q])
         end
     end            
 end
@@ -434,13 +454,13 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     to_real_space!(rhs)
     for p=1:m.N
         for q=1:m.N
-            u_pq[:] = m.Vee * (conj(get_data(psi.phi[p], true)).*get_data(psi.phi[q], true))
+            u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
             for s=1:m.N
-                u_pqs[:] = u_pq .* get_data(psi.phi[s], true)
+                u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
                 for r=1:m.N
-                    u = get_data(rhs.phi[r], true)
+                    u = get_data(rhs.o[r].phi, true)
                     u[:] += (m.density2_tensor[r,s,p,q]*(m.f-1)*dx) * u_pqs                
-                    h = dot(get_data(psi.phi[r], true), u_pqs) * dx^2
+                    h = dot(get_data(psi.o[r].phi, true), u_pqs) * dx^2
                     for (j,l,f) in m.slater2_rules[q,p,s,r]
                         rhs.a[j] += h*f*psi.a[l] 
                     end
@@ -465,28 +485,102 @@ function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
 end
 
 
-function expand_slater_determinants!(psi2::WfSchroedinger2D, psi::WfMCTDHF1D)
+type Schroedinger2Electrons <: TSSM.TimeSplittingSpectralMethodComplex2D
+    m::Schroedinger2D
+    function Schroedinger2Electrons(nx::Integer, xmin::Real, xmax::Real)
+        new(Schroedinger2D(nx, xmin, xmax, nx, xmin, xmax))
+    end
+end
+
+type WfSchroedinger2Electrons <: TSSM.WaveFunctionComplex2D
+    m::Schroedinger2Electrons
+    singlet::WfSchroedinger2D
+    triplet_up::WfSchroedinger2D
+    triplet_down::WfSchroedinger2D
+    triplet_symm::WfSchroedinger2D
+    function WfSchroedinger2Electrons(m::Schroedinger2Electrons)
+        new(m, WfSchroedinger2D(m.m),
+               WfSchroedinger2D(m.m),
+               WfSchroedinger2D(m.m),
+               WfSchroedinger2D(m.m))
+    end
+end
+
+function TSSM.wave_function(m::Schroedinger2Electrons)
+    WfSchroedinger2Electrons(m) 
+end
+
+
+
+function convert_to_full!(psi2::WfSchroedinger2Electrons, psi::WfMCTDHF1D)
     m = psi.m
+    n = get_nx(m.m)
     @assert m.f==2
-    m2 = psi2.m
-    u2 = get_data(psi2, true)
-    u2[:,:] = 0.0
+    u_singlet = get_data(psi2.singlet, true)
+    u_triplet_up = get_data(psi2.triplet_up, true)
+    u_triplet_down = get_data(psi2.triplet_down, true)
+    u_triplet_symm = get_data(psi2.triplet_symm, true)
+    u_singlet[:,:] = 0.0
+    u_triplet_up[:,:] = 0.0
+    u_triplet_down[:,:] = 0.0
+    u_triplet_symm[:,:] = 0.0
     f = 1/sqrt(2)
     to_real_space!(psi)
     for j = 1:m.lena # eval slater determinants
         J = m.slater_indices[j]
-        s = sign(J)
-        v1 = get_data(psi.phi[J[1]], true)
-        v2 = get_data(psi.phi[J[2]], true)
-        #u2[:,:] += (s*f*psi.a[j])*(v1*v2.' - v2*v1.')
-        for i1=1:size(u2,1)
-            for i2=1:size(u2,2)
-                u2[i1,i2] += (s*f*psi.a[j])*(v1[i1]*v2[i2]-v1[i2]*v2[i1])
+        s = sign(J) 
+        v1 = get_data(psi.o[J[1]].phi, true)
+        v2 = get_data(psi.o[J[2]].phi, true)
+        s1 = psi.o[J[1]].spin 
+        s2 = psi.o[J[2]].spin
+        if s1==s2
+            if s1==+1
+                for i1=1:n
+                    for i2=1:n
+                        u_triplet_up[i1,i2] += (s*f*psi.a[j])*(v1[i1]*v2[i2] - v1[i2]*v2[i1])
+                    end
+                end
+            else
+                for i1=1:n
+                    for i2=1:n
+                        u_triplet_down[i1,i2] += (s*f*psi.a[j])*(v1[i1]*v2[i2] - v1[i2]*v2[i1])
+                    end
+                end
+            end
+        else
+            if s1==+1
+                for i1=1:n
+                    for i2=1:n
+                        u_singlet[i1,i2] += (0.5*s*psi.a[j])*(v1[i1]*v2[i2] + v1[i2]*v2[i1])
+                        u_triplet_symm[i1,i2] += (0.5*s*psi.a[j])*(v1[i1]*v2[i2] - v1[i2]*v2[i1])
+                    end
+                end
+            else
+                for i1=1:n
+                    for i2=1:n
+                        u_singlet[i1,i2] += (0.5*s*psi.a[j])*(v1[i1]*v2[i2] + v1[i2]*v2[i1])
+                        u_triplet_symm[i1,i2] -= (0.5*s*psi.a[j])*(v1[i1]*v2[i2] - v1[i2]*v2[i1])
+                    end
+                end
             end
         end
     end    
     psi2
 end
+
+TSSM.norm(psi::WfSchroedinger2Electrons) = sqrt(
+    TSSM.norm(psi.singlet)^2 + TSSM.norm(psi.triplet_symm)^2 +
+    TSSM.norm(psi.triplet_up)^2 + TSSM.norm(psi.triplet_down)^2 )
+
+TSSM.potential_energy(psi::WfSchroedinger2Electrons) = (
+    potential_energy(psi.singlet) + potential_energy(psi.triplet_symm) +
+    potential_energy(psi.triplet_up) + potential_energy(psi.triplet_down) )
+
+TSSM.kinetic_energy(psi::WfSchroedinger2Electrons) = (
+    kinetic_energy(psi.singlet) + kinetic_energy(psi.triplet_symm) +
+    kinetic_energy(psi.triplet_up) + kinetic_energy(psi.triplet_down) )
+
+
 
 
 function expand_slater_determinants!(psi3::WfSchroedinger3D, psi::WfMCTDHF1D)
@@ -500,9 +594,10 @@ function expand_slater_determinants!(psi3::WfSchroedinger3D, psi::WfMCTDHF1D)
     for j = 1:m.lena # eval slater determinants
         J = m.slater_indices[j]
         s = sign(J)
-        v1 = get_data(psi.phi[J[1]], true)
-        v2 = get_data(psi.phi[J[2]], true)
-        v3 = get_data(psi.phi[J[3]], true)
+        v1 = get_data(psi.o[J[1]].phi, true)
+        v2 = get_data(psi.o[J[2]].phi, true)
+        v3 = get_data(psi.o[J[3]].phi, true)
+        #TODO: spin-dependent signs !!!        
         for i1=1:size(u3,1)
             for i2=1:size(u3,2)
                 for i3=1:size(u3,3)
@@ -522,16 +617,16 @@ function orthonormalize_orbitals!(psi::WfMCTDHF1D)
     for p = 1:m.N
         a1 = zeros(Complex{Float64}, m.lena)
         for q=1:p-1
-            g[q] = inner_product(psi.phi[q], psi.phi[p])
+            g[q] = inner_product(psi.o[q], psi.o[p])
         end
         for q=1:p-1
-            axpy!(psi.phi[p], psi.phi[q], -g[q])
+            axpy!(psi.o[p], psi.o[q], -g[q])
             for (j, l, s) in m.orthogonalization_rules[p,q]
                 a1[l] += s*g[q]*psi.a[j]
             end
         end
-        f = TSSM.norm(psi.phi[p])
-        scale!(psi.phi[p],1/f)
+        f = Base.norm(psi.o[p])
+        scale!(psi.o[p],1/f)
         for j=1:m.lena
             if p in m.slater_indices[j]
                 a1[j] += f*psi.a[j]
@@ -550,7 +645,7 @@ function potential_energy_1(psi::WfMCTDHF1D)
     V = 0
     for p=1:m.N        
         for q=1:m.N
-            h = potential_matrix_element(psi.phi[p], psi.phi[q])
+            h = potential_matrix_element(psi.o[p], psi.o[q])
             for (j,l,f) in m.slater1_rules[q,p]
                 V += h*f*conj(psi.a[j])*psi.a[l]
                 #V += h*f*psi.a[j]*conj(psi.a[l])
@@ -565,13 +660,13 @@ function potential_energy_1_A(psi::WfMCTDHF1D)
     m = psi.m
     V = 0
     for p=1:m.N    
-        h = potential_matrix_element(psi.phi[p], psi.phi[p])
+        h = potential_matrix_element(psi.o[p], psi.o[p])
         for (j,l,f) in m.slater1_rules[p,p]
            #V += real(h*f*conj(psi.a[j])*psi.a[l])
             V += real(h*f*psi.a[j]*conj(psi.a[l]))
         end
         for q=1:p-1
-            h = potential_matrix_element(psi.phi[p], psi.phi[q])
+            h = potential_matrix_element(psi.o[p], psi.o[q])
             for (j,l,f) in m.slater1_rules[p,q]
                 #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
                 V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
@@ -588,7 +683,7 @@ function TSSM.kinetic_energy(psi::WfMCTDHF1D)
     T = 0
     for p=1:m.N        
         for q=1:m.N
-            h = kinetic_matrix_element(psi.phi[p], psi.phi[q])
+            h = kinetic_matrix_element(psi.o[p], psi.o[q])
             for (j,l,f) in m.slater1_rules[q,p]
                 T += h*f*conj(psi.a[j])*psi.a[l]
                 #T += h*f*psi.a[j]*conj(psi.a[l])
@@ -603,13 +698,13 @@ function kinetic_energy_A(psi::WfMCTDHF1D)
     m = psi.m
     V = 0
     for p=1:m.N    
-        h = kinetic_matrix_element(psi.phi[p], psi.phi[p])
+        h = kinetic_matrix_element(psi.o[p], psi.o[p])
         for (j,l,f) in m.slater1_rules[p,p]
            #V += real(h*f*conj(psi.a[j])*psi.a[l])
             V += real(h*f*psi.a[j]*conj(psi.a[l]))
         end
         for q=1:p-1
-            h = kinetic_matrix_element(psi.phi[p], psi.phi[q])
+            h = kinetic_matrix_element(psi.o[p], psi.o[q])
             for (j,l,f) in m.slater1_rules[p,q]
                 #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
                 V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
@@ -630,14 +725,18 @@ function potential_energy_2(psi::WfMCTDHF1D)
     to_real_space!(psi)
     for p=1:m.N
         for q=1:m.N
-            u_pq[:] = m.Vee * (conj(get_data(psi.phi[p], true)).*get_data(psi.phi[q], true))
-            for s=1:m.N
-                u_pqs[:] = u_pq .* get_data(psi.phi[s], true)
-                for r=1:m.N
-                    h = dot(get_data(psi.phi[r], true), u_pqs)
-                    for (j,l,f) in m.slater2_rules[q,p,s,r]
-                        V += h*f*conj(psi.a[j])*psi.a[l]
-                        #V += h*f*psi.a[j]*conj(psi.a[l])
+            u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
+            if psi.o[p].spin==psi.o[q].spin
+                for s=1:m.N
+                    u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
+                    for r=1:m.N
+                        if psi.o[p].spin==psi.o[q].spin
+                            h = dot(get_data(psi.o[r].phi, true), u_pqs)
+                            for (j,l,f) in m.slater2_rules[q,p,s,r]
+                                V += h*f*conj(psi.a[j])*psi.a[l]
+                                #V += h*f*psi.a[j]*conj(psi.a[l])
+                            end
+                        end
                     end
                 end
             end
@@ -653,26 +752,26 @@ TSSM.potential_energy(psi::WfMCTDHF1D) = potential_energy_1(psi) + potential_ene
 
 function TSSM.imaginary_time_propagate_A!(psi::WfMCTDHF1D, dt::Real)
     for j=1:psi.m.N
-        imaginary_time_propagate_A!(psi.phi[j], dt)
+        imaginary_time_propagate_A!(psi.o[j].phi, dt)
     end
 end
 
 function TSSM.imaginary_time_propagate_B!(psi::WfMCTDHF1D, dt::Real)
     for j=1:psi.m.N
-        imaginary_time_propagate_B!(psi.phi[j], dt)
+        imaginary_time_propagate_B!(psi.o[j].phi, dt)
     end
 end
 
 function TSSM.scale!(psi::WfMCTDHF1D, f::Number)
     for j=1:psi.m.N
-        scale!(psi.phi[j], f)
+        scale!(psi.o[j], f)
     end
     psi.a[:] *= f
 end
 
-function TSSM.axpy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D, f::Number)
+function axpy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D, f::Number)
     for j=1:psi.m.N
-        axpy!(psi1.phi[j], psi2.phi[j], f)
+        axpy!(psi1.o[j], psi2.o[j], f)
     end
     psi1.a[:] += f*psi2.a[:]
 end
