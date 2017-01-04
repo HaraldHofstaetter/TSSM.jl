@@ -558,8 +558,8 @@ function convert_to_full!(psi2::WfSchroedinger2Electrons, psi::WfMCTDHF1D)
             else
                 for i1=1:n
                     for i2=1:n
-                        u_singlet[i1,i2] += (0.5*s*psi.a[j])*(v1[i1]*v2[i2] + v1[i2]*v2[i1])
-                        u_triplet_symm[i1,i2] -= (0.5*s*psi.a[j])*(v1[i1]*v2[i2] - v1[i2]*v2[i1])
+                        u_singlet[i1,i2] -= (0.5*s*psi.a[j])*(v1[i1]*v2[i2] + v1[i2]*v2[i1])
+                        u_triplet_symm[i1,i2] += (0.5*s*psi.a[j])*(v1[i1]*v2[i2] - v1[i2]*v2[i1])
                     end
                 end
             end
@@ -620,10 +620,12 @@ function orthonormalize_orbitals!(psi::WfMCTDHF1D)
             g[q] = inner_product(psi.o[q], psi.o[p])
         end
         for q=1:p-1
-            axpy!(psi.o[p], psi.o[q], -g[q])
-            for (j, l, s) in m.orthogonalization_rules[p,q]
-                a1[l] += s*g[q]*psi.a[j]
-            end
+            if psi.o[p].spin==psi.o[q].spin
+                axpy!(psi.o[p], psi.o[q], -g[q])
+                for (j, l, s) in m.orthogonalization_rules[p,q]
+                    a1[l] += s*g[q]*psi.a[j]
+                end
+            end    
         end
         f = Base.norm(psi.o[p])
         scale!(psi.o[p],1/f)
@@ -730,7 +732,7 @@ function potential_energy_2(psi::WfMCTDHF1D)
                 for s=1:m.N
                     u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
                     for r=1:m.N
-                        if psi.o[p].spin==psi.o[q].spin
+                        if psi.o[r].spin==psi.o[s].spin
                             h = dot(get_data(psi.o[r].phi, true), u_pqs)
                             for (j,l,f) in m.slater2_rules[q,p,s,r]
                                 V += h*f*conj(psi.a[j])*psi.a[l]
