@@ -39,12 +39,14 @@ function Base.next(MF::MultiFor, k::Array{Int,1})
 end
 
 
-function find_xxx(v::Vector{Int}, lena::Int, slater_exchange)
+function find_xxx(v::Vector{Int}, lena::Int, slater_exchange, slater_indices; must_be_included::Int=0)
     res = Tuple{Int,Int,Float64}[]
     for i=1:lena
         for j=1:lena
-            if v==slater_exchange[i,j][1]
-                push!(res, (i,j, slater_exchange[i,j][2]))
+            if must_be_included==0 || ((must_be_included in slater_indices[i]) || (must_be_included in slater_indices[i]))
+                if v==slater_exchange[i,j][1]
+                    push!(res, (i,j, slater_exchange[i,j][2]))
+                end
             end
         end
     end
@@ -181,7 +183,7 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
                     end
                 end
             end
-            v = find_xxx([q,p], lena, slater_exchange)
+            v = find_xxx([q,p], lena, slater_exchange, slater_indices)
             add_xxx!(res[p,q], v)
         end
     end
@@ -207,17 +209,17 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
                         end
                     end
                     if p==q && r!=s 
-                        v = find_xxx([s,r], lena, slater_exchange)
+                        v = find_xxx([s,r], lena, slater_exchange, slater_indices, must_be_included=p)
                         add_xxx!(res[p,q,r,s], v)
                     end
                     if q==r && s!=p 
-                        v0 = find_xxx([s,p], lena, slater_exchange)
+                        v0 = find_xxx([s,p], lena, slater_exchange, slater_indices, must_be_included=q)
                         v = [(j,k,-sigma) for (j,k, sigma) in v0]
                         add_xxx!(res[p,q,r,s], v)     
                     end     
-                    v = find_xxx([s,r,q,p], lena, slater_exchange)
+                    v = find_xxx([s,r,q,p], lena, slater_exchange, slater_indices)
                     add_xxx!(res[p,q,r,s], v)
-                    v0 = find_xxx([s,p,q,r], lena, slater_exchange)
+                    v0 = find_xxx([s,p,q,r], lena, slater_exchange, slater_indices)
                     v = [(j,k,-sigma) for (j,k, sigma) in v0]
                     add_xxx!(res[p,q,r,s], v)
                 end
