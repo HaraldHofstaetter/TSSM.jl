@@ -324,6 +324,59 @@ function axpy!(o1::Orbital, o2::Orbital, f::Number)
 end
 
 
+function get_full_coeffs(psi::WfMCTDHF1D)
+    m = psi.m
+    A = zeros(Complex{Float64}, [m.N for j=1:m.f]...)
+    perms = [(p, sign(p)) for p in Combinatorics.Permutations(1:m.f,m.f)]
+    for j=1:m.lena
+        J = m.slater_indices[j]
+        for (p,s) in perms
+            J1 = [J[p[i]] for i=1:m.f]
+            setindex!(A,s*psi.a[j], J1...)
+        end
+    end
+    A
+end
+
+function density_matrix_from_full_coeffs(psi::WfMCTDHF1D)
+    m = psi.m
+    A = get_full_coeffs(psi)
+    rho = zeros(Complex{Float64},m.N,m.N)
+    for p=1:m.N
+        for q=1:m.N
+            h = 0im
+            for J = MultiFor([m.N for j=2:m.f])
+                h += conj(getindex(A, p, J...)*getindex(A, q, J...))
+            end
+            rho[p,q] = h
+        end
+    end
+    rho
+end
+
+function density2_tensor_from_full_coeffs(psi::WfMCTDHF1D)
+    m = psi.m
+    A = get_full_coeffs(psi)
+    rho = zeros(Complex{Float64},m.N,m.N,m.N,m.N)
+    for p=1:m.N
+        for q=1:m.N
+            for r=1:m.N
+                for s=1:m.N
+                    h = 0im
+                    if m.f>=3
+                        for J = MultiFor([m.N for j=3:m.f])
+                            h += conj(getindex(A, p, r, J...)*getindex(A, q, s, J...))
+                        end
+                    else
+                        h += conj(A[p,r])*A[q,s]
+                    end
+                    rho[p,q,r,s] = h
+                end
+            end
+        end
+    end
+    rho
+end
 
 
 function gen_density_matrix(psi::WfMCTDHF1D)
@@ -331,7 +384,7 @@ function gen_density_matrix(psi::WfMCTDHF1D)
     rho = psi.m.density_matrix
     rho[:,:] = 0.0
     for j=1:N
-        for l=1:N
+        for l=j:N
             for (u, v, s) in psi.m.density_rules[j,l]
                 rho[j,l] += s * conj(psi.a[u]) * psi.a[v]
                 if l!=j
