@@ -275,6 +275,8 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     Vee
     density_matrix
     density2_tensor
+    u_pq
+    u_pqs
     k1
     k2
 
@@ -287,7 +289,8 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
         Vee = init_Vee(get_nodes(m))
         new(m, f, N, lena, spins, slater_indices, density_rules, 
             density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules, Vee,
-        zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N), nothing, nothing )
+            zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N),
+            zeros(Complex{Float64}, nx), zeros(Complex{Float64}, nx), nothing, nothing )
     end
 end
 
@@ -453,12 +456,15 @@ end
 
 
 
-function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
+function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; include_kinetic_part::Bool=false)
     m = rhs.m
     if m ≠ psi.m
         error("rhs and psi must belong to the same method")
     end
     for q=1:m.N
+        if include_kinetic_part
+            add_apply_A!(psi.o[q].phi, rhs.o[q].phi, 1im)
+        end
         add_apply_B!(psi.o[q].phi, rhs.o[q].phi, 1im)
         for p=1:m.N
             if psi.o[p].spin==psi.o[q].spin
@@ -493,8 +499,8 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     end
     n = get_nx(m.m)
     dx = (get_xmax(m.m)-get_xmin(m.m))/n
-    u_pq = zeros(Complex{Float64}, n)
-    u_pqs = zeros(Complex{Float64}, n)
+    u_pq = m.u_pq #zeros(Complex{Float64}, n)
+    u_pqs = m.u_pqs #zeros(Complex{Float64}, n)
     to_real_space!(psi)
     to_real_space!(rhs)
     for p=1:m.N
@@ -517,20 +523,6 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
             end
         end
     end
-end
-
-
-function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
-    m = rhs.m
-    if m ≠ psi.m
-        error("rhs and psi must belong to the same method")
-    end
-    #gen_density_matrix(psi)
-    #gen_density2_tensor(psi)
-    set_zero!(rhs)
-    gen_rhs1!(rhs, psi)
-    #gen_rhs2!(rhs, psi)
-    project_out_orbitals!(rhs, psi)
 end
 
 
@@ -779,8 +771,8 @@ function potential_energy_2(psi::WfMCTDHF1D)
     V = 0
     n = get_nx(m.m)
     dx = (get_xmax(m.m)-get_xmin(m.m))/n
-    u_pq = zeros(Complex{Float64}, n)
-    u_pqs = zeros(Complex{Float64}, n)
+    u_pq = m.u_pq #zeros(Complex{Float64}, n)
+    u_pqs = m.u_pqs #zeros(Complex{Float64}, n)
     to_real_space!(psi)
     for p=1:m.N
         for q=1:m.N
@@ -840,9 +832,22 @@ function RK2_step!(psi::WfMCTDHF1D, dt::Number)
     gen_rhs!(m.k1, psi)
     scale!(m.k1, -0.5im*dt)
     axpy!(m.k1, psi, 1.0)
-    #orthonormalize_orbitals!(m.k1)
     gen_rhs!(m.k2, m.k1)
     axpy!(psi, m.k2, -1im*dt)
+end
+
+
+function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
+    m = rhs.m
+    if m ≠ psi.m
+        error("rhs and psi must belong to the same method")
+    end
+    gen_density_matrix(psi)
+    gen_density2_tensor(psi)
+    set_zero!(rhs)
+    gen_rhs1!(rhs, psi)
+    gen_rhs2!(rhs, psi)
+    project_out_orbitals!(rhs, psi)
 end
 
 
@@ -856,7 +861,6 @@ function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int)
         imaginary_time_propagate_A!(psi, 0.5*dt)
         orthonormalize_orbitals!(psi)
         RK2_step!(psi, -1im*dt)
-        #imaginary_time_propagate_B!(psi, dt)
         orthonormalize_orbitals!(psi)
         imaginary_time_propagate_A!(psi, 0.5*dt)
         orthonormalize_orbitals!(psi)
