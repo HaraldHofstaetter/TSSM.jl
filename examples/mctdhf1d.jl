@@ -350,7 +350,7 @@ function density_matrix_from_full_coeffs(psi::WfMCTDHF1D)
         for q=1:m.N
             h = 0im
             for J = MultiFor([m.N for j=2:m.f])
-                h += conj(getindex(A, p, J...)*getindex(A, q, J...))
+                h += conj(getindex(A, p, J...))*getindex(A, q, J...)
             end
             rho[p,q] = h
         end
@@ -369,7 +369,7 @@ function density2_tensor_from_full_coeffs(psi::WfMCTDHF1D)
                     h = 0im
                     if m.f>=3
                         for J = MultiFor([m.N for j=3:m.f])
-                            h += conj(getindex(A, p, r, J...)*getindex(A, q, s, J...))
+                            h += conj(getindex(A, p, r, J...))*getindex(A, q, s, J...)
                         end
                     else
                         h += conj(A[p,r])*A[q,s]
@@ -420,9 +420,10 @@ function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=
         end
     end
     if mult_inverse_density_matrix
+        X=cholfact(m.density_matrix)
         for p=1:N
             for q=1:N
-                rho[:,:,p,q] = psi.m.density_matrix \ rho[:,:,p,q]
+                rho[:,:,p,q] = X \ rho[:,:,p,q]
             end
         end
     end
@@ -466,16 +467,22 @@ function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; include_kinetic_part::Bool=
             add_apply_A!(psi.o[q].phi, rhs.o[q].phi, 1im)
         end
         add_apply_B!(psi.o[q].phi, rhs.o[q].phi, 1im)
-        for p=1:m.N
+        h = inner_product(psi.o[q], rhs.o[q])
+        for (j,l,f) in m.slater1_rules[q,q]
+            rhs.a[j] += h*f*psi.a[l] 
+        end
+        for p=1:q-1
             if psi.o[p].spin==psi.o[q].spin
                 h = inner_product(psi.o[p], rhs.o[q])
                 for (j,l,f) in m.slater1_rules[q,p]
                     rhs.a[j] += h*f*psi.a[l] 
+                    rhs.a[l] += conj(h)*f*psi.a[j] 
                 end
             end
         end
     end
 end
+
 
 function project_out_orbitals!(rhs:: WfMCTDHF1D, psi::WfMCTDHF1D)
     m = psi.m
@@ -685,36 +692,16 @@ end
 
 function potential_energy_1(psi::WfMCTDHF1D)
     m = psi.m
-    V = 0
-    for p=1:m.N        
-        for q=1:m.N
-            if psi.o[p].spin==psi.o[q].spin
-                h = potential_matrix_element(psi.o[p], psi.o[q])
-                for (j,l,f) in m.slater1_rules[q,p]
-                    V += h*f*conj(psi.a[j])*psi.a[l]
-                    #V += h*f*psi.a[j]*conj(psi.a[l])
-                end
-            end
-        end
-    end
-    real(V)
-end
-
-
-function potential_energy_1_A(psi::WfMCTDHF1D)
-    m = psi.m
-    V = 0
+    V = 0.0
     for p=1:m.N    
         h = potential_matrix_element(psi.o[p], psi.o[p])
         for (j,l,f) in m.slater1_rules[p,p]
-           #V += real(h*f*conj(psi.a[j])*psi.a[l])
             V += real(h*f*psi.a[j]*conj(psi.a[l]))
         end
         for q=1:p-1
             if psi.o[p].spin==psi.o[q].spin
                 h = potential_matrix_element(psi.o[p], psi.o[q])
                 for (j,l,f) in m.slater1_rules[p,q]
-                    #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
                     V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
                 end
             end
@@ -724,39 +711,18 @@ function potential_energy_1_A(psi::WfMCTDHF1D)
 end
 
 
-
 function TSSM.kinetic_energy(psi::WfMCTDHF1D)
-    m = psi.m
-    T = 0
-    for p=1:m.N        
-        for q=1:m.N
-            if psi.o[p].spin==psi.o[q].spin
-                h = kinetic_matrix_element(psi.o[p], psi.o[q])
-                for (j,l,f) in m.slater1_rules[q,p]
-                    T += h*f*conj(psi.a[j])*psi.a[l]
-                    #T += h*f*psi.a[j]*conj(psi.a[l])
-                end
-            end
-        end
-    end
-    real(T)    
-end
-
-
-function kinetic_energy_A(psi::WfMCTDHF1D)
     m = psi.m
     V = 0
     for p=1:m.N    
         h = kinetic_matrix_element(psi.o[p], psi.o[p])
         for (j,l,f) in m.slater1_rules[p,p]
-           #V += real(h*f*conj(psi.a[j])*psi.a[l])
             V += real(h*f*psi.a[j]*conj(psi.a[l]))
         end
         for q=1:p-1
             if psi.o[p].spin==psi.o[q].spin
                 h = kinetic_matrix_element(psi.o[p], psi.o[q])
                 for (j,l,f) in m.slater1_rules[p,q]
-                    #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
                     V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
                 end
             end
@@ -785,7 +751,6 @@ function potential_energy_2(psi::WfMCTDHF1D)
                             h = dot(get_data(psi.o[r].phi, true), u_pqs)
                             for (j,l,f) in m.slater2_rules[q,p,s,r]
                                 V += h*f*conj(psi.a[j])*psi.a[l]
-                                #V += h*f*psi.a[j]*conj(psi.a[l])
                             end
                         end
                     end
@@ -870,7 +835,7 @@ function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int)
         E_pot = potential_energy(psi)
         E_kin = kinetic_energy(psi)
         E = E_pot + E_kin
-        println("step =", k,"  E_pot =", E_pot, "  E_kin=", E_kin, "  E=", E)                
+        @printf("step=%4i  E_pot=%14.10f  E_pot=%14.10f  E=%14.10f\n", k, E_pot, E_kin, E)                
     end
     
     m.k1 = nothing
