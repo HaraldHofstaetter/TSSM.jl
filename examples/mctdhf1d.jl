@@ -262,6 +262,7 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     f::Int # number of electrons
     N::Int # number of orbitals
     lena::Int # number of (independent) coefficients
+    spins::Array{Int, 1}
     
     slater_indices
     density_rules 
@@ -278,13 +279,13 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     k2
 
     function MCTDHF1D(f::Integer, N::Integer, 
-                      nx::Integer, xmin::Real, xmax::Real)
+                      nx::Integer, xmin::Real, xmax::Real; spins::Array{Int,1}=ones(Int, N))
         m = Schroedinger1D(nx, xmin, xmax)
         lena = binomial(N,f)
         slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules = 
               init_mctdhf_combinatorics(f, N)
         Vee = init_Vee(get_nodes(m))
-        new(m, f, N, lena, slater_indices, density_rules, 
+        new(m, f, N, lena, spins, slater_indices, density_rules, 
             density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules, Vee,
         zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N), nothing, nothing )
     end
@@ -301,7 +302,7 @@ type WfMCTDHF1D <: TSSM.WaveFunctionComplex1D
     m::MCTDHF1D
     function WfMCTDHF1D(m::MCTDHF1D)
         a = zeros(Complex{Float64}, m.lena)
-        o = [Orbital(WfSchroedinger1D(m.m), 1) for j=1:m.N]
+        o = [Orbital(WfSchroedinger1D(m.m), m.spins[j]) for j=1:m.N]
         new(a, o, m)
     end
 end
@@ -457,27 +458,16 @@ function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     if m ≠ psi.m
         error("rhs and psi must belong to the same method")
     end
-    #n = get_nx(m.m)
-    #u_save = zeros(Complex{Float64}, n)    
     for q=1:m.N
-        #to_real_space!(rhs.o[q].phi)
-        #u_save[:] = get_data(rhs.o[q].phi, false)
-        #u = get_data(rhs.o[q].phi, true)  
-        #u[:] = 0.0
-        #if A
-        #    add_apply_A!(psi.o[q].phi, rhs.o[q].phi, 1im)
-        #end
-        #if B
-            add_apply_B!(psi.o[q].phi, rhs.o[q].phi, 1im)
-        #end    
-        #to_real_space!(rhs.o.[q].phi)
+        add_apply_B!(psi.o[q].phi, rhs.o[q].phi, 1im)
         for p=1:m.N
-            h = inner_product(psi.o[p], rhs.o[q])
-            for (j,l,f) in m.slater1_rules[q,p]
-                rhs.a[j] += h*f*psi.a[l] 
+            if psi.o[p].spin==psi.o[q].spin
+                h = inner_product(psi.o[p], rhs.o[q])
+                for (j,l,f) in m.slater1_rules[q,p]
+                    rhs.a[j] += h*f*psi.a[l] 
+                end
             end
         end
-        #u[:] += u_save        
     end
 end
 
@@ -509,15 +499,19 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     to_real_space!(rhs)
     for p=1:m.N
         for q=1:m.N
-            u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
-            for s=1:m.N
-                u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
-                for r=1:m.N
-                    u = get_data(rhs.o[r].phi, true)
-                    u[:] += (m.density2_tensor[r,s,p,q]*(m.f-1)*dx) * u_pqs                
-                    h = dot(get_data(psi.o[r].phi, true), u_pqs) * dx^2
-                    for (j,l,f) in m.slater2_rules[q,p,s,r]
-                        rhs.a[j] += h*f*psi.a[l] 
+            if psi.o[p].spin==psi.o[q].spin
+                u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
+                for s=1:m.N
+                    u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
+                    for r=1:m.N
+                        if psi.o[r].spin==psi.o[s].spin
+                            u = get_data(rhs.o[r].phi, true)
+                            u[:] += (m.density2_tensor[r,s,p,q]*(m.f-1)*dx) * u_pqs                
+                            h = dot(get_data(psi.o[r].phi, true), u_pqs) * dx^2
+                            for (j,l,f) in m.slater2_rules[q,p,s,r]
+                                rhs.a[j] += h*f*psi.a[l] 
+                            end
+                        end
                     end
                 end
             end
@@ -702,10 +696,12 @@ function potential_energy_1(psi::WfMCTDHF1D)
     V = 0
     for p=1:m.N        
         for q=1:m.N
-            h = potential_matrix_element(psi.o[p], psi.o[q])
-            for (j,l,f) in m.slater1_rules[q,p]
-                V += h*f*conj(psi.a[j])*psi.a[l]
-                #V += h*f*psi.a[j]*conj(psi.a[l])
+            if psi.o[p].spin==psi.o[q].spin
+                h = potential_matrix_element(psi.o[p], psi.o[q])
+                for (j,l,f) in m.slater1_rules[q,p]
+                    V += h*f*conj(psi.a[j])*psi.a[l]
+                    #V += h*f*psi.a[j]*conj(psi.a[l])
+                end
             end
         end
     end
@@ -723,10 +719,12 @@ function potential_energy_1_A(psi::WfMCTDHF1D)
             V += real(h*f*psi.a[j]*conj(psi.a[l]))
         end
         for q=1:p-1
-            h = potential_matrix_element(psi.o[p], psi.o[q])
-            for (j,l,f) in m.slater1_rules[p,q]
-                #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
-                V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
+            if psi.o[p].spin==psi.o[q].spin
+                h = potential_matrix_element(psi.o[p], psi.o[q])
+                for (j,l,f) in m.slater1_rules[p,q]
+                    #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
+                    V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
+                end
             end
         end
     end
@@ -740,10 +738,12 @@ function TSSM.kinetic_energy(psi::WfMCTDHF1D)
     T = 0
     for p=1:m.N        
         for q=1:m.N
-            h = kinetic_matrix_element(psi.o[p], psi.o[q])
-            for (j,l,f) in m.slater1_rules[q,p]
-                T += h*f*conj(psi.a[j])*psi.a[l]
-                #T += h*f*psi.a[j]*conj(psi.a[l])
+            if psi.o[p].spin==psi.o[q].spin
+                h = kinetic_matrix_element(psi.o[p], psi.o[q])
+                for (j,l,f) in m.slater1_rules[q,p]
+                    T += h*f*conj(psi.a[j])*psi.a[l]
+                    #T += h*f*psi.a[j]*conj(psi.a[l])
+                end
             end
         end
     end
@@ -761,10 +761,12 @@ function kinetic_energy_A(psi::WfMCTDHF1D)
             V += real(h*f*psi.a[j]*conj(psi.a[l]))
         end
         for q=1:p-1
-            h = kinetic_matrix_element(psi.o[p], psi.o[q])
-            for (j,l,f) in m.slater1_rules[p,q]
-                #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
-                V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
+            if psi.o[p].spin==psi.o[q].spin
+                h = kinetic_matrix_element(psi.o[p], psi.o[q])
+                for (j,l,f) in m.slater1_rules[p,q]
+                    #V += 2*real(h*f*conj(psi.a[j])*psi.a[l])
+                    V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
+                end
             end
         end
     end
@@ -782,8 +784,8 @@ function potential_energy_2(psi::WfMCTDHF1D)
     to_real_space!(psi)
     for p=1:m.N
         for q=1:m.N
-            u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
             if psi.o[p].spin==psi.o[q].spin
+                u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
                 for s=1:m.N
                     u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
                     for r=1:m.N
