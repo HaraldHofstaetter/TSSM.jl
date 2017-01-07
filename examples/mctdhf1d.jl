@@ -498,7 +498,6 @@ function project_out_orbitals!(rhs:: WfMCTDHF1D, psi::WfMCTDHF1D)
 end
 
 
-
 function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     m = rhs.m
     if m ≠ psi.m
@@ -506,12 +505,12 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     end
     n = get_nx(m.m)
     dx = (get_xmax(m.m)-get_xmin(m.m))/n
-    u_pq = m.u_pq #zeros(Complex{Float64}, n)
-    u_pqs = m.u_pqs #zeros(Complex{Float64}, n)
+    u_pq = m.u_pq 
+    u_pqs = m.u_pqs 
     to_real_space!(psi)
     to_real_space!(rhs)
     for p=1:m.N
-        for q=1:m.N
+        for q=1:p
             if psi.o[p].spin==psi.o[q].spin
                 u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
                 for s=1:m.N
@@ -524,6 +523,12 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
                             for (j,l,f) in m.slater2_rules[q,p,s,r]
                                 rhs.a[j] += h*f*psi.a[l] 
                             end
+                            if p!=q
+                                h = conj(h)
+                                for (j,l,f) in m.slater2_rules[p,q,r,s]
+                                    rhs.a[j] += h*f*psi.a[l] 
+                                end
+                            end
                         end
                     end
                 end
@@ -531,6 +536,9 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
         end
     end
 end
+
+
+
 
 
 type Schroedinger2Electrons <: TSSM.TimeSplittingSpectralMethodComplex2D
@@ -737,11 +745,11 @@ function potential_energy_2(psi::WfMCTDHF1D)
     V = 0
     n = get_nx(m.m)
     dx = (get_xmax(m.m)-get_xmin(m.m))/n
-    u_pq = m.u_pq #zeros(Complex{Float64}, n)
-    u_pqs = m.u_pqs #zeros(Complex{Float64}, n)
+    u_pq = m.u_pq 
+    u_pqs = m.u_pqs 
     to_real_space!(psi)
     for p=1:m.N
-        for q=1:m.N
+        for q=1:p
             if psi.o[p].spin==psi.o[q].spin
                 u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
                 for s=1:m.N
@@ -752,6 +760,12 @@ function potential_energy_2(psi::WfMCTDHF1D)
                             for (j,l,f) in m.slater2_rules[q,p,s,r]
                                 V += h*f*conj(psi.a[j])*psi.a[l]
                             end
+                            if p!=q
+                                h = conj(h)
+                                for (j,l,f) in m.slater2_rules[p,q,r,s]
+                                    V += h*f*conj(psi.a[j])*psi.a[l]
+                                end
+                            end
                         end
                     end
                 end
@@ -761,6 +775,7 @@ function potential_energy_2(psi::WfMCTDHF1D)
     V *= dx^2
     real(V)
 end
+
 
 
 TSSM.potential_energy(psi::WfMCTDHF1D) = potential_energy_1(psi) + potential_energy_2(psi)
