@@ -251,10 +251,10 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
 end
 
 
-function init_Vee(x::Vector{Float64})
-    n = length(x)
-    1./sqrt(( kron(x',ones(n)) - kron(x,ones(1,n)) ).^2 + 1)    
-end
+#function init_Vee(x::Vector{Float64})
+#    n = length(x)
+#    1./sqrt(( kron(x',ones(n)) - kron(x,ones(1,n)) ).^2 + 1)    
+#end
 
 
 type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
@@ -281,18 +281,36 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     k2
 
     function MCTDHF1D(f::Integer, N::Integer, 
-                      nx::Integer, xmin::Real, xmax::Real; spins::Array{Int,1}=ones(Int, N))
-        m = Schroedinger1D(nx, xmin, xmax)
+                      nx::Integer, xmin::Real, xmax::Real; spins::Array{Int,1}=ones(Int, N), 
+                      potential1::Function=TSSM.none_1D, potential2::Function=TSSM.none_2D)
+        m = Schroedinger1D(nx, xmin, xmax, potential=potential1)
         lena = binomial(N,f)
         slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules = 
               init_mctdhf_combinatorics(f, N)
-        Vee = init_Vee(get_nodes(m))
-        new(m, f, N, lena, spins, slater_indices, density_rules, 
-            density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules, Vee,
-            zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N),
-            zeros(Complex{Float64}, nx), zeros(Complex{Float64}, nx), nothing, nothing )
+        mm = new(m, f, N, lena, spins, slater_indices, density_rules, 
+                density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules, 
+                zeros(Float64, nx, nx),
+                zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N),
+                zeros(Complex{Float64}, nx), zeros(Complex{Float64}, nx), nothing, nothing )
+        set_potential2!(mm, potential2)
+        mm
     end
 end
+
+function set_potential2!(m::MCTDHF1D, V::Function)
+    xx = get_nodes(m.m)
+    n = get_nx(m.m)
+    for ix=1:n
+        x = xx[ix]
+        for iy=1:n
+            y = xx[iy]
+            m.Vee[ix, iy] = V(x,y)
+        end
+    end
+end
+
+set_potential1!(m::MCTDHF1D, V::Function) = TSSM.set_potential!(m.m, V)
+
 
 type Orbital
     phi::WfSchroedinger1D
@@ -420,7 +438,7 @@ function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=
         end
     end
     if mult_inverse_density_matrix
-        X=cholfact(m.density_matrix)
+        X=bkfact(m.density_matrix)
         for p=1:N
             for q=1:N
                 rho[:,:,p,q] = X \ rho[:,:,p,q]
@@ -543,10 +561,13 @@ end
 
 type Schroedinger2Electrons <: TSSM.TimeSplittingSpectralMethodComplex2D
     m::Schroedinger2D
-    function Schroedinger2Electrons(nx::Integer, xmin::Real, xmax::Real)
-        new(Schroedinger2D(nx, xmin, xmax, nx, xmin, xmax))
+    function Schroedinger2Electrons(nx::Integer, xmin::Real, xmax::Real; 
+                                    potential::Function=TSSM.none_2D)
+        new(Schroedinger2D(nx, xmin, xmax, nx, xmin, xmax, potential=potential))
     end
 end
+
+set_potential!(m::Schroedinger2Electrons, V::Function) = set_potential!(m.m, V)
 
 type WfSchroedinger2Electrons <: TSSM.WaveFunctionComplex2D
     m::Schroedinger2Electrons
@@ -831,12 +852,22 @@ function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
 end
 
 
-function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int)
+function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
     m = psi.m
     m.k1 = wave_function(m)
     m.k2 = wave_function(m)
-    
+
+    to_frequency_space!(psi)
+    for k=1:m.N
+        u=get_data(psi.o[k].phi,true)
+        u[:]=zeros(Complex{Float64}, length(u))
+        u[div(k+1,2)]=1
+    end
+    to_real_space!(psi)
+    psi.a[:] = ones(m.lena)
     orthonormalize_orbitals!(psi)
+    psi.a[:] = psi.a[:]/Base.norm(psi.a)
+
     for k=1:n
         imaginary_time_propagate_A!(psi, 0.5*dt)
         orthonormalize_orbitals!(psi)
@@ -847,10 +878,11 @@ function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int)
         norm_psi = norm(psi)
         psi.a[:] *= 1/norm_psi
         
-        E_pot = potential_energy(psi)
-        E_kin = kinetic_energy(psi)
-        E = E_pot + E_kin
-        @printf("step=%4i  E_pot=%14.10f  E_pot=%14.10f  E=%14.10f\n", k, E_pot, E_kin, E)                
+        if mod(k,output_step)==0
+            E_pot = potential_energy(psi)
+            E_kin = kinetic_energy(psi)
+            E = E_pot + E_kin
+            @printf("step=%4i  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f\n", k, E_pot, E_kin, E)            end
     end
     
     m.k1 = nothing
