@@ -251,12 +251,6 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
 end
 
 
-#function init_Vee(x::Vector{Float64})
-#    n = length(x)
-#    1./sqrt(( kron(x',ones(n)) - kron(x,ones(1,n)) ).^2 + 1)    
-#end
-
-
 type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     m::Schroedinger1D
     f::Int # number of electrons
@@ -343,6 +337,35 @@ end
 
 function axpy!(o1::Orbital, o2::Orbital, f::Number)
     TSSM.axpy!(o1.phi, o2.phi, f)
+end
+
+
+using HDF5
+
+function save(psi::WfMCTDHF1D, filename::ASCIIString)
+    for k=1:psi.m.N
+       TSSM.save(psi.o[k].phi, filename, string("orbital_",k, "_real"),
+             string("orbital_", k, "_imag", ), append=(k>1))
+    end
+    h5open(filename,"r+") do file 
+        file["coefficients_real"] =  real(psi.a)
+        file["coefficients_imag"] =  imag(psi.a)
+        file["spins"] = Cint[psi.o[k].spin for k=1:psi.m.N]
+        attrs(file)["number_of_particles"] = psi.m.f
+        attrs(file)["number_of_orbitals"] = psi.m.N
+    end
+    filename
+end
+
+function load!(psi::WfMCTDHF1D, filename::ASCIIString)
+    for k=1:psi.m.N
+       TSSM.load!(psi.o[k].phi, filename, string("orbital_",k, "_real"),
+             string("orbital_", k, "_imag", ))
+    end
+    h5open(filename,"r") do file 
+        psi.a = read(file["coefficients_real"])+ 1im*read(file["coefficients_imag"])
+    end
+    psi
 end
 
 
@@ -449,7 +472,7 @@ function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=
 end
 
 
-norm(psi::WfMCTDHF1D) = Base.norm(psi.a)
+Base.norm(psi::WfMCTDHF1D) = Base.norm(psi.a)
 #Note, only correct if orbitals are ortonormal
 
 function TSSM.to_real_space!(psi::WfMCTDHF1D)
@@ -882,7 +905,8 @@ function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
             E_pot = potential_energy(psi)
             E_kin = kinetic_energy(psi)
             E = E_pot + E_kin
-            @printf("step=%4i  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f\n", k, E_pot, E_kin, E)            end
+            @printf("step=%4i  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f\n", k, E_pot, E_kin, E)            
+        end
     end
     
     m.k1 = nothing

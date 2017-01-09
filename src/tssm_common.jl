@@ -297,6 +297,25 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
     if COMPLEX_METHOD
         @eval begin
 
+            function save(psi::($WF){$T}, filename::ASCIIString, 
+                         dset_name_real::ASCIIString, dset_name_imag::ASCIIString;
+                         append::Bool=false)
+   	         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save1_wf",SUF))), Void,
+                 	(Ptr{Void}, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32, Int32), 
+	                  psi.p, filename, length(filename),
+        	          dset_name_real, length(dset_name_real),
+                	  dset_name_imag, length(dset_name_imag), append)
+            end         
+
+            function load!(psi::($WF){$T}, filename::ASCIIString, 
+                         dset_name_real::ASCIIString, dset_name_imag::ASCIIString)
+   	         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"load1_wf",SUF))), Void,
+                 	(Ptr{Void}, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32), 
+	                  psi.p, filename, length(filename),
+        	          dset_name_real, length(dset_name_real),
+                	  dset_name_imag, length(dset_name_imag))
+            end         
+
             function set_time!(psi::($WF){$T}, t::Number)
                 ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_time_wf",SUF))), Void,
                         (Ptr{Void}, Complex{$T},), psi.p, t)
@@ -516,6 +535,21 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
 
     else    
         @eval begin
+
+            function save(psi::($WF){$T}, filename::ASCIIString, 
+                         dset_name::ASCIIString;
+			 append::Bool=false)
+   	         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save1_wf",SUF))), Void,
+                 	(Ptr{Void}, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32, Int32), 
+	                  psi.p, filename, length(filename), dset_name, length(dset_name))
+            end         
+
+            function load!(psi::($WF){$T}, filename::ASCIIString, 
+                         dset_name::ASCIIString)
+   	         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"load1_wf",SUF))), Void,
+                 	(Ptr{Void}, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32), 
+	                  psi.p, filename, length(filename), dset_name, length(dset_name))
+            end         
 
             function set_time!(psi::($WF){$T}, t::Real)
                 ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_time_wf",SUF))), Void,
