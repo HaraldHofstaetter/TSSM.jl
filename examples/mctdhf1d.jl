@@ -276,8 +276,8 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
 
     function MCTDHF1D(f::Integer, N::Integer, 
                       nx::Integer, xmin::Real, xmax::Real; spins::Array{Int,1}=ones(Int, N), 
-                      potential1::Function=TSSM.none_1D, potential2::Function=TSSM.none_2D)
-        m = Schroedinger1D(nx, xmin, xmax, potential=potential1)
+                      potential1::Function=TSSM.none_1D, potential1_t::Function=TSSM.none_2D ,potential2::Function=TSSM.none_2D)
+        m = Schroedinger1D(nx, xmin, xmax, potential=potential1, potential_t = potential1_t)
         lena = binomial(N,f)
         slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules = 
               init_mctdhf_combinatorics(f, N)
@@ -304,6 +304,7 @@ function set_potential2!(m::MCTDHF1D, V::Function)
 end
 
 set_potential1!(m::MCTDHF1D, V::Function) = TSSM.set_potential!(m.m, V)
+set_potential1_t!(m::MCTDHF1D, V::Function) = TSSM.set_potential_t!(m.m, V)
 
 
 type Orbital
@@ -831,7 +832,20 @@ function TSSM.set_time!(psi::WfMCTDHF1D, t::Number)
 end
 
 TSSM.get_time(psi::WfMCTDHF1D) = get_time(psi.o[1].phi)
+TSSM.set_propagate_time_together_with_A!(m::MCTDHF1D, flag::Bool) = set_propagate_time_together_with_A!(m.m, flag)
+TSSM.get_propagate_time_together_with_A(m::MCTDHF1D) = get_propagate_time_together_with_A(m.m)
 
+function TSSM.propagate_A!(psi::WfMCTDHF1D, dt::Real)
+    for j=1:psi.m.N
+        propagate_A!(psi.o[j].phi, dt)
+    end
+end
+
+function TSSM.propagate_B!(psi::WfMCTDHF1D, dt::Real)
+    for j=1:psi.m.N
+        propagate_B!(psi.o[j].phi, dt)
+    end
+end
 
 function TSSM.imaginary_time_propagate_A!(psi::WfMCTDHF1D, dt::Real)
     for j=1:psi.m.N
@@ -924,3 +938,33 @@ function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
     m.k2 = nothing
 end
     
+function run!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
+    m = psi.m
+    m.k1 = wave_function(m)
+    m.k2 = wave_function(m)
+    time0 = time()
+
+    orthonormalize_orbitals!(psi)
+
+    for k=1:n
+        propagate_A!(psi, 0.5*dt)
+        orthonormalize_orbitals!(psi)
+        RK2_step!(psi, dt)
+        orthonormalize_orbitals!(psi)
+        propagate_A!(psi, 0.5*dt)
+        orthonormalize_orbitals!(psi)
+        
+        if mod(k,output_step)==0
+            t = get_time(psi)
+            nn = norm(psi)
+            E_pot = potential_energy(psi)
+            E_kin = kinetic_energy(psi)
+            E = E_pot + E_kin
+	    ctime = time() - time0
+            @printf("step=%5i  t=%14.10f  norm=%14.10f  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f  ctime=%10.2f\n", k, t, nn, E_pot, E_kin, E, ctime)            
+        end
+    end
+    
+    m.k1 = nothing
+    m.k2 = nothing
+end
