@@ -321,9 +321,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                         (Ptr{Void}, Complex{$T},), psi.p, t)
             end
 
-            function get_time(psi::($WF){$T}, t::Number)
+            function get_time(psi::($WF){$T})
                 ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_time_wf",SUF))), ($T),
-                        (Ptr{Void}, Complex{$T},), psi.p, t)
+                        (Ptr{Void},), psi.p)
             end
 
             function propagate_time!(psi::($WF){$T}, dt::Number)

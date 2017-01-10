@@ -824,6 +824,14 @@ end
 
 TSSM.potential_energy(psi::WfMCTDHF1D) = potential_energy_1(psi) + potential_energy_2(psi)
 
+function TSSM.set_time!(psi::WfMCTDHF1D, t::Number)
+   for j=1:psi.m.N
+       set_time!(psi.o[j].phi, t)
+   end
+end
+
+TSSM.get_time(psi::WfMCTDHF1D) = get_time(psi.o[1].phi)
+
 
 function TSSM.imaginary_time_propagate_A!(psi::WfMCTDHF1D, dt::Real)
     for j=1:psi.m.N
@@ -853,17 +861,20 @@ end
 
 function RK2_step!(psi::WfMCTDHF1D, dt::Number)
     m = psi.m
+    t = get_time(psi)
     gen_rhs!(m.k1, psi)
     scale!(m.k1, -0.5im*dt)
     axpy!(m.k1, psi, 1.0)
+    set_time!(m.k1, t) # not t+0.5*t as maybe expected, because time is frozen 
+                       # for the operator B part, and propagated by the A part.
     gen_rhs!(m.k2, m.k1)
     axpy!(psi, m.k2, -1im*dt)
+    #set_time!(psi, t) # do NOT update time because this is done by the operator A part.
 end
 
 
 function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
-    m = rhs.m
-    if m ≠ psi.m
+    if rhs.m ≠ psi.m
         error("rhs and psi must belong to the same method")
     end
     gen_density_matrix(psi)
