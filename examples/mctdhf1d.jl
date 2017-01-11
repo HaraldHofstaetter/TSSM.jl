@@ -586,8 +586,9 @@ end
 type Schroedinger2Electrons <: TSSM.TimeSplittingSpectralMethodComplex2D
     m::Schroedinger2D
     function Schroedinger2Electrons(nx::Integer, xmin::Real, xmax::Real; 
-                                    potential::Function=TSSM.none_2D)
-        new(Schroedinger2D(nx, xmin, xmax, nx, xmin, xmax, potential=potential))
+                                    potential::Function=TSSM.none_2D,
+                                    potential_t::Function=TSSM.none_3D)
+        new(Schroedinger2D(nx, xmin, xmax, nx, xmin, xmax, potential=potential, potential_t=potential_t))
     end
 end
 
@@ -915,6 +916,7 @@ function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
     psi.a[:] = ones(m.lena)
     orthonormalize_orbitals!(psi)
     psi.a[:] = psi.a[:]/Base.norm(psi.a)
+    time0 = time()
 
     for k=1:n
         imaginary_time_propagate_A!(psi, 0.5*dt)
@@ -930,7 +932,8 @@ function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
             E_pot = potential_energy(psi)
             E_kin = kinetic_energy(psi)
             E = E_pot + E_kin
-            @printf("step=%4i  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f\n", k, E_pot, E_kin, E)            
+	    ctime = time() - time0
+            @printf("step=%4i  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f ctime=%10.2f\n", k, E_pot, E_kin, E, ctime)            
         end
     end
     
@@ -943,6 +946,7 @@ function run!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
     m.k1 = wave_function(m)
     m.k2 = wave_function(m)
     time0 = time()
+    set_propagate_time_together_with_A(psi, true)
 
     orthonormalize_orbitals!(psi)
 
