@@ -531,10 +531,14 @@ function project_out_orbitals!(rhs:: WfMCTDHF1D, psi::WfMCTDHF1D)
     c = zeros(Complex{Float64},m.N)
     for p = 1:m.N
         for q = 1:m.N
-            c[q] = inner_product(psi.o[q], rhs.o[p])
+            if psi.o[p].spin==psi.o[q].spin
+                c[q] = inner_product(psi.o[q], rhs.o[p])
+            end
         end
         for q = 1:m.N
-            axpy!(rhs.o[p], psi.o[q], -c[q])
+            if psi.o[p].spin==psi.o[q].spin
+                axpy!(rhs.o[p], psi.o[q], -c[q])
+            end
         end
     end            
 end
@@ -901,19 +905,27 @@ function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
 end
 
 
-function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
+function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1, 
+                      keep_initial_value::Bool=false)
     m = psi.m
     m.k1 = wave_function(m)
     m.k2 = wave_function(m)
 
-    to_frequency_space!(psi)
-    for k=1:m.N
-        u=get_data(psi.o[k].phi,true)
-        u[:]=zeros(Complex{Float64}, length(u))
-        u[div(k+1,2)]=1
+    if !keep_initial_value
+	    to_frequency_space!(psi)
+	    nx = get_nx(m.m)
+	    for k=1:m.N
+	        u=get_data(psi.o[k].phi,true)
+	        u[:]=zeros(Complex{Float64}, length(u))
+	        u[div(k+1,2)]=1
+	        if k>=3
+	            u[nx-div(k+1,2)+2]=1
+	        end
+	    end
+	    to_real_space!(psi)
+    	psi.a[:] = ones(m.lena)
     end
-    to_real_space!(psi)
-    psi.a[:] = ones(m.lena)
+
     orthonormalize_orbitals!(psi)
     psi.a[:] = psi.a[:]/Base.norm(psi.a)
     time0 = time()
