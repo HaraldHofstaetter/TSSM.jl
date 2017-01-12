@@ -958,7 +958,7 @@ function run!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
     m.k1 = wave_function(m)
     m.k2 = wave_function(m)
     time0 = time()
-    set_propagate_time_together_with_A(psi, true)
+    set_propagate_time_together_with_A!(m, true)
 
     orthonormalize_orbitals!(psi)
 
