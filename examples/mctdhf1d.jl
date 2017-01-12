@@ -343,7 +343,7 @@ end
 
 using HDF5
 
-function TSSM.save(psi::WfMCTDHF1D, filename::ASCIIString)
+function save(psi::WfMCTDHF1D, filename::ASCIIString)
     for k=1:psi.m.N
        TSSM.save(psi.o[k].phi, filename, string("orbital_",k, "_real"),
              string("orbital_", k, "_imag", ), append=(k>1))
@@ -358,7 +358,7 @@ function TSSM.save(psi::WfMCTDHF1D, filename::ASCIIString)
     filename
 end
 
-function TSSM.load!(psi::WfMCTDHF1D, filename::ASCIIString)
+function load!(psi::WfMCTDHF1D, filename::ASCIIString)
     for k=1:psi.m.N
        TSSM.load!(psi.o[k].phi, filename, string("orbital_",k, "_real"),
              string("orbital_", k, "_imag", ))
@@ -958,7 +958,7 @@ function run!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
     m.k1 = wave_function(m)
     m.k2 = wave_function(m)
     time0 = time()
-    set_propagate_time_together_with_A!(m, true)
+    set_propagate_time_together_with_A(psi, true)
 
     orthonormalize_orbitals!(psi)
 
@@ -976,7 +976,7 @@ function run!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1)
             E_pot = potential_energy(psi)
             E_kin = kinetic_energy(psi)
             E = E_pot + E_kin
-            ctime = time() - time0
+	    ctime = time() - time0
             @printf("step=%5i  t=%14.10f  norm=%14.10f  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f  ctime=%10.2f\n", k, t, nn, E_pot, E_kin, E, ctime)            
         end
     end
