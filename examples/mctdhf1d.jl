@@ -476,6 +476,36 @@ end
 Base.norm(psi::WfMCTDHF1D) = Base.norm(psi.a)
 #Note, only correct if orbitals are ortonormal
 
+function TSSM.inner_product(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
+    m = psi1.m
+    if m ≠ psi2.m
+        error("psi1 and psi2 must belong to the same method")
+    end
+    ip = zeros(Complex{Float64}, m.N,m.N)
+    for j=1:m.N
+        for l=1:m.N
+            ip[j,l] = TSSM.inner_product(psi1.o[j].phi, psi2.o[l].phi)
+        end
+    end
+    ps = [(p, sign(p)) for p in (Combinatorics.permutations(1:m.f))]
+    d = 0.0im
+    for j=1:m.lena
+        J = m.slater_indices[j]
+        for l=1:m.lena
+            L = m.slater_indices[l]
+            aa = conj(psi1.a[j])*psi2.a[l]
+            for (p,s) in ps
+                L1 = getindex(L, p)
+                d = d + s*aa*prod([ip[J[k],L1[k]] for k=1:m.f])
+            end
+        end
+    end
+    d
+end
+
+TSSM.distance(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D) = sqrt(norm(psi1)^2+norm(psi2)^2-2*real(TSSM.inner_product(psi1,psi2)))
+
+
 function TSSM.to_real_space!(psi::WfMCTDHF1D)
     for j=1:psi.m.N
         to_real_space!(psi.o[j].phi)
@@ -596,7 +626,7 @@ type Schroedinger2Electrons <: TSSM.TimeSplittingSpectralMethodComplex2D
     end
 end
 
-set_potential!(m::Schroedinger2Electrons, V::Function) = set_potential!(m.m, V)
+TSSM.set_potential!(m::Schroedinger2Electrons, V::Function) = set_potential!(m.m, V)
 
 type WfSchroedinger2Electrons <: TSSM.WaveFunctionComplex2D
     m::Schroedinger2Electrons
@@ -685,7 +715,6 @@ TSSM.potential_energy(psi::WfSchroedinger2Electrons) = (
 TSSM.kinetic_energy(psi::WfSchroedinger2Electrons) = (
     kinetic_energy(psi.singlet) + kinetic_energy(psi.triplet_symm) +
     kinetic_energy(psi.triplet_up) + kinetic_energy(psi.triplet_down) )
-
 
 
 
