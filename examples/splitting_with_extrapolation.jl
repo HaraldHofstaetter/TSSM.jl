@@ -59,6 +59,7 @@ type SplittingWithExtrapolationEquidistantTimeStepperIterator
    t0::Real
    tend::Real
    dt::Real
+   steps::Int
    a::Vector{Float64}
    b::Vector{Float64}
    L::Matrix{Float64}
@@ -70,25 +71,26 @@ end
 
 
 function splitting_with_extrapolation_equidistant_time_stepper(psi::WaveFunction, 
-         t0::Real, tend::Real, dt::Real, order::Int, a::Vector{Float64}, b::Vector{Float64}) 
+         t0::Real, tend::Real, dt::Real, order::Int, a::Vector{Float64}, b::Vector{Float64}; steps::Int=-1) 
     m = psi.m
     psi_ex = wave_function(m)
     rhs = wave_function(m)
     set_propagate_time_together_with_A!(m, true)
-    psi_back = gen_starting_values(psi, dt, order+1, a, b, psi_ex=psi_ex, rhs=rhs)
     set_time!(psi, t0)
+    psi_back = gen_starting_values(psi, dt, order+1, a, b, psi_ex=psi_ex, rhs=rhs)
     copy!(psi, psi_back[order+1])
     z = cumsum(a)
-    L = gen_interpolation_matrix(collect((-order-0.0):0.0), [z; 1.0])
+    L = gen_interpolation_matrix(collect((-order-0.0):0.0), z)
     first = 1
-    SplittingWithExtrapolationEquidistantTimeStepperIterator(psi, t0, tend, dt, a, b, L, first, psi_back, psi_ex, rhs)
+    SplittingWithExtrapolationEquidistantTimeStepperIterator(psi, t0, tend, dt, steps, a, b, L, first, psi_back, psi_ex, rhs)
 end
 
 
-Base.start(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator) = tsi.t0 + (length(tsi.psi_back)-1)*tsi.dt
+Base.start(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator) = (tsi.steps<0 ? 
+    tsi.t0 + (length(tsi.psi_back)-1)*tsi.dt : length(tsi.psi_back)-1)
 
 
-Base.done(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator, t) = (t >= tsi.tend)
+Base.done(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator, t) = (tsi.steps<0 ? t >= tsi.tend : t>=tsi.steps )
 
 
 function Base.next(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator, t)
@@ -107,7 +109,48 @@ function Base.next(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator
     to_real_space!(tsi.psi_back[tsi.first])
     n = length(tsi.psi_back)
     tsi.first = mod(tsi.first, n) + 1
-      
-    t1 = t + tsi.dt < tsi.tend ? t + tsi.dt : tsi.tend
-    t1, t1
+    if tsi.steps<0 
+        t1 = t + tsi.dt < tsi.tend ? t + tsi.dt : tsi.tend
+    else
+        t1 = t+1
+    end
+    return t1, t1
+end
+
+
+function global_orders(psi::WaveFunction, reference_solution::WaveFunction, 
+                       t0::Real, tend::Real, dt::Real, order::Int, a::Vector{Float64}, b::Vector{Float64}; 
+                       operator_sequence="AB", rows=8)
+    @assert psi.m==reference_solution.m
+    tab = Array(Float64, rows, 3)
+
+    wf_save_initial_value = clone(psi)
+    copy!(wf_save_initial_value, psi)
+
+    steps = Int(floor((tend-t0)/dt))
+    dt1 = dt
+    err_old = 0.0
+    println("             dt         err      p")
+    println("-----------------------------------")
+    for row=1:rows
+        for t in splitting_with_extrapolation_equidistant_time_stepper(psi, t0, tend, dt1, order, a, b, steps=steps)
+        end    
+        err = distance(psi, reference_solution)
+        if (row==1) then
+            @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
+            tab[row,1] = dt1
+            tab[row,2] = err
+            tab[row,3] = 0 
+        else
+            p = log(err_old/err)/log(2.0);
+            @printf("%3i%12.3e%12.3e%7.2f\n", row, Float64(dt1), Float64(err), Float64(p))
+            tab[row,1] = dt1
+            tab[row,2] = err
+            tab[row,3] = p 
+        end
+        err_old = err
+        dt1 = 0.5*dt1
+        steps = 2*steps
+        copy!(psi,wf_save_initial_value)
+    end
 end
