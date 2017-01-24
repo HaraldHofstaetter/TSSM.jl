@@ -481,6 +481,13 @@ function set_zero!(psi::WfMCTDHF1D)
     psi.a[:] = 0.0
 end
 
+function TSSM.set!(psi::WfMCTDHF1D, x::Number)
+    for j=1:psi.m.N 
+        set!(psi.o[j].phi, x)
+    end
+    psi.a[:] = x
+end
+
 
 
 function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; include_kinetic_part::Bool=false, 
@@ -578,13 +585,16 @@ function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; include_kinetic_part::Bool=f
     if rhs.m ≠ psi.m
         error("rhs and psi must belong to the same method")
     end
+    orthonormalize_orbitals!(psi)
     gen_density_matrix(psi)
     gen_density2_tensor(psi)
-    set_zero!(rhs)
+    #set_zero!(rhs)
+    set!(rhs, 0.0)
     gen_rhs1!(rhs, psi, include_kinetic_part=include_kinetic_part,
                         include_one_particle_potential_part=include_one_particle_potential_part)
     gen_rhs2!(rhs, psi)
     project_out_orbitals!(rhs, psi)
+    scale!(rhs, -1im)
 end
 
 

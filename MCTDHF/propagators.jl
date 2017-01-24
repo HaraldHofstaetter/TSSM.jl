@@ -8,12 +8,12 @@ function RK2_step!(psi::WfMCTDHF1D, dt::Number; include_kinetic_part::Bool=false
     t2 = freeze_time ? t : t+dt
     gen_rhs!(m.k1, psi, include_kinetic_part=include_kinetic_part,
                         include_one_particle_potential_part=include_one_particle_potential_part)
-    scale!(m.k1, -0.5im*dt)
+    scale!(m.k1, 0.5*dt)
     axpy!(m.k1, psi, 1.0)
     set_time!(m.k1, t) 
     gen_rhs!(m.k2, m.k1, include_kinetic_part=include_kinetic_part,
                          include_one_particle_potential_part=include_one_particle_potential_part)
-    axpy!(psi, m.k2, -1im*dt)
+    axpy!(psi, m.k2, dt)
     set_time!(psi, t2) 
     orthonormalize_orbitals!(psi)
 end
@@ -27,19 +27,19 @@ function RK4_step!(psi::WfMCTDHF1D, dt::Number; include_kinetic_part::Bool=false
     t1 = freeze_time ? t : t
     t2 = freeze_time ? t : t+0.5*dt
     t3 = freeze_time ? t : t+0.5*dt
-    t4 = freeze_time ? t : t+t
+    t4 = freeze_time ? t : t+dt
     #For this storage-efficient implementation, see
     #E. K. Blum: A  Modification of the  Runge-Kutta Fourth-Order Method
     gen_rhs!(m.k3, psi, include_kinetic_part=include_kinetic_part,
                         include_one_particle_potential_part=include_one_particle_potential_part)
-    scale!(m.k3, -1im*dt)
+    scale!(m.k3, dt)
     copy!(m.k2, m.k3)
     copy!(m.k1, psi)
     axpy!(m.k1, m.k3, 0.5)
     set_time!(m.k1, t2) 
     gen_rhs!(m.k3, m.k1, include_kinetic_part=include_kinetic_part,
                          include_one_particle_potential_part=include_one_particle_potential_part)
-    scale!(m.k3, -1im*dt)
+    scale!(m.k3, dt)
     axpy!(m.k1, m.k3, 0.5)
     axpy!(m.k1, m.k2, -0.5)
     scale!(m.k2,1.0/6)
@@ -47,14 +47,14 @@ function RK4_step!(psi::WfMCTDHF1D, dt::Number; include_kinetic_part::Bool=false
     set_time!(m.k1, t3) 
     gen_rhs!(m.k4, m.k1, include_kinetic_part=include_kinetic_part,
                          include_one_particle_potential_part=include_one_particle_potential_part)
-    axpy!(m.k3, m.k4, -1im*dt)
+    axpy!(m.k3, m.k4, dt)
     axpy!(m.k1, m.k3, 1.0)
     axpy!(m.k2, m.k3, -1.0)
     scale!(m.k3, 2.0)
     set_time!(m.k1, t4)     
     gen_rhs!(m.k4, m.k1, include_kinetic_part=include_kinetic_part,
                          include_one_particle_potential_part=include_one_particle_potential_part)
-    axpy!(m.k3, m.k4, -1im*dt)
+    axpy!(m.k3, m.k4, dt)
     axpy!(m.k1, m.k2, 1.0)
     axpy!(m.k1, m.k3, 1.0/6)
     copy!(psi,m.k1)
@@ -139,19 +139,19 @@ function strang_step!(psi::WfMCTDHF1D, dt::Real; include_kinetic_part_in_B::Bool
 end
 
     
-function run!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1, include_kinetic_part_in_B::Bool=false, 
-    include_one_particle_potential_part_in_B::Bool=true)
+function run!(psi::WfMCTDHF1D, dt::Real, n::Int, method::Function; output_step::Int=1) 
     m = psi.m
     m.k1 = wave_function(m)
     m.k2 = wave_function(m)
+    m.k3 = wave_function(m)
+    m.k4 = wave_function(m)
     time0 = time()
     set_propagate_time_together_with_A!(m, true)
 
     orthonormalize_orbitals!(psi)
 
     for k=1:n
-        strang_step!(psi, dt, include_kinetic_part_in_B=include_kinetic_part_in_B,
-            include_one_particle_potential_part_in_B=include_one_particle_potential_part_in_B)
+        method(psi, dt)
         
         if mod(k,output_step)==0
             t = get_time(psi)
@@ -166,6 +166,8 @@ function run!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1, include_kin
     
     m.k1 = nothing
     m.k2 = nothing
+    m.k3 = nothing
+    m.k4 = nothing
 end
 
 
