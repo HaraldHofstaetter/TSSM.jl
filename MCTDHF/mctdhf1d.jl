@@ -712,6 +712,17 @@ end
 
 TSSM.potential_energy(psi::WfMCTDHF1D) = potential_energy_1(psi) + potential_energy_2(psi)
 
+
+function TSSM.get_energy_expectation_deviation(psi::WfMCTDHF1D; tmp::WfMCTDHF1D=psi.m.k1)
+    gen_rhs!(tmp, psi, include_kinetic_part=true, include_one_particle_potential_part=true )
+    E = -imag(dot(psi.a, tmp.a))
+    dev = norm(tmp.a+1im*E*psi.a)
+    E, dev
+end
+
+TSSM.interaction_energy(psi::WfMCTDHF1D) = 0.0 #dummy
+
+
 function TSSM.set_time!(psi::WfMCTDHF1D, t::Number)
    for j=1:psi.m.N
        set_time!(psi.o[j].phi, t)
