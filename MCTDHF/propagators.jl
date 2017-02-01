@@ -65,11 +65,13 @@ end
 
 
 
-function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1, 
+function groundstate!(psi::WfMCTDHF1D;  dt::Float64=0.05, max_iter::Int=2000, output_step::Int=20, tol=1e-5,
                       keep_initial_value::Bool=false)
     m = psi.m
     m.k1 = wave_function(m)
     m.k2 = wave_function(m)
+    psi1 = wave_function(m)
+    
 
     if !keep_initial_value
         to_frequency_space!(psi)
@@ -83,30 +85,58 @@ function groundstate!(psi::WfMCTDHF1D, dt::Real, n::Int; output_step::Int=1,
             end
         end
         to_real_space!(psi)
-        psi.a[:] = ones(m.lena)
+        psi.a[:] = zeros(m.lena)
+        for k=1:m.lena #generate singlet state (works only for f=2!!!)
+            (i1,i2) = m.slater_indices[k]            
+            if isodd(i1) && i2==i1+1
+                psi.a[k] = 1.0
+            end
+        end
     end
 
     orthonormalize_orbitals!(psi)
     psi.a[:] = psi.a[:]/Base.norm(psi.a)
     time0 = time()
 
-    for k=1:n
+    for k=1:max_iter
+        if mod(k,output_step)==0
+            copy!(psi1, psi)
+            imaginary_time_propagate_A!(psi1, 0.25*dt)
+            orthonormalize_orbitals!(psi1)
+            RK2_step!(psi1, -0.5im*dt)
+            orthonormalize_orbitals!(psi1)
+            imaginary_time_propagate_A!(psi1, 0.25*dt)
+            normalize!(psi1)
+            E1, dev1 = get_energy_expectation_deviation(psi1)
+            err1 = dev1/max(abs(E1),1.0)
+        end
         imaginary_time_propagate_A!(psi, 0.5*dt)
         orthonormalize_orbitals!(psi)
         RK2_step!(psi, -1im*dt)
         orthonormalize_orbitals!(psi)
         imaginary_time_propagate_A!(psi, 0.5*dt)
-        orthonormalize_orbitals!(psi)
-        norm_psi = norm(psi)
-        psi.a[:] *= 1/norm_psi
+        normalize!(psi)
         
         if mod(k,output_step)==0
-            E_pot = potential_energy(psi)
-            E_kin = kinetic_energy(psi)
-            E = E_pot + E_kin
+            #E_pot = potential_energy(psi)
+            #E_kin = kinetic_energy(psi)
+            #E = E_pot + E_kin
+            #ctime = time() - time0
+            #@printf("step=%4i  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f ctime=%10.2f\n", k, E_pot, E_kin, E, ctime)               
+            E, dev = get_energy_expectation_deviation(psi)
+            err = dev/max(abs(E),1.0)
             ctime = time() - time0
-            @printf("step=%4i  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f ctime=%10.2f\n", k, E_pot, E_kin, E, ctime)            
+            @printf("step=%4i  E=%14.10f  err=%12.3e  E1=%14.10f  err1=%12.3e  ctime=%10.2f\n", k, E, err, E1, err1, ctime)
+            if err1<err 
+               @printf("changed step size, old:%24.15e  new:%24.15e\n", dt, 0.5*dt)                 
+               dt = 0.5*dt
+               copy!(psi,psi1)
+            end 
+            if (err<tol)||(err1<tol)
+                break;
+            end
         end
+        
     end
     
     m.k1 = nothing
