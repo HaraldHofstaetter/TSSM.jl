@@ -588,7 +588,6 @@ function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; include_kinetic_part::Bool=f
     orthonormalize_orbitals!(psi)
     gen_density_matrix(psi)
     gen_density2_tensor(psi)
-    #set_zero!(rhs)
     set!(rhs, 0.0)
     gen_rhs1!(rhs, psi, include_kinetic_part=include_kinetic_part,
                         include_one_particle_potential_part=include_one_particle_potential_part)
@@ -627,6 +626,11 @@ function orthonormalize_orbitals!(psi::WfMCTDHF1D)
         psi.a[:] = a1
     end
     psi
+end
+
+function TSSM.normalize!(psi::WfMCTDHF1D)
+    orthonormalize_orbitals!(psi) 
+    psi.a[:] /= norm(psi)
 end
 
 
