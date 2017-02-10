@@ -268,3 +268,82 @@ function local_orders(psi::WfMCTDHF1D, dt::Real, method::Function; method_ref::F
     m.k4 = nothing   
     tab
 end
+
+
+
+function run!(psi::WfMCTDHF1D, dt::Real, steps::Int, a::Vector{Float64}, b::Vector{Float64};
+    method::Symbol=:RK2, iters::Int=0, output_step::Int=1, return_solutions::Bool=false) 
+    time0 = time()    
+    s = length(a)
+    m = psi.m
+    if method==:RK2 || method==:RK4
+        m.k1 = wave_function(m)
+        m.k2 = wave_function(m)
+    end
+    if method==:RK4
+        m.k3 = wave_function(m)
+        m.k4 = wave_function(m)
+    end
+    if iters>0
+        psi0 = wave_function(m)
+    end
+    if return_solutions
+        psi_back = WaveFunction[wave_function(m) for j=1:steps+1]
+        copy!(psi_back[1],psi)
+    end
+    set_propagate_time_together_with_A!(m, true)
+
+    orthonormalize_orbitals!(psi)
+
+    for step=1:steps
+        for j = 1:s
+            if a[j]!=0.0
+                propagate_A!(psi, a[j]*dt)            
+            end
+            if b[j]!=0.0
+                if iters>0
+                    copy!(psi0, psi)
+                end            
+                if method == :RK2
+                    RK2_step!(psi, b[j]*dt)
+                elseif method ==:RK4
+                    RK4_step!(psi, b[j]*dt)
+                end
+                
+                for it=1:iters
+                    copy!(m.k1, psi0)
+                    scale!(m.k1, 0.5)
+                    axpy!(m.k1, psi, 0.5)
+                    copy!(psi, psi0)
+                    set_time!(m.k1, get_time(psi))
+                    gen_rhs!(m.k2, m.k1)
+                    axpy!(psi, m.k2, b[j]*dt)                    
+                end
+            end 
+            if return_solutions
+                copy!(psi_back[step+1], psi) 
+            end
+        end
+        
+        if mod(step,output_step)==0
+            t = get_time(psi)
+            nn = norm(psi)
+            E_pot = potential_energy(psi)
+            E_kin = kinetic_energy(psi)
+            E = E_pot + E_kin
+            ctime = time() - time0
+            @printf("step=%5i  t=%14.10f  norm=%14.10f  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f  ctime=%10.2f\n", 
+                     step, t, nn, E_pot, E_kin, E, ctime)            
+        end
+    end
+    
+    m.k1 = nothing
+    m.k2 = nothing
+    m.k3 = nothing
+    m.k4 = nothing
+    if return_solutions
+        return psi_back
+    else
+        return nothing
+    end
+end

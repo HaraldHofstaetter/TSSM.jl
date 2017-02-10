@@ -1,3 +1,17 @@
+function get_coeffs_composition(g::Vector{Float64})
+    n = length(g)
+    a = zeros(n+1)
+    b = vcat(g, 0)
+    a[1] = g[1]/2
+    a[n+1] = a[1]
+    for j=2:div(n,2)+1
+        a[j] = (g[j-1]+g[j])/2
+        a[n-j+2] = a[j]
+    end
+    a,b
+end
+
+
 function gen_interpolation_matrix(x::Vector{Float64}, z::Vector{Float64})
     n = length(x)
     m = length(z)    
@@ -65,7 +79,7 @@ function gen_starting_values(psi::WaveFunction, dt::Number, N::Int, a::Vector{Fl
     bb = cumsum(b)
     c = (aa-[0.0; bb[1:end-1]])./b
     d = (bb-aa)./b
-    psi_back = WaveFunction[wave_function(m) for j=1:N]
+    psi_back = WaveFunction[wave_function(psi.m) for j=1:N]
     copy!(psi_back[1], psi)   
     t0 = get_time(psi)
     for K=2:N
@@ -209,20 +223,25 @@ end
 
 
 function splitting_with_extrapolation_equidistant_time_stepper2(psi::WaveFunction, 
-    t0::Real, tend::Real, dt::Real, order::Int, order1::Int, a::Vector{Float64}, b::Vector{Float64}; steps::Int=-1, nonlinear_potential::Bool=false, iter::Int=0) 
+    t0::Real, tend::Real, dt::Real, order::Int, order1::Int, a::Vector{Float64}, b::Vector{Float64}; steps::Int=-1, nonlinear_potential::Bool=false, iter::Int=0, psi_back=nothing) 
     m = psi.m
     psi_ex = wave_function(m)
     rhs = wave_function(m)
     set_propagate_time_together_with_A!(m, true)
     set_time!(psi, t0)
     N = max(order, order1)+1
-    psi_back = gen_starting_values(psi, dt, N, a, b, psi_ex=psi_ex, rhs=rhs, nonlinear_potential=nonlinear_potential)
-    copy!(psi, psi_back[order+1])
+    if psi_back!=nothing 
+        psi_back1 = psi_back
+        @assert length(psi_back)==N
+    else
+        psi_back1 = gen_starting_values(psi, dt, N, a, b, psi_ex=psi_ex, rhs=rhs, nonlinear_potential=nonlinear_potential)
+    end
+    copy!(psi, psi_back1[N])
     aa = cumsum(a)
     L = gen_interpolation_matrix(collect((-order-0.0):0.0), aa)
     L1 = gen_interpolation_matrix(collect((-order1-0.0):0.0), aa-1.0)
     ptr = order+1
-    SplittingWithExtrapolationEquidistantTimeStepperIterator2(psi, t0, tend, dt, steps, a, b, L, L1, order, order1, N, iter, ptr, psi_back, psi_ex, rhs, nonlinear_potential)
+    SplittingWithExtrapolationEquidistantTimeStepperIterator2(psi, t0, tend, dt, steps, a, b, L, L1, order, order1, N, iter, ptr, psi_back1, psi_ex, rhs, nonlinear_potential)
 end
 
 
