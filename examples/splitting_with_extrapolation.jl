@@ -116,6 +116,48 @@ function gen_starting_values(psi::WaveFunction, dt::Number, N::Int, a::Vector{Fl
 end
 
 
+function gen_starting_values3(psi::WaveFunction, dt::Number, N::Int, a::Vector{Float64}, b::Vector{Float64};
+    rhs::WaveFunction=wave_function(psi.m), nonlinear_potential::Bool=false)
+    s = length(a)
+    aa = cumsum(a)
+    psi0 = wave_function(psi.m)
+    rhs_back = WaveFunction[wave_function(psi.m) for j=1:N]
+    copy!(psi0, psi)   
+    gen_rhs!(rhs_back[1], psi)
+    t0 = get_time(psi)
+    for K=2:N
+        copy!(psi, psi0)
+        for J=2:K
+            L = gen_interpolation_matrix(collect(0.0:(K-2.0)), J-2.0+aa)            
+            for j = 1:s
+                if a[j]!=0.0
+                    propagate_A!(psi, a[j]*dt)            
+                end
+                if b[j]!=0.0
+                    gen_extrapolated_wf!(rhs, L[:,j], rhs_back[1:K-1], 2*K-2)
+                    if nonlinear_potential
+                        to_real_space!(psi)
+                        to_real_space!(rhs)
+                        u = get_data(psi, true)
+                        f = get_data(rhs, true)
+                       u[:] .*= exp(b[j]*dt*f)
+                    else
+                        axpy!(psi, rhs, b[j]*dt)
+                    end
+                end
+            end            
+            if nonlinear_potential
+                gen_nonlinear_potential!(rhs_back[J], psi)
+            else
+                gen_rhs!(rhs_back[J], psi)
+            end            
+        end
+    end 
+    rhs_back
+end
+
+
+
 
 type SplittingWithExtrapolationEquidistantTimeStepperIterator
     psi::WaveFunction
@@ -271,6 +313,7 @@ function Base.next(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator
                 gen_rhs!(tsi.rhs, tsi.psi_ex)
                 axpy!(tsi.psi, tsi.rhs, tsi.b[j]*tsi.dt)
             end
+            #orthonormalize_orbitals!(tsi.psi)
         end
     end      
     ptr0 = tsi.ptr
@@ -297,6 +340,7 @@ function Base.next(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator
                     gen_rhs!(tsi.rhs, tsi.psi_ex)
                     axpy!(tsi.psi, tsi.rhs, tsi.b[j]*tsi.dt)
                 end
+                #orthonormalize_orbitals!(tsi.psi)
             end
         end      
         copy!(tsi.psi_back[ptr1], tsi.psi)
@@ -313,12 +357,175 @@ function Base.next(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator
 end
 
 
+type SplittingWithExtrapolationEquidistantTimeStepperIterator3
+    psi::WaveFunction
+    t0::Real
+    tend::Real
+    dt::Real
+    steps::Int
+    a::Vector{Float64}
+    b::Vector{Float64}
+    L::Matrix{Float64}
+    L1::Matrix{Float64}
+    order::Int
+    order1::Int
+    N::Int
+    iter::Int    
+    ptr::Int
+    rhs_back::Vector{WaveFunction} # storage for previous solution values
+    psi0::WaveFunction
+    rhs::WaveFunction     # storage for the righthandside of the B equation
+    nonlinear_potential::Bool
+end
+
+
+function splitting_with_extrapolation_equidistant_time_stepper3(psi::WaveFunction, 
+         t0::Real, tend::Real, dt::Real, order::Int, order1::Int, a::Vector{Float64}, b::Vector{Float64}; steps::Int=-1,
+         nonlinear_potential::Bool=false, psi_back=nothing, iter::Int=0) 
+    m = psi.m
+    rhs = wave_function(m)
+    psi0 = wave_function(m)
+    set_propagate_time_together_with_A!(m, true)
+    set_time!(psi, t0)
+    N = max(order, order1)+1
+    if psi_back!=nothing 
+        rhs_back = psi_back
+        @assert length(psi_back)==N
+        for k=1:N
+            gen_rhs!(rhs, rhs_back[k])
+            copy!(rhs_back[k], rhs)
+        end        
+    else
+        rhs_back = gen_starting_values3(psi, dt, N, a, b, rhs=rhs, nonlinear_potential=nonlinear_potential)
+    end    
+    aa = cumsum(a)
+    L = gen_interpolation_matrix(collect((-order-0.0):0.0), aa)
+    L1 = gen_interpolation_matrix(collect((-order1-0.0):0.0), aa-1.0)
+    ptr = order+1
+    SplittingWithExtrapolationEquidistantTimeStepperIterator3(psi, t0, tend, dt, steps, a, b, L, L1, 
+                 order, order1, N, iter, ptr, rhs_back, psi0, rhs, nonlinear_potential)
+end
+
+
+Base.start(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator3) = (tsi.steps<0 ? 
+    tsi.t0 + (tsi.N-1)*tsi.dt : tsi.N-1)
+
+
+Base.done(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator3, t) = (tsi.steps<0 ? t >= tsi.tend : t>=tsi.steps )
+
+
+function Base.next(tsi::SplittingWithExtrapolationEquidistantTimeStepperIterator3, t)
+    if tsi.iter>=1
+        copy!(tsi.psi0, tsi.psi)
+    end
+    for j = 1:length(tsi.a)
+        if tsi.a[j]!=0.0
+            propagate_A!(tsi.psi, tsi.a[j]*tsi.dt)            
+        end
+        if tsi.b[j]!=0.0
+            gen_extrapolated_wf!(tsi.rhs, tsi.L[:,j], tsi.rhs_back, tsi.ptr, order=tsi.order)
+            if tsi.nonlinear_potential
+                to_real_space!(tsi.psi)
+                to_real_space!(tsi.rhs)
+                u = get_data(tsi.psi, true)
+                f = get_data(tsi.rhs, true)
+                u[:] .*= exp(tsi.b[j]*tsi.dt*f)
+            else
+                axpy!(tsi.psi, tsi.rhs, tsi.b[j]*tsi.dt)
+            end
+            #orthonormalize_orbitals!(tsi.psi)            
+        end    
+    end
+    
+    tsi.ptr = mod(tsi.ptr, tsi.N) + 1
+    if tsi.nonlinear_potential
+        gen_nonlinear_potential!(tsi.rhs_back[tsi.ptr], tsi.psi)
+    else
+        gen_rhs!(tsi.rhs_back[tsi.ptr], tsi.psi)
+    end    
+    
+    
+    for iter=1:tsi.iter
+        copy!(tsi.psi, tsi.psi0)
+        for j = 1:length(tsi.a)
+            if tsi.a[j]!=0.0
+                propagate_A!(tsi.psi, tsi.a[j]*tsi.dt)            
+            end
+            if tsi.b[j]!=0.0
+                gen_extrapolated_wf!(tsi.rhs, tsi.L1[:,j], tsi.rhs_back, tsi.ptr, order=tsi.order1)
+                if tsi.nonlinear_potential
+                    gen_nonlinear_potential!(tsi.rhs, tsi.psi_ex)
+                    to_real_space!(tsi.psi)
+                    to_real_space!(tsi.rhs)
+                    u = get_data(tsi.psi, true)
+                    f = get_data(tsi.rhs, true)
+                    u[:] .*= exp(tsi.b[j]*tsi.dt*f)
+                else
+                    axpy!(tsi.psi, tsi.rhs, tsi.b[j]*tsi.dt)
+                end
+                #orthonormalize_orbitals!(tsi.psi)
+            end
+        end      
+        if tsi.nonlinear_potential
+            gen_nonlinear_potential!(tsi.rhs_back[tsi.ptr], tsi.psi)
+        else
+            gen_rhs!(tsi.rhs_back[tsi.ptr], tsi.psi)
+        end    
+    end
+    
+    if tsi.steps<0 
+        t1 = t + tsi.dt < tsi.tend ? t + tsi.dt : tsi.tend
+    else
+        t1 = t+1
+    end
+    return t1, t1
+end
+
+
+
+function global_orders3(psi::WaveFunction, reference_solution::WaveFunction, 
+                        t0::Real, tend::Real, dt::Real, order::Int, order1::Int, a::Vector{Float64}, b::Vector{Float64}; 
+                        rows=8, nonlinear_potential::Bool=false, iter::Int=0)
+    @assert psi.m==reference_solution.m
+    tab = Array(Float64, rows, 3)
+
+    wf_save_initial_value = clone(psi)
+    copy!(wf_save_initial_value, psi)
+
+    steps = Int(floor((tend-t0)/dt))
+    dt1 = dt
+    err_old = 0.0
+    println("             dt         err      p")
+    println("-----------------------------------")
+    for row=1:rows
+        for t in splitting_with_extrapolation_equidistant_time_stepper3(psi, t0, tend, dt1, order, order1, a, b, steps=steps,
+            nonlinear_potential=nonlinear_potential, iter=iter)
+        end    
+        err = distance(psi, reference_solution)
+        if (row==1) then
+            @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
+            tab[row,1] = dt1
+            tab[row,2] = err
+            tab[row,3] = 0 
+        else
+            p = log(err_old/err)/log(2.0);
+            @printf("%3i%12.3e%12.3e%7.2f\n", row, Float64(dt1), Float64(err), Float64(p))
+            tab[row,1] = dt1
+            tab[row,2] = err
+            tab[row,3] = p 
+        end
+        err_old = err
+        dt1 = 0.5*dt1
+        steps = 2*steps
+        copy!(psi,wf_save_initial_value)
+    end
+end
 
 
 
 function global_orders2(psi::WaveFunction, reference_solution::WaveFunction, 
                         t0::Real, tend::Real, dt::Real, order::Int, order1::Int, a::Vector{Float64}, b::Vector{Float64}; 
-    operator_sequence="AB", rows=8, nonlinear_potential::Bool=false, iter::Int=0)
+                        rows=8, nonlinear_potential::Bool=false, iter::Int=0)
     @assert psi.m==reference_solution.m
     tab = Array(Float64, rows, 3)
 
