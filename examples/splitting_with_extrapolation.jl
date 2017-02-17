@@ -401,7 +401,7 @@ function splitting_with_extrapolation_equidistant_time_stepper3(psi::WaveFunctio
     aa = cumsum(a)
     L = gen_interpolation_matrix(collect((-order-0.0):0.0), aa)
     L1 = gen_interpolation_matrix(collect((-order1-0.0):0.0), aa-1.0)
-    ptr = order+1
+    ptr = N
     SplittingWithExtrapolationEquidistantTimeStepperIterator3(psi, t0, tend, dt, steps, a, b, L, L1, 
                  order, order1, N, iter, ptr, rhs_back, psi0, rhs, nonlinear_potential)
 end
