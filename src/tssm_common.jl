@@ -355,6 +355,17 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                         (Ptr{Void}, Ptr{Void}, Complex{$T}), 
                          this.p, other.p, coefficient)
             end
+
+            function add_phi_A!(this::($WF){$T}, other::($WF){$T}, dt::Number, n::Integer, 
+                                 coefficient::Number=1.0)
+               if this.m ≠ other.m
+                   error("this and other must belong to the same method")
+               end
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_phi_A_wf",SUF))), Void,
+                        (Ptr{Void}, Ptr{Void}, Complex{$T}, Cint, Complex{$T}), 
+                         this.p, other.p, dt, n, coefficient)
+            end
+            
     
             function scale!(psi::($WF){$T}, factor::Number)
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"scale_wf",SUF))), Void,
@@ -589,6 +600,16 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_A_wf",SUF))), Void,
                         (Ptr{Void}, Ptr{Void}, ($T)), 
                          this.p, other.p, coefficient)
+            end
+
+            function add_phi_A!(this::($WF){$T}, other::($WF){$T}, dt::Real, n::Integer,
+                                 coefficient::Real=1.0)
+               if this.m ≠ other.m
+                   error("this and other must belong to the same method")
+               end
+               ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_phi_A_wf",SUF))), Void,
+                        (Ptr{Void}, Ptr{Void}, ($T), Cint, ($T)), 
+                         this.p, other.p, dt, n, coefficient)
             end
 
             function scale!(psi::($WF){$T}, factor::Real)
