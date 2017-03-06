@@ -4,6 +4,7 @@ type ExponentialRungeKuttaEquidistantTimeStepperIterator
     tend::Real
     dt::Real
     steps::Int
+    scheme::Int
     s::Int
     G::WaveFunction
     U::Vector{WaveFunction}
@@ -11,14 +12,28 @@ end
 
 
 function exponential_runge_kutta_equidistant_time_stepper(psi::WaveFunction, 
-         t0::Real, tend::Real, dt::Real; steps::Int=-1,)
+         t0::Real, tend::Real, dt::Real; steps::Int=-1, scheme::Symbol=:krogstad)
     m = psi.m
     set_time!(psi, t0)
-    s = 4
     G = wave_function(m)
-    U = [wave_function(m) for j=1:4]
-    ExponentialRungeKuttaEquidistantTimeStepperIterator(psi, t0, tend, dt, steps, s, G, U)
+    scheme1 = 42
+    s = 4
+    if scheme==:krogstad
+        scheme1=42
+        s = 4    
+#    elseif scheme==:cox_mathews
+#        scheme1=41
+#        s = 4
+    elseif scheme==:strehmel_weiner    
+        scheme1=43
+        s = 4
+    else
+        warn("scheme not known, I use :krogstad")
+    end
+    U = [wave_function(m) for j=1:s]
+    ExponentialRungeKuttaEquidistantTimeStepperIterator(psi, t0, tend, dt, steps, scheme1, s, G, U)
 end
+
 
 Base.start(tsi::ExponentialRungeKuttaEquidistantTimeStepperIterator) = (tsi.steps<0 ? tsi.t0 : 0)
 
@@ -26,7 +41,8 @@ Base.start(tsi::ExponentialRungeKuttaEquidistantTimeStepperIterator) = (tsi.step
 Base.done(tsi::ExponentialRungeKuttaEquidistantTimeStepperIterator, t) = (tsi.steps<0 ? t >= tsi.tend : t>=tsi.steps )
 
 
-function ERK4_step!(psi::WaveFunction, dt::Number; 
+function ERK4_step_krogstad!(psi::WaveFunction, dt::Number; 
+    #Krogstad, eq. (2.42) in Hochbruck/Ostermann
     G::WaveFunction=wave_function(psi.m),
     U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:4])
     
@@ -70,8 +86,59 @@ function ERK4_step!(psi::WaveFunction, dt::Number;
 end
 
 
+function ERK4_step_strehmel_weiner!(psi::WaveFunction, dt::Number; 
+    #Strehmel/Weiner, eq. (2.43) in Hochbruck/Ostermann
+    G::WaveFunction=wave_function(psi.m),
+    U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:4])
+    
+    s = 4
+    c = [0.0, 0.5, 0.5, 1.0]*dt
+    t = get_time(psi)
+    for j=1:s
+        copy!(U[j], psi)
+        set_time!(U[j], t+c[j])
+    end
+    set_time!(psi, t+dt)
+    
+    gen_rhs!(G, U[1])
+    add_apply_A!(U[1], G, 1.0)
+    add_phi_A!(G, U[2], c[2], 1, 0.5*dt)
+    add_phi_A!(G, U[3], c[3], 1, 0.5*dt)
+    add_phi_A!(G, U[3], c[3], 2, -0.5*dt)
+    add_phi_A!(G, U[4], c[4], 1, 1.0*dt)
+    add_phi_A!(G, U[4], c[4], 2, -2.0*dt)
+    add_phi_A!(G, psi, dt, 1, 1.0*dt)
+    add_phi_A!(G, psi, dt, 2, -3.0*dt)
+    add_phi_A!(G, psi, dt, 3, 4.0*dt)
+    
+    gen_rhs!(G, U[2])
+    add_apply_A!(U[1], G, 1.0)
+    add_phi_A!(G, U[3], c[3], 2, 0.5*dt)
+    add_phi_A!(G, U[4], c[4], 2, -2.0*dt)
+    
+    gen_rhs!(G, U[3])
+    add_apply_A!(U[1], G, 1.0)
+    add_phi_A!(G, U[4], c[4], 2, 4.0*dt)
+    add_phi_A!(G, psi, dt, 2, 4.0*dt)
+    add_phi_A!(G, psi, dt, 3, -8.0*dt)
+
+    gen_rhs!(G, U[4])
+    add_apply_A!(U[1], G, 1.0)
+    add_phi_A!(G, psi, dt, 2, -1.0*dt)
+    add_phi_A!(G, psi, dt, 3, 4.0*dt)
+    psi
+end
+
+
 function Base.next(tsi::ExponentialRungeKuttaEquidistantTimeStepperIterator, t)
-    ERK4_step!(tsi.psi, tsi.dt, G=tsi.G, U=tsi.U)    
+    if tsi.scheme==42
+        ERK4_step_krogstad!(tsi.psi, tsi.dt, G=tsi.G, U=tsi.U)    
+    elseif tsi.scheme==43
+        ERK4_step_strehmel_weiner!(tsi.psi, tsi.dt, G=tsi.G, U=tsi.U)    
+    elseif tsi.scheme==41
+        ERK4_step_cox_mathews!(tsi.psi, tsi.dt, G=tsi.G, U=tsi.U)    
+    end
+    
     if tsi.steps<0 
         t1 = t + tsi.dt < tsi.tend ? t + tsi.dt : tsi.tend
     else
@@ -82,7 +149,7 @@ function Base.next(tsi::ExponentialRungeKuttaEquidistantTimeStepperIterator, t)
  
  
  function global_orders(psi::WaveFunction, reference_solution::WaveFunction, 
-                       t0::Real, tend::Real, dt::Real; rows=8)
+                       t0::Real, tend::Real, dt::Real; scheme::Symbol=:krogstad, rows=8)
     @assert psi.m==reference_solution.m
     tab = Array(Float64, rows, 3)
 
@@ -95,7 +162,7 @@ function Base.next(tsi::ExponentialRungeKuttaEquidistantTimeStepperIterator, t)
     println("             dt         err      p")
     println("-----------------------------------")
     for row=1:rows
-        for t in exponential_runge_kutta_equidistant_time_stepper(psi, t0, tend, dt1, steps=steps) 
+        for t in exponential_runge_kutta_equidistant_time_stepper(psi, t0, tend, dt1, steps=steps, scheme=scheme) 
         end    
         err = distance(psi, reference_solution)
         if (row==1) then
