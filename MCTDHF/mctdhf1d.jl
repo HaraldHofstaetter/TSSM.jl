@@ -737,13 +737,13 @@ TSSM.get_time(psi::WfMCTDHF1D) = get_time(psi.o[1].phi)
 TSSM.set_propagate_time_together_with_A!(m::MCTDHF1D, flag::Bool) = set_propagate_time_together_with_A!(m.m, flag)
 TSSM.get_propagate_time_together_with_A(m::MCTDHF1D) = get_propagate_time_together_with_A(m.m)
 
-function TSSM.propagate_A!(psi::WfMCTDHF1D, dt::Real)
+function TSSM.propagate_A!(psi::WfMCTDHF1D, dt::Number)
     for j=1:psi.m.N
         propagate_A!(psi.o[j].phi, dt)
     end
 end
 
-function TSSM.propagate_B!(psi::WfMCTDHF1D, dt::Real)
+function TSSM.propagate_B!(psi::WfMCTDHF1D, dt::Number)
     for j=1:psi.m.N
         propagate_B!(psi.o[j].phi, dt)
     end
@@ -759,6 +759,25 @@ function TSSM.imaginary_time_propagate_B!(psi::WfMCTDHF1D, dt::Real)
     for j=1:psi.m.N
         imaginary_time_propagate_B!(psi.o[j].phi, dt)
     end
+end
+
+function TSSM.add_apply_A!(this::WfMCTDHF1D, other::WfMCTDHF1D, coefficient::Number=1.0)
+    if this.m ≠ other.m
+        error("this and other must belong to the same method")
+    end
+    for j=1:this.m.N
+        add_apply_A!(this.o[j].phi, other.o[j].phi, coefficient)
+    end
+end
+
+function TSSM.add_phi_A!(this::WfMCTDHF1D, other::WfMCTDHF1D, dt::Real, n::Integer, coefficient::Number=1.0)
+    if this.m ≠ other.m
+        error("this and other must belong to the same method")
+    end
+    for j=1:this.m.N
+        add_phi_A!(this.o[j].phi, other.o[j].phi, dt, n, coefficient)
+    end
+    other.a[:] += coefficient/factorial(n)*this.a[:]
 end
 
 function TSSM.scale!(psi::WfMCTDHF1D, f::Number)
