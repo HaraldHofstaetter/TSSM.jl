@@ -21,6 +21,8 @@ function finalize!(method::TimePropagationMethod, psi::WaveFunction,
 end     
 
 function Base.start(tsi::EquidistantTimeStepper) 
+    set_propagate_time_together_with_A!(tsi.psi.m, true)
+    set_time!(tsi.psi, tsi.t0)
     initialize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps)
 end
 
@@ -428,4 +430,154 @@ function step!(m::ExponentialRungeKutta, psi::WaveFunction,
     end
  end
 
+########################################################################################
+# Exponential multistep
+
+
+type ExponentialMultistep <: TimePropagationMethod
+    N::Int
+    N1::Int
+    N2::Int
+    iters::Int    
+    ptr::Int
+    V1::Matrix{Float64}
+    V2::Matrix{Float64}
+    final_iteration::Bool
+    combine_first::Bool    
+    rhs_back #::Vector{WaveFunction} # storage for previous solution values
+    psi0 #::WaveFunction
+    acc #::WaveFunction
+     
+    function ExponentialMultistep(N1::Int; iters::Int=0, N2::Int=(iters>0?N1+1:0),
+        psi_back=nothing,  final_iteration::Bool=false, combine_first::Bool=true)
+        rhs_back = psi_back
+        N = max(N1, N2)
+        if psi_back!=nothing            
+            @assert length(psi_back)==N
+        end
+        V1 = Matrix{Float64}(inv(Rational{Int}[n^m//factorial(m) for n=-N1+1:0, m=0:N1-1]))
+        V2 = Matrix{Float64}(inv(Rational{Int}[n^m//factorial(m) for n=-N2+2:1, m=0:N2-1]))
+        ptr = N        
+        new(N, N1, N2, iters, ptr, V1, V2, final_iteration, combine_first, rhs_back, nothing, nothing)
+    end
+end    
+
+function gen_exponential_multistep_starting_values(psi::WaveFunction, dt::Number, N::Int; 
+          final_iteration=false, combine_first::Bool=false)    
+    acc = wave_function(psi.m)
+    psi0 = wave_function(psi.m)
+    rhs_back = WaveFunction[wave_function(psi.m) for j=1:N]
+    gen_rhs!(rhs_back[1], psi)
+    t0 = get_time(psi)
+    copy!(psi0, psi)
+    for K=2:N
+        for R=1:(final_iteration&&K==N?2:1)
+            copy!(psi, psi0)            
+            for J=2:K
+                V  = Matrix{Float64}(inv(Rational{Int}[k^m//factorial(m) for k=-J+2:K-J, m=0:K-2])) 
+                if combine_first
+                    copy!(acc, rhs_back[J-1])
+                    add_apply_A!(psi, acc, 1.0)
+                    add_phi_A!(acc, psi, dt, 1, dt)
+                    set_time!(psi, get_time(psi)+dt)
+                else
+                    propagate_A!(psi, dt)
+                end
+                for m=(combine_first?2:1):K-1                
+                    set!(acc, 0.0)
+                    for k=1:K-1
+                        axpy!(acc, rhs_back[k], V[m,k])
+                    end
+                    add_phi_A!(acc, psi, dt, m, dt)        
+                end 
+                gen_rhs!(rhs_back[J], psi)   
+            end
+        end
+    end
+    rhs_back
+end
+
+function initialize!(method::ExponentialMultistep, psi::WaveFunction, 
+         t0::Real, dt::Real, steps::Int)
+    method.psi0 = wave_function(psi.m)
+    method.acc = wave_function(psi.m)
+    if method.rhs_back!=nothing 
+        psi_back = method.rhs_pack
+        rhs = method.acc
+        for k=1:method.N
+            gen_rhs!(rhs, psi_back[k])
+            copy!(method.rhs_back[k], rhs)
+        end        
+    else
+        method.rhs_back = gen_exponential_multistep_starting_values(psi, dt, method.N, 
+                       final_iteration=method.final_iteration, combine_first=method.combine_first)
+    end
+    method.N-1 
+end
+
+
+function finalize!(method::ExponentialMultistep, psi::WaveFunction, 
+         t0::Real, dt::Real, steps::Int, step::Int)
+    method.psi0 = nothing
+    method.acc = nothing
+    method.rhs_back = nothing
+end     
+
+
+
+function step!(m::ExponentialMultistep, psi::WaveFunction, 
+         t0::Real, dt::Real, steps::Int, step::Int)
+
+    if m.iters>=1
+        copy!(m.psi0, psi)
+    end
+    
+    #predictor
+    if m.combine_first
+        k1 = mod(m.ptr-1, m.N)+1
+        copy!(m.acc, m.rhs_back[k1])
+        add_apply_A!(psi, m.acc, 1.0)
+        add_phi_A!(m.acc, psi, dt, 1, dt)
+        set_time!(psi, get_time(psi)+dt)
+    else
+        propagate_A!(psi, dt)
+    end
+    for n=(m.combine_first?2:1):m.N1
+        set!(m.acc, 0.0)
+        for k=1:m.N1
+            k1 = mod(k-m.N1+m.ptr-1, m.N)+1
+            axpy!(m.acc, m.rhs_back[k1], m.V1[n,k])
+        end
+        add_phi_A!(m.acc, psi, dt, n, dt)
+    end
+   
+    m.ptr = mod(m.ptr, m.N) + 1
+    gen_rhs!(m.rhs_back[m.ptr], psi)    
+        
+    for iter=1:m.iters
+        copy!(psi, m.psi0)
+        
+        #corrector
+        if m.combine_first
+            k1 = mod(m.ptr-2, m.N)+1
+            copy!(m.acc, m.rhs_back[k1])
+            add_apply_A!(psi, m.acc, 1.0)
+            add_phi_A!(m.acc, psi, dt, 1, dt)
+            set_time!(psi, get_time(psi)+dt)
+        else
+            propagate_A!(psi, dt)
+        end        
+        for n=(m.combine_first?2:1):m.N2
+            set!(m.acc, 0.0)
+            for k=1:m.N2
+                k1 = mod(k-m.N2+m.ptr-1, m.N)+1
+                axpy!(m.acc, m.rhs_back[k1], m.V2[n,k])
+            end
+            add_phi_A!(m.acc, psi, dt, n, dt)
+        end        
+        
+        gen_rhs!(m.rhs_back[m.ptr], psi)
+    end
+end
+    
     
