@@ -51,8 +51,8 @@ function global_orders(method::TimePropagationMethod,
     steps = Int(floor((tend-t0)/dt))
     dt1 = dt
     err_old = 0.0
-    println("             dt         err      p")
-    println("-----------------------------------")
+    println("             dt         err           C      p")
+    println("-----------------------------------------------")
     for row=1:rows
         for t in EquidistantTimeStepper(method, psi, t0, dt1, steps) end
         err = distance(psi, reference_solution)
@@ -62,8 +62,9 @@ function global_orders(method::TimePropagationMethod,
             tab[row,2] = err
             tab[row,3] = 0 
         else
-            p = log(err_old/err)/log(2.0);
-            @printf("%3i%12.3e%12.3e%7.2f\n", row, Float64(dt1), Float64(err), Float64(p))
+            p = log(err_old/err)/log(2.0)
+            C = err/dt1^p
+            @printf("%3i%12.3e%12.3e%12.3e%7.2f\n", row, Float64(dt1), Float64(err), Float64(C), Float64(p))
             tab[row,1] = dt1
             tab[row,2] = err
             tab[row,3] = p 
