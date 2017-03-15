@@ -36,7 +36,7 @@ end
     
 function Base.next(tsi::EquidistantTimeStepper, step::Int)    
     step!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps, step)
-    tsi, step+1
+    (step+1, tsi), step+1
 end
 
 function global_orders(method::TimePropagationMethod, 

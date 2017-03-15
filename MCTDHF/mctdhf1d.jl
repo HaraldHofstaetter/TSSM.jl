@@ -770,7 +770,7 @@ function TSSM.add_apply_A!(this::WfMCTDHF1D, other::WfMCTDHF1D, coefficient::Num
     end
 end
 
-function TSSM.add_phi_A!(this::WfMCTDHF1D, other::WfMCTDHF1D, dt::Real, n::Integer, coefficient::Number=1.0)
+function TSSM.add_phi_A!(this::WfMCTDHF1D, other::WfMCTDHF1D, dt::Number, n::Integer, coefficient::Number=1.0)
     if this.m ≠ other.m
         error("this and other must belong to the same method")
     end
