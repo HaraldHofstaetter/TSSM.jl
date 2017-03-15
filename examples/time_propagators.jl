@@ -433,6 +433,24 @@ function step!(m::ExponentialRungeKutta, psi::WaveFunction,
 ########################################################################################
 # Exponential multistep
 
+immutable QuadratureRule
+    c::Vector{Float64} # nodes normed to interval [0,1]
+    b::Vector{Float64} # weights 
+end
+
+
+function gen_interpolation_matrix(x::Vector{Float64}, z::Vector{Float64})
+    n = length(x)
+    m = length(z)    
+    L = zeros(n, m)
+    for j=1:m
+        for i=1:n
+            L[i,j] = prod([(z[j]-x[k])/(x[i]-x[k]) for k=1:i-1])*prod([(z[j]-x[k])/(x[i]-x[k]) for k=i+1:n])
+        end
+    end
+    L
+end
+
 
 type ExponentialMultistep <: TimePropagationMethod
     N::Int
@@ -443,6 +461,8 @@ type ExponentialMultistep <: TimePropagationMethod
     version::Int
     C1::Union{Matrix{Float64}, Vector{Float64}}
     C2::Union{Matrix{Float64}, Vector{Float64}}
+    a::Vector{Float64}
+    b::Vector{Float64}
     final_iteration::Bool
     combine_first::Bool    
     rhs_back #::Vector{WaveFunction} # storage for previous solution values
@@ -451,14 +471,20 @@ type ExponentialMultistep <: TimePropagationMethod
     starting_method #::TimePropagationMethod
      
     function ExponentialMultistep(N1::Int; version::Int=1, iters::Int=0, N2::Int=(iters>0?N1+1:0),
-        psi_back=nothing,  final_iteration::Bool=false, combine_first::Bool=true, starting_method=nothing)
-        rhs_back = psi_back
+        final_iteration::Bool=false, combine_first::Bool=true, starting_method::Union{Void,TimePropagationMethod}=nothing, 
+        quadrature::Union{Void,QuadratureRule}=nothing)
         N = max(N1, N2)
-        if psi_back!=nothing            
-            @assert length(psi_back)==N
-        end
         @assert version>=0 && version<=2
-        if version==1
+        a = Float64[]
+        b = Float64[]
+        if quadrature!=nothing
+            version=3
+            a = vcat(quadrature.c,1)
+            a = vcat(a[1], a[2:end]-a[1:end-1])
+            b = vcat(quadrature.b,0)
+            C1 = gen_interpolation_matrix(collect((-N1+1.0):0.0), quadrature.c)
+            C2 = gen_interpolation_matrix(collect((-N2+2.0):1.0), quadrature.c)
+        elseif version==1
             C1 = Matrix{Float64}(inv(Rational{Int}[n^m//factorial(m) for n=-N1+1:0, m=0:N1-1]))
             C2 = Matrix{Float64}(inv(Rational{Int}[n^m//factorial(m) for n=-N2+2:1, m=0:N2-1]))
         else 
@@ -466,7 +492,7 @@ type ExponentialMultistep <: TimePropagationMethod
             C2 = Vector{Float64}(Rational{Int}[n^m for m=0:N2-1, n=-N2+2:1]\Rational{Int}[1//(m+1) for m=0:N2-1])            
         end    
         ptr = N        
-        new(N, N1, N2, iters, ptr, version, C1, C2, final_iteration, combine_first, rhs_back, nothing, nothing, starting_method)
+        new(N, N1, N2, iters, ptr, version, C1, C2, a, b, final_iteration, combine_first, nothing, nothing, nothing, starting_method)
     end
 end    
 
@@ -529,34 +555,56 @@ function gen_exponential_multistep2_starting_values(psi::WaveFunction, dt::Numbe
                 for k=1:K
                     propagate_A!(rhs_back[k], dt) 
                 end
-            end
-            
+            end            
         end
     end
     rhs_back
 end
 
+function gen_extrapolated_wf!(psi::WaveFunction, L::Vector{Float64}, psi_back::Vector{WaveFunction}, ptr::Int; 
+                              order::Int=length(psi_back))
+    n = length(psi_back)
+    set!(psi, 0)
+    for j=1:order
+        k = mod(j-order+ptr-1, n)+1
+        axpy!(psi, psi_back[k], L[j])
+    end
+end
+
+function gen_exponential_multistep3_starting_values(psi::WaveFunction, dt::Number, N::Int, 
+    a::Vector{Float64}, b::Vector{Float64};final_iteration=false) 
+    rhs = wave_function(psi.m)
+    s = length(a)
+    aa = cumsum(a)
+    psi0 = wave_function(psi.m)
+    rhs_back = WaveFunction[wave_function(psi.m) for j=1:N]
+    copy!(psi0, psi)   
+    gen_rhs!(rhs_back[1], psi)
+    t0 = get_time(psi)
+    for K=2:N
+        for R=1:(final_iteration&&K==N?2:1)
+            copy!(psi, psi0)
+            for J=2:K
+                L = gen_interpolation_matrix(collect(0.0:(K-2.0)), J-2.0+aa) # TODO: check order->order+/-1            
+                for j = 1:s
+                    if a[j]!=0.0
+                        propagate_A!(psi, a[j]*dt)            
+                    end
+                    if b[j]!=0.0
+                        gen_extrapolated_wf!(rhs, L[:,j], rhs_back[1:K-1], 2*K-2) # TODO: check order->order+/-1 
+                        axpy!(psi, rhs, b[j]*dt)
+                    end
+                end            
+                gen_rhs!(rhs_back[J], psi)
+            end
+        end
+    end 
+    rhs_back
+end
+
 function initialize!(method::ExponentialMultistep, psi::WaveFunction, 
          t0::Real, dt::Real, steps::Int)
-    if method.iters>=1
-        method.psi0 = wave_function(psi.m)
-    end    
-    #if method.version==1
-        method.acc = wave_function(psi.m)
-    #end
-    if method.rhs_back!=nothing 
-        psi_back = method.rhs_pack
-        rhs = method.acc
-        for k=1:method.N
-            gen_rhs!(rhs, psi_back[k])
-            copy!(method.rhs_back[k], rhs)
-        end      
-        if method.version==2
-            for k=0:method.N-1
-                propagate_A!(method.rhs_back[method.N-k], dt*k)
-            end         
-        end    
-    elseif method.starting_method!=nothing
+    if method.starting_method!=nothing
         method.rhs_back = WaveFunction[wave_function(psi.m) for j=1:method.N]              
         gen_rhs!(method.rhs_back[1], psi)
         k=1  
@@ -576,8 +624,17 @@ function initialize!(method::ExponentialMultistep, psi::WaveFunction,
         elseif method.version==2
             method.rhs_back = gen_exponential_multistep2_starting_values(psi, dt, method.N, 
                            final_iteration=method.final_iteration)
+        elseif method.version==3
+            method.rhs_back = gen_exponential_multistep3_starting_values(psi, dt, method.N, method.a, method.b,
+                           final_iteration=method.final_iteration)                   
         end
     end
+    if method.iters>=1
+        method.psi0 = wave_function(psi.m)
+    end    
+    if method.version==1 || method.version==3
+        method.acc = wave_function(psi.m)
+    end    
     method.ptr = method.N
     method.N-1 
 end
@@ -617,6 +674,16 @@ function step!(m::ExponentialMultistep, psi::WaveFunction,
             end
             add_phi_A!(m.acc, psi, dt, n, dt)
         end
+    elseif m.version==3            
+        for j = 1:length(m.a)
+            if m.a[j]!=0.0
+                propagate_A!(psi, m.a[j]*dt)            
+            end
+            if m.b[j]!=0.0
+                gen_extrapolated_wf!(m.acc, m.C1[:,j], m.rhs_back, m.ptr, order=m.N1)
+                axpy!(psi, m.acc, m.b[j]*dt)
+            end    
+        end                            
     elseif m.version==2
         for k=1:m.N1
             k1 = mod(k-m.N1+m.ptr-1, m.N)+1
@@ -652,7 +719,17 @@ function step!(m::ExponentialMultistep, psi::WaveFunction,
                     axpy!(m.acc, m.rhs_back[k1], m.C2[n,k])
                 end
                 add_phi_A!(m.acc, psi, dt, n, dt)
-            end                            
+            end  
+        elseif m.version==3
+            for j = 1:length(m.a)
+                if m.a[j]!=0.0
+                    propagate_A!(psi, m.a[j]*dt)            
+                end
+                if m.b[j]!=0.0
+                    gen_extrapolated_wf!(m.acc, m.C2[:,j], m.rhs_back, m.ptr, order=m.N2)
+                    axpy!(psi, m.acc, m.b[j]*dt)
+                end
+            end                                                                   
         elseif m.version==2
             for k=1:m.N2
                 k1 = mod(k-m.N2+m.ptr-1, m.N)+1
