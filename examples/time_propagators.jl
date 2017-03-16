@@ -695,7 +695,7 @@ function step!(m::ExponentialMultistep, psi::WaveFunction,
    
     m.ptr = mod(m.ptr, m.N) + 1
     gen_rhs!(m.rhs_back[m.ptr], psi)    
-    if m.version==2
+    if m.version==2 && m.iters>=1
         propagate_A!(m.rhs_back[m.ptr], -dt)
     end
         
@@ -739,13 +739,11 @@ function step!(m::ExponentialMultistep, psi::WaveFunction,
             propagate_A!(psi, dt)                        
         end
         gen_rhs!(m.rhs_back[m.ptr], psi)
-        if m.version==2
-            propagate_A!(m.rhs_back[m.ptr], -dt)
-        end        
     end
     
     if m.version==2
         for k=1:m.N
+            if k==m.ptr continue end
             propagate_A!(m.rhs_back[k], dt)
         end    
     end
