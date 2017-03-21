@@ -207,7 +207,10 @@ type ExponentialRungeKutta <: TimePropagationMethod
             s = 2   
         elseif scheme==:erk2a
             scheme1=40
-            s = 2           
+            s = 2         
+        elseif scheme==:lawson
+            scheme1=14
+            s = 4
         elseif scheme==:krogstad
             scheme1=42
             s = 4    
@@ -369,6 +372,47 @@ function RK4_step!(psi::WaveFunction, dt::Number;
     psi
 end    
 
+function ERK4_step_lawson!(psi::WaveFunction, dt::Number; 
+    #Lawson Runge-Kutta method 
+    G::WaveFunction=wave_function(psi.m),
+    U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:4])
+    
+    s = 4
+    c = [0.0, 0.5, 0.5, 1.0]*dt
+    t = get_time(psi)
+    copy!(U[1], psi)
+    copy!(U[2], U[1])
+    propagate_A!(U[2], 0.5*dt)
+    copy!(U[3], U[2])
+    copy!(U[4], U[3])
+    propagate_A!(U[4], 0.5*dt)
+    copy!(psi, U[4])
+    for j=1:s #seems to be not necessary: propagate_A! already yields right time...
+        set_time!(U[j], t+c[j])
+    end
+    set_time!(psi, t+dt)
+    
+    gen_rhs!(G, U[1])
+    propagate_A!(G, 0.5*dt)
+    axpy!(U[2], G, 0.5*dt)
+    propagate_A!(G, 0.5*dt)
+    axpy!(psi, G, 1/6*dt)  
+    
+    gen_rhs!(G, U[2])
+    axpy!(U[3], G, 0.5*dt)
+    propagate_A!(G, 0.5*dt)
+    axpy!(psi, G, 1/3*dt)  
+    
+    gen_rhs!(G, U[3])
+    propagate_A!(G, 0.5*dt)
+    axpy!(U[4], G, dt)
+    axpy!(psi, G, 1/3*dt)      
+
+    gen_rhs!(G, U[4])
+    axpy!(psi, G, 1/6*dt)
+    psi
+end    
+
 
 
 function ERK4_step_strehmel_weiner!(psi::WaveFunction, dt::Number; 
@@ -418,6 +462,8 @@ function step!(m::ExponentialRungeKutta, psi::WaveFunction,
          t0::Real, dt::Real, steps::Int, step::Int)
     if m.scheme==4
         RK4_step!(psi, dt, G=m.G, U=m.U) 
+    elseif m.scheme==14
+        ERK4_step_lawson!(psi, dt, G=m.G, U=m.U) 
     elseif m.scheme==39
         ERK2_step!(psi, dt, G=m.G, U=m.U)    
     elseif m.scheme==40
