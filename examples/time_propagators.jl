@@ -194,9 +194,10 @@ end
 type ExponentialRungeKutta <: TimePropagationMethod
     scheme::Int
     s::Int
+    iters::Int    
     G #::WaveFunction
     U #::Vector{WaveFunction}
-    function ExponentialRungeKutta(scheme::Symbol=:krogstad)
+    function ExponentialRungeKutta(scheme::Symbol=:krogstad; iters::Int=(scheme==:gauss_lawson? 4: 0))
         scheme1 = 42
         s = 4
         if scheme==:rk4
@@ -220,10 +221,13 @@ type ExponentialRungeKutta <: TimePropagationMethod
         elseif scheme==:strehmel_weiner    
             scheme1=43
             s = 4
+        elseif scheme==:gauss_lawson
+            scheme1=24
+            s = 3     
         else
             warn("scheme not known, I use :krogstad")
         end
-        new(scheme1, s, nothing, nothing)
+        new(scheme1, s, iters, nothing, nothing)
     end         
 end
 
@@ -414,6 +418,59 @@ function ERK4_step_lawson!(psi::WaveFunction, dt::Number;
 end    
 
 
+function ERK4_step_gauss_lawson!(psi::WaveFunction, dt::Number; 
+    iters::Int=4,
+    #Lawson Runge-Kutta method 
+    G::WaveFunction=wave_function(psi.m),
+    U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:3])
+    
+    c1 = 1/2-sqrt(3)/6
+    c2 = 1/2+sqrt(3)/6
+    a11 = 1/4
+    a12 = 1/4-sqrt(3)/6
+    a21 = 1/4+sqrt(3)/6
+    a22 = 1/4
+    G1 = G
+    G2 = U[3]
+    copy!(U[1], psi)
+    copy!(U[2], psi)
+    propagate_A!(U[1], c1*dt)    
+    propagate_A!(U[2], c2*dt)        
+    
+    gen_rhs!(G1, U[1])    
+    gen_rhs!(G2, U[2])
+ 
+    for iter = 1:iters #fixed point iteration
+        if iter>1
+            copy!(U[1], psi)
+            copy!(U[2], psi)        
+            propagate_A!(U[1], c1*dt)    
+            propagate_A!(U[2], c2*dt)                
+        end
+    
+        axpy!(U[1], G1, a11*dt)
+        axpy!(U[2], G2, a22*dt)
+    
+        propagate_A!(G1, (c2-c1)*dt)    
+        propagate_A!(G2, (c1-c2)*dt)        
+
+        axpy!(U[1], G2, a12*dt)
+        axpy!(U[2], G1, a21*dt)
+
+        gen_rhs!(G1, U[1])    
+        gen_rhs!(G2, U[2])
+    end
+    
+    propagate_A!(psi, dt)
+    
+    propagate_A!(G1, (1.0-c1)*dt)    
+    propagate_A!(G2, (1.0-c2)*dt) 
+    
+    axpy!(psi, G1, 0.5*dt)
+    axpy!(psi, G2, 0.5*dt)
+end
+
+
 
 function ERK4_step_strehmel_weiner!(psi::WaveFunction, dt::Number; 
     #Strehmel/Weiner, eq. (2.43) in Hochbruck/Ostermann
@@ -464,6 +521,8 @@ function step!(m::ExponentialRungeKutta, psi::WaveFunction,
         RK4_step!(psi, dt, G=m.G, U=m.U) 
     elseif m.scheme==14
         ERK4_step_lawson!(psi, dt, G=m.G, U=m.U) 
+    elseif m.scheme==24
+        ERK4_step_gauss_lawson!(psi, dt, G=m.G, U=m.U, iters=m.iters)         
     elseif m.scheme==39
         ERK2_step!(psi, dt, G=m.G, U=m.U)    
     elseif m.scheme==40
