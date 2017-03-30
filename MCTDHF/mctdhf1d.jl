@@ -257,6 +257,7 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
     N::Int # number of orbitals
     lena::Int # number of (independent) coefficients
     spins::Array{Int, 1}
+    spin_restricted::Bool
     
     slater_indices
     density_rules 
@@ -278,12 +279,16 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
 
     function MCTDHF1D(f::Integer, N::Integer, 
                       nx::Integer, xmin::Real, xmax::Real; spins::Array{Int,1}=ones(Int, N), 
+                      spin_restricted::Bool=true,
                       potential1::Function=TSSM.none_1D, potential1_t::Function=TSSM.none_2D ,potential2::Function=TSSM.none_2D)
         m = Schroedinger1D(nx, xmin, xmax, potential=potential1, potential_t = potential1_t)
         lena = binomial(N,f)
+        if spin_restricted
+            spin = [(-1)^(k+1) for k=1:N]
+        end
         slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules = 
               init_mctdhf_combinatorics(f, N)
-        mm = new(m, f, N, lena, spins, slater_indices, density_rules, 
+        mm = new(m, f, N, lena, spins, spin_restricted, slater_indices, density_rules, 
                 density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules, 
                 zeros(Float64, nx, nx),
                 zeros(Complex{Float64},N,N),  zeros(Complex{Float64},N,N,N,N),
@@ -320,7 +325,12 @@ type WfMCTDHF1D <: TSSM.WaveFunctionComplex1D
     m::MCTDHF1D
     function WfMCTDHF1D(m::MCTDHF1D)
         a = zeros(Complex{Float64}, m.lena)
-        o = [Orbital(WfSchroedinger1D(m.m), m.spins[j]) for j=1:m.N]
+        if m.spin_restricted
+            w = [WfSchroedinger1D(m.m) for j=1:m.N]
+            o = [Orbital(w[div(j+1,2)], m.spins[j]) for j=1:m.N]
+        else
+            o = [Orbital(WfSchroedinger1D(m.m), m.spins[j]) for j=1:m.N]
+        end
         new(a, o, m)
     end
 end
@@ -346,7 +356,8 @@ end
 using HDF5
 
 function save(psi::WfMCTDHF1D, filename::ASCIIString)
-    for k=1:psi.m.N
+    st = psi.m.spin_restricted ? 2 : 1
+    for k=1:st:psi.m.N
        TSSM.save(psi.o[k].phi, filename, string("orbital_",k, "_real"),
              string("orbital_", k, "_imag", ), append=(k>1))
     end
@@ -356,12 +367,14 @@ function save(psi::WfMCTDHF1D, filename::ASCIIString)
         file["spins"] = Cint[psi.o[k].spin for k=1:psi.m.N]
         attrs(file)["number_of_particles"] = psi.m.f
         attrs(file)["number_of_orbitals"] = psi.m.N
+        attrs(file)["spin_restricted"] = psi.m.spin_restricted ? 1 : 0
     end
     filename
 end
 
 function load!(psi::WfMCTDHF1D, filename::ASCIIString)
-    for k=1:psi.m.N
+    st = psi.m.spin_restricted ? 2 : 1
+    for k=1:st:psi.m.N
        TSSM.load!(psi.o[k].phi, filename, string("orbital_",k, "_real"),
              string("orbital_", k, "_imag", ))
     end
@@ -429,11 +442,16 @@ function TSSM.inner_product(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
         error("psi1 and psi2 must belong to the same method")
     end
     ip = zeros(Complex{Float64}, m.N,m.N)
-    for j=1:m.N
-        for l=1:m.N
+    st = m.spin_restricted ? 2 : 1
+    for j=1:st:m.N     
+        for l=1:st:m.N
             ip[j,l] = inner_product(psi1.o[j], psi2.o[l])
+            if m.spin_restricted && j+1<=m.N && l+1<=m.N
+                ip[j+1,l+1] = ip[j,l]
+            end
         end
     end
+
     ps = [(p, sign(p)) for p in (Combinatorics.permutations(1:m.f))]
     d = 0.0im
     for j=1:m.lena
@@ -461,28 +479,32 @@ end
 
 
 function TSSM.to_real_space!(psi::WfMCTDHF1D)
-    for j=1:psi.m.N
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
         to_real_space!(psi.o[j].phi)
     end
 end
 
 
 function TSSM.to_frequency_space!(psi::WfMCTDHF1D)
-    for j=1:psi.m.N
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
         to_frequency_space!(psi.o[j].phi)
     end
 end
 
 
 function set_zero!(psi::WfMCTDHF1D)
-    for j=1:psi.m.N 
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N 
         get_data(psi.o[j].phi, true)[:] = 0.0
     end
     psi.a[:] = 0.0
 end
 
 function TSSM.set!(psi::WfMCTDHF1D, x::Number)
-    for j=1:psi.m.N 
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N 
         set!(psi.o[j].phi, x)
     end
     psi.a[:] = x
@@ -496,10 +518,11 @@ function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; include_kinetic_part::Bool=
         return # nothing to do
     end
     m = rhs.m
+    st = m.spin_restricted ? 2 : 1
     if m ≠ psi.m
         error("rhs and psi must belong to the same method")
     end
-    for q=1:m.N
+    for q=1:st:m.N
         if include_kinetic_part
             add_apply_A!(psi.o[q].phi, rhs.o[q].phi, 1im)
         end
@@ -510,12 +533,23 @@ function gen_rhs1!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; include_kinetic_part::Bool=
         for (j,l,f) in m.slater1_rules[q,q]
             rhs.a[j] += h*f*psi.a[l] 
         end
-        for p=1:q-1
+        if m.spin_restricted && q+1<=m.N 
+            for (j,l,f) in m.slater1_rules[q+1,q+1]
+                rhs.a[j] += h*f*psi.a[l] 
+            end
+        end
+        for p=1:st:q-1
             if psi.o[p].spin==psi.o[q].spin
                 h = inner_product(psi.o[p], rhs.o[q])
                 for (j,l,f) in m.slater1_rules[q,p]
                     rhs.a[j] += h*f*psi.a[l] 
                     rhs.a[l] += conj(h)*f*psi.a[j] 
+                end
+                if m.spin_restricted &&  q+1<=m.N && p+1<=m.N
+                    for (j,l,f) in m.slater1_rules[q+1,p+1]
+                        rhs.a[j] += h*f*psi.a[l] 
+                        rhs.a[l] += conj(h)*f*psi.a[j] 
+                    end
                 end
             end
         end
@@ -525,14 +559,15 @@ end
 
 function project_out_orbitals!(rhs:: WfMCTDHF1D, psi::WfMCTDHF1D)
     m = psi.m
+    st = m.spin_restricted ? 2 : 1
     c = zeros(Complex{Float64},m.N)
-    for p = 1:m.N
-        for q = 1:m.N
+    for p = 1:st:m.N
+        for q = 1:st:m.N
             if psi.o[p].spin==psi.o[q].spin
                 c[q] = inner_product(psi.o[q], rhs.o[p])
             end
         end
-        for q = 1:m.N
+        for q = 1:st:m.N
             if psi.o[p].spin==psi.o[q].spin
                 axpy!(rhs.o[p], psi.o[q], -c[q])
             end
@@ -552,24 +587,62 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
     u_pqs = m.u_pqs 
     to_real_space!(psi)
     to_real_space!(rhs)
-    for p=1:m.N
-        for q=1:p
+    st = m.spin_restricted ? 2 : 1
+    for p=1:st:m.N
+        for q=1:st:p
             if psi.o[p].spin==psi.o[q].spin
                 u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
-                for s=1:m.N
+                for s=1:st:m.N
                     u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
-                    for r=1:m.N
+                    for r=1:st:m.N
                         if psi.o[r].spin==psi.o[s].spin
                             u = get_data(rhs.o[r].phi, true)
                             u[:] += (m.density2_tensor[r,s,p,q]*(m.f-1)*dx) * u_pqs                
+                            if m.spin_restricted && s+1<=m.N && r+1<=m.N
+                                u[:] += (m.density2_tensor[r+1,s+1,p,q]*(m.f-1)*dx) * u_pqs                
+                            end
                             h = dot(get_data(psi.o[r].phi, true), u_pqs) * dx^2
                             for (j,l,f) in m.slater2_rules[q,p,s,r]
                                 rhs.a[j] += h*f*psi.a[l] 
+                            end
+                            if m.spin_restricted 
+                                if q+1<=m.N && p+1<=m.N
+                                    for (j,l,f) in m.slater2_rules[q+1,p+1,s,r]
+                                        rhs.a[j] += h*f*psi.a[l] 
+                                    end
+                                end
+                                if s+1<=m.N && r+1<=m.N
+                                    for (j,l,f) in m.slater2_rules[q,p,s+1,r+1]
+                                        rhs.a[j] += h*f*psi.a[l] 
+                                    end
+                                end
+                                if q+1<=m.N && p+1<=m.N && s+1<=m.N && r+1<=m.N
+                                    for (j,l,f) in m.slater2_rules[q+1,p+1,s+1,r+1]
+                                        rhs.a[j] += h*f*psi.a[l] 
+                                    end
+                                end
                             end
                             if p!=q
                                 h = conj(h)
                                 for (j,l,f) in m.slater2_rules[p,q,r,s]
                                     rhs.a[j] += h*f*psi.a[l] 
+                                end
+                                if m.spin_restricted 
+                                    if q+1<=m.N && p+1<=m.N 
+                                        for (j,l,f) in m.slater2_rules[p+1,q+1,r,s]
+                                            rhs.a[j] += h*f*psi.a[l] 
+                                        end
+                                    end
+                                    if s+1<=m.N && r+1<=m.N
+                                        for (j,l,f) in m.slater2_rules[p,q,r+1,s+1]
+                                            rhs.a[j] += h*f*psi.a[l] 
+                                        end
+                                    end
+                                    if q+1<=m.N && p+1<=m.N && s+1<=m.N && r+1<=m.N
+                                        for (j,l,f) in m.slater2_rules[p+1,q+1,r+1,s+1]
+                                            rhs.a[j] += h*f*psi.a[l] 
+                                        end
+                                    end
                                 end
                             end
                         end
@@ -601,12 +674,17 @@ end
 function orthonormalize_orbitals!(psi::WfMCTDHF1D)
     m = psi.m
     g = zeros(Complex{Float64}, m.N)
-    for p = 1:m.N
-        a1 = zeros(Complex{Float64}, m.lena)
-        for q=1:p-1
+    st = m.spin_restricted ? 2 : 1
+
+    for p = 1:st:m.N
+        for q=1:st:p-1
             g[q] = inner_product(psi.o[q], psi.o[p])
+            if m.spin_restricted && q+1<=m.N
+                g[q+1] = g[q]
+            end    
         end
-        for q=1:p-1
+        a1 = zeros(Complex{Float64}, m.lena)
+        for q=1:st:p-1
             if psi.o[p].spin==psi.o[q].spin
                 axpy!(psi.o[p], psi.o[q], -g[q])
                 for (j, l, s) in m.orthogonalization_rules[p,q]
@@ -624,6 +702,27 @@ function orthonormalize_orbitals!(psi::WfMCTDHF1D)
             end
         end
         psi.a[:] = a1
+
+        if m.spin_restricted && p+1<=m.N
+            a1 = zeros(Complex{Float64}, m.lena)
+            for q=1:st:p-1
+                if psi.o[p].spin==psi.o[q].spin
+                    if q+1<=m.N
+                        for (j, l, s) in m.orthogonalization_rules[p+1,q+1]
+                            a1[l] += s*g[q+1]*psi.a[j]
+                        end
+                    end
+                end
+            end    
+            for j=1:m.lena
+                if p+1 in m.slater_indices[j]
+                    a1[j] += f*psi.a[j]
+                else
+                    a1[j] += psi.a[j]
+                end
+            end    
+            psi.a[:] = a1
+        end
     end
     psi
 end
@@ -637,16 +736,27 @@ end
 function potential_energy_1(psi::WfMCTDHF1D)
     m = psi.m
     V = 0.0
-    for p=1:m.N    
+    st = m.spin_restricted ? 2 : 1
+    for p=1:st:m.N    
         h = potential_matrix_element(psi.o[p], psi.o[p])
         for (j,l,f) in m.slater1_rules[p,p]
             V += real(h*f*psi.a[j]*conj(psi.a[l]))
         end
-        for q=1:p-1
+        if m.spin_restricted && p+1<=m.N+1
+            for (j,l,f) in m.slater1_rules[p+1,p+1]
+                V += real(h*f*psi.a[j]*conj(psi.a[l]))
+            end
+        end
+        for q=1:st:p-1
             if psi.o[p].spin==psi.o[q].spin
                 h = potential_matrix_element(psi.o[p], psi.o[q])
                 for (j,l,f) in m.slater1_rules[p,q]
                     V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
+                end
+                if m.spin_restricted &&  q+1<=m.N && p+1<=m.N+1
+                    for (j,l,f) in m.slater1_rules[p+1,q+1]
+                        V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
+                    end
                 end
             end
         end
@@ -658,16 +768,27 @@ end
 function TSSM.kinetic_energy(psi::WfMCTDHF1D)
     m = psi.m
     V = 0
-    for p=1:m.N    
+    st = m.spin_restricted ? 2 : 1
+    for p=1:st:m.N    
         h = kinetic_matrix_element(psi.o[p], psi.o[p])
         for (j,l,f) in m.slater1_rules[p,p]
             V += real(h*f*psi.a[j]*conj(psi.a[l]))
         end
-        for q=1:p-1
+        if m.spin_restricted && p+1<=m.N+1
+            for (j,l,f) in m.slater1_rules[p+1,p+1]
+                V += real(h*f*psi.a[j]*conj(psi.a[l]))
+            end
+        end
+        for q=1:st:p-1
             if psi.o[p].spin==psi.o[q].spin
                 h = kinetic_matrix_element(psi.o[p], psi.o[q])
                 for (j,l,f) in m.slater1_rules[p,q]
                     V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
+                end
+                if m.spin_restricted &&  q+1<=m.N && p+1<=m.N+1
+                    for (j,l,f) in m.slater1_rules[p+1,q+1]
+                        V += 2*real(h*f*psi.a[j]*conj(psi.a[l]))
+                    end
                 end
             end
         end
@@ -684,22 +805,57 @@ function potential_energy_2(psi::WfMCTDHF1D)
     u_pq = m.u_pq 
     u_pqs = m.u_pqs 
     to_real_space!(psi)
-    for p=1:m.N
-        for q=1:p
+    st = m.spin_restricted ? 2 : 1
+    for p=1:st:m.N
+        for q=1:st:p
             if psi.o[p].spin==psi.o[q].spin
                 u_pq[:] = m.Vee * (conj(get_data(psi.o[p].phi, true)).*get_data(psi.o[q].phi, true))
-                for s=1:m.N
+                for s=1:st:m.N
                     u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
-                    for r=1:m.N
+                    for r=1:st:m.N
                         if psi.o[r].spin==psi.o[s].spin
                             h = dot(get_data(psi.o[r].phi, true), u_pqs)
                             for (j,l,f) in m.slater2_rules[q,p,s,r]
                                 V += h*f*conj(psi.a[j])*psi.a[l]
                             end
+                            if m.spin_restricted 
+                                if q+1<=m.N && p+1<=m.N 
+                                    for (j,l,f) in m.slater2_rules[q+1,p+1,s,r]
+                                        V += h*f*conj(psi.a[j])*psi.a[l]
+                                    end
+                                end    
+                                if s+1<=m.N && r+1<=m.N
+                                    for (j,l,f) in m.slater2_rules[q,p,s+1,r+1]
+                                        V += h*f*conj(psi.a[j])*psi.a[l]
+                                    end
+                                end    
+                                if q+1<=m.N && p+1<=m.N && s+1<=m.N && r+1<=m.N
+                                    for (j,l,f) in m.slater2_rules[q+1,p+1,s+1,r+1]
+                                        V += h*f*conj(psi.a[j])*psi.a[l]
+                                    end
+                                end    
+                            end
                             if p!=q
                                 h = conj(h)
                                 for (j,l,f) in m.slater2_rules[p,q,r,s]
                                     V += h*f*conj(psi.a[j])*psi.a[l]
+                                end
+                                if m.spin_restricted 
+                                    if q+1<=m.N && p+1<=m.N 
+                                        for (j,l,f) in m.slater2_rules[p+1,q+1,r,s]
+                                            V += h*f*conj(psi.a[j])*psi.a[l]
+                                        end
+                                    end
+                                    if s+1<=m.N && r+1<=m.N
+                                        for (j,l,f) in m.slater2_rules[p,q,r+1,s+1]
+                                            V += h*f*conj(psi.a[j])*psi.a[l]
+                                        end
+                                    end
+                                    if q+1<=m.N && p+1<=m.N && s+1<=m.N && r+1<=m.N
+                                        for (j,l,f) in m.slater2_rules[p+1,q+1,r+1,s+1]
+                                            V += h*f*conj(psi.a[j])*psi.a[l]
+                                        end
+                                    end
                                 end
                             end
                         end
@@ -728,7 +884,8 @@ TSSM.interaction_energy(psi::WfMCTDHF1D) = 0.0 #dummy
 
 
 function TSSM.set_time!(psi::WfMCTDHF1D, t::Number)
-   for j=1:psi.m.N
+   st = psi.m.spin_restricted ? 2 : 1
+   for j=1:st:psi.m.N
        set_time!(psi.o[j].phi, t)
    end
 end
@@ -738,25 +895,29 @@ TSSM.set_propagate_time_together_with_A!(m::MCTDHF1D, flag::Bool) = set_propagat
 TSSM.get_propagate_time_together_with_A(m::MCTDHF1D) = get_propagate_time_together_with_A(m.m)
 
 function TSSM.propagate_A!(psi::WfMCTDHF1D, dt::Number)
-    for j=1:psi.m.N
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
         propagate_A!(psi.o[j].phi, dt)
     end
 end
 
 function TSSM.propagate_B!(psi::WfMCTDHF1D, dt::Number)
-    for j=1:psi.m.N
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
         propagate_B!(psi.o[j].phi, dt)
     end
 end
 
 function TSSM.imaginary_time_propagate_A!(psi::WfMCTDHF1D, dt::Real)
-    for j=1:psi.m.N
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
         imaginary_time_propagate_A!(psi.o[j].phi, dt)
     end
 end
 
 function TSSM.imaginary_time_propagate_B!(psi::WfMCTDHF1D, dt::Real)
-    for j=1:psi.m.N
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
         imaginary_time_propagate_B!(psi.o[j].phi, dt)
     end
 end
@@ -765,7 +926,8 @@ function TSSM.add_apply_A!(this::WfMCTDHF1D, other::WfMCTDHF1D, coefficient::Num
     if this.m ≠ other.m
         error("this and other must belong to the same method")
     end
-    for j=1:this.m.N
+    st = this.m.spin_restricted ? 2 : 1
+    for j=1:st:this.m.N
         add_apply_A!(this.o[j].phi, other.o[j].phi, coefficient)
     end
 end
@@ -774,29 +936,35 @@ function TSSM.add_phi_A!(this::WfMCTDHF1D, other::WfMCTDHF1D, dt::Number, n::Int
     if this.m ≠ other.m
         error("this and other must belong to the same method")
     end
-    for j=1:this.m.N
+    st = this.m.spin_restricted ? 2 : 1
+    for j=1:st:this.m.N
         add_phi_A!(this.o[j].phi, other.o[j].phi, dt, n, coefficient)
     end
     other.a[:] += coefficient/factorial(n)*this.a[:]
 end
 
 function TSSM.scale!(psi::WfMCTDHF1D, f::Number)
-    for j=1:psi.m.N
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
         scale!(psi.o[j], f)
     end
     psi.a[:] *= f
 end
 
 function axpy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D, f::Number)
-    for j=1:psi.m.N
+    st = psi1.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
         axpy!(psi1.o[j], psi2.o[j], f)
     end
     psi1.a[:] += f*psi2.a[:]
 end
 
 function copy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
-    for j=1:psi.m.N
+    st = psi1.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
         TSSM.copy!(psi1.o[j].phi, psi2.o[j].phi)
+    end
+    for j=1:psi.m.N
         psi1.o[j].spin = psi2.o[j].spin
     end
     psi1.a[:] = psi2.a[:]
