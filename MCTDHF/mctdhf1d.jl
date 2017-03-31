@@ -386,12 +386,13 @@ end
 
 
 function gen_density_matrix(psi::WfMCTDHF1D)
-    N = psi.m.N
-    rho = psi.m.density_matrix
+    m = psi.m
+    N = m.N
+    rho = m.density_matrix
     rho[:,:] = 0.0
     for j=1:N
         for l=j:N
-            for (u, v, s) in psi.m.density_rules[j,l]
+            for (u, v, s) in m.density_rules[j,l]
                 rho[j,l] += s * conj(psi.a[u]) * psi.a[v]
                 if l!=j
                    rho[l,j] = conj(rho[j,l])
@@ -404,14 +405,15 @@ end
 
 
 function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=true)
-    N = psi.m.N
-    rho = psi.m.density2_tensor
+    m = psi.m
+    N = m.N
+    rho = m.density2_tensor
     rho[:,:,:,:] = 0.0
     for j=1:N
         for l=j:N
             for p=1:N
                 for q=1:N
-                    for (u, v, s) in psi.m.density2_rules[j,l,p,q]
+                    for (u, v, s) in m.density2_rules[j,l,p,q]
                         rho[j,l,p,q] += s * conj(psi.a[u]) * psi.a[v]
                         if l!=j
                            rho[l,j,q,p] = conj(rho[j,l,p,q])
@@ -953,7 +955,7 @@ end
 
 function axpy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D, f::Number)
     st = psi1.m.spin_restricted ? 2 : 1
-    for j=1:st:psi.m.N
+    for j=1:st:psi1.m.N
         axpy!(psi1.o[j], psi2.o[j], f)
     end
     psi1.a[:] += f*psi2.a[:]
@@ -961,10 +963,10 @@ end
 
 function copy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
     st = psi1.m.spin_restricted ? 2 : 1
-    for j=1:st:psi.m.N
+    for j=1:st:psi1.m.N
         TSSM.copy!(psi1.o[j].phi, psi2.o[j].phi)
     end
-    for j=1:psi.m.N
+    for j=1:psi1.m.N
         psi1.o[j].spin = psi2.o[j].spin
     end
     psi1.a[:] = psi2.a[:]
