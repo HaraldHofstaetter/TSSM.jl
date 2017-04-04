@@ -284,7 +284,7 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
         m = Schroedinger1D(nx, xmin, xmax, potential=potential1, potential_t = potential1_t)
         lena = binomial(N,f)
         if spin_restricted
-            spin = [(-1)^(k+1) for k=1:N]
+            spins = [(-1)^(k+1) for k=1:N]
         end
         slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules = 
               init_mctdhf_combinatorics(f, N)
