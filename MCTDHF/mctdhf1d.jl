@@ -284,7 +284,7 @@ type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
         m = Schroedinger1D(nx, xmin, xmax, potential=potential1, potential_t = potential1_t)
         lena = binomial(N,f)
         if spin_restricted
-            spin = [(-1)^(k+1) for k=1:N]
+            spins = [(-1)^(k+1) for k=1:N]
         end
         slater_indices, density_rules, density2_rules, slater_exchange, slater1_rules, slater2_rules, orthogonalization_rules = 
               init_mctdhf_combinatorics(f, N)
@@ -598,11 +598,13 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
                     u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
                     for r=1:st:m.N
                         if psi.o[r].spin==psi.o[s].spin
+                            
                             u = get_data(rhs.o[r].phi, true)
                             u[:] += (m.density2_tensor[r,s,p,q]*(m.f-1)*dx) * u_pqs                
                             if m.spin_restricted && s+1<=m.N && r+1<=m.N
                                 u[:] += (m.density2_tensor[r+1,s+1,p,q]*(m.f-1)*dx) * u_pqs                
                             end
+                            
                             h = dot(get_data(psi.o[r].phi, true), u_pqs) * dx^2
                             for (j,l,f) in m.slater2_rules[q,p,s,r]
                                 rhs.a[j] += h*f*psi.a[l] 
@@ -650,10 +652,26 @@ function gen_rhs2!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D)
                         end
                     end
                 end
+                if p!=q
+                    u_pq = conj(u_pq)
+                    for s=1:st:m.N
+                        u_pqs[:] = u_pq .* get_data(psi.o[s].phi, true)
+                        for r=1:st:m.N
+                            if psi.o[r].spin==psi.o[s].spin
+                                u = get_data(rhs.o[r].phi, true)
+                                u[:] += (m.density2_tensor[r,s,q,p]*(m.f-1)*dx) * u_pqs                
+                                if m.spin_restricted && s+1<=m.N && r+1<=m.N
+                                    u[:] += (m.density2_tensor[r+1,s+1,q,p]*(m.f-1)*dx) * u_pqs                
+                                end
+                            end
+                        end
+                    end
+                end
             end
         end
     end
 end
+
 
 function gen_rhs!(rhs::WfMCTDHF1D, psi::WfMCTDHF1D; include_kinetic_part::Bool=false, 
                    include_one_particle_potential_part::Bool=true )
