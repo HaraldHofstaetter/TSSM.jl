@@ -856,4 +856,185 @@ function step!(m::ExponentialMultistep, psi::WaveFunction,
     end
 end
     
+###########################################################################################
+# Adaptive Propagators
+###########################################################################################
+
+abstract AdaptiveTimePropagationMethod
+
+type AdaptiveTimeStepper
+    method::AdaptiveTimePropagationMethod
+
+    psi::WaveFunction
+    t0::Real
+    tend::Real
+    tol::Real
+    dt::Real
+end
+
+#default initializer 
+function initialize!(method::AdaptiveTimePropagationMethod, psi::WaveFunction, 
+         t0::Real, tend::Real, tol::Real, dt::Real)
+    t0 # iteration  starts with step 0
+end
+
+#default finalizer
+function finalize!(method::AdaptiveTimePropagationMethod, psi::WaveFunction, 
+         t0::Real, tend::Real, tol::Real, dt::Real, t::Real)
+end     
+
+function Base.start(tsi::AdaptiveTimeStepper) 
+    set_propagate_time_together_with_A!(tsi.psi.m, true)
+    set_time!(tsi.psi, tsi.t0)
+    initialize!(tsi.method, tsi.psi, tsi.t0, tsi.tend, tsi.tol, tsi.dt)
+end
+
+function Base.done(tsi::AdaptiveTimeStepper, t::Real) 
+    f = (t>=tsi.tend )
+    if f 
+        finalize!(tsi.method, tsi.psi, tsi.t0, tsi.tend, tsi.tol, tsi.dt, t)
+    end
+    f    
+end
     
+function Base.next(tsi::AdaptiveTimeStepper, t::Real)    
+    (tnew, dtnew) = step!(tsi.method, tsi.psi, tsi.t0, tsi.tend, tsi.tol, tsi.dt, t)
+    tsi.dt = dtnew
+    (tnew, tsi), tnew 
+end
+
+########################################################################################
+
+function solve_vander_trans(x::Vector, b::Vector)
+    # Algorithm 4.6.2 from Golub/van Loan
+    n = length(x)
+    for k=1:n-1
+        for i=n:-1:k+1
+            b[i] -= x[k]*b[i-1]
+        end
+    end
+    for k=n-1:-1:1
+        for i=k+1:n
+            b[i] /= (x[i]-x[i-k])
+        end
+        for i=k:n-1
+            b[i] -= b[i+1]
+        end
+    end
+end
+
+#c = Float64[dt^m/(m+1) for m=0:N1-1]
+#solve_vander_trans(t_back, c)
+#c
+
+
+type AdaptiveAdamsLawson <: AdaptiveTimePropagationMethod
+    N::Int
+    N1::Int
+    ptr::Int
+    t_back::Vector{Float64}
+    rhs_back #::Vector{WaveFunction} # storage for previous solution values
+    psi0 #::WaveFunction
+    psi1 #::WaveFunction
+    starting_method #::TimePropagationMethod
+     
+    function AdaptiveAdamsLawson(N1::Int; starting_method::Union{Void,TimePropagationMethod}=nothing)
+        N = N1+1
+        ptr = N        
+        t_back = zeros(Float64, N)
+        new(N, N1, ptr, t_back, nothing, nothing, nothing, starting_method)
+    end
+end    
+
+function initialize!(method::AdaptiveAdamsLawson, psi::WaveFunction, 
+         t0::Real, tend::Real, tol::Real, dt::Real)
+    method.rhs_back = WaveFunction[wave_function(psi.m) for j=1:method.N]              
+    gen_rhs!(method.rhs_back[1], psi)
+    k=1  
+    for I in EquidistantTimeStepper(method.starting_method, psi, t0, dt, method.N1-1) 
+        k += 1
+        gen_rhs!(method.rhs_back[k], psi)
+    end
+    method.t_back[:] = Float64[dt*k for k=0:method.N1] 
+    for k=0:method.N1-1
+        propagate_A!(method.rhs_back[method.N1-k], dt*k)
+    end         
+    method.psi0 = wave_function(psi.m)
+    method.psi1 = wave_function(psi.m)
+    method.ptr = method.N1
+    (method.N1-1)*dt 
+end    
+
+function finalize!(method::AdaptiveAdamsLawson, psi::WaveFunction, 
+         t0::Real, tend::Real, tol::Real, dt::Real, t::Real)
+    method.psi0 = nothing
+    method.psi1 = nothing
+    method.rhs_back = nothing
+end     
+
+function step!(m::AdaptiveAdamsLawson, psi::WaveFunction, 
+         t0::Real, tend::Real, tol::Real, dt::Real, t::Real)
+    const facmin = 0.25
+    const facmax = 4.0
+    const fac = 0.9
+    
+    copy!(m.psi0, psi)
+    copy!(m.psi1, psi)
+    ptr0 = m.ptr
+    dt0 = dt
+    
+    err = 2.0 #error/t    
+    while err>=1.0
+        dt = min(dt, tend-t)
+        dt0 = dt
+        
+        #predictor 
+        tt = Float64[m.t_back[mod(k-m.N1+m.ptr-1, m.N)+1] for k=1:m.N1]
+        tt = tt - tt[end]
+        C = Float64[dt^m/(m+1) for m=0:m.N1-1]
+        solve_vander_trans(tt, C)
+        for k=1:m.N1
+            k1 = mod(k-m.N1+m.ptr-1, m.N)+1
+            axpy!(m.psi1, m.rhs_back[k1], C[k]*dt)
+        end
+        propagate_A!(m.psi1, dt)    
+        
+        m.ptr = mod(m.ptr, m.N) + 1
+        gen_rhs!(m.rhs_back[m.ptr], m.psi1)    
+        m.t_back[m.ptr] = t+dt
+        propagate_A!(m.rhs_back[m.ptr], -dt)
+        
+        #corrector
+        tt = Float64[m.t_back[mod(k-m.N1+m.ptr-2, m.N)+1] for k=1:m.N1+1]
+        tt = tt - tt[end-1]
+        C = Float64[dt^m/(m+1) for m=0:m.N1]       
+        solve_vander_trans(tt, C)
+        for k=1:m.N1+1
+            k1 = mod(k-m.N1+m.ptr-2, m.N)+1
+            axpy!(psi, m.rhs_back[k1], C[k]*dt)
+        end
+        propagate_A!(psi, dt)                        
+        
+        err = distance(psi, m.psi1)/tol
+        dt = dt*min(facmax, max(facmin, fac*(1.0/err)^(1.0/(m.N1+1)))) # CHECK m.N+1=p+1 !!!
+        
+        if err>=1.0
+            copy!(m.psi1, m.psi0)
+            copy!(psi, m.psi0)
+            m.ptr = ptr0
+            @printf("t=%17.9e  err=%17.8e  dt=%17.8e  rejected...\n", 
+                    Float64(t), Float64(err), Float64(dt))
+        end
+    end    
+    
+    gen_rhs!(m.rhs_back[m.ptr], psi)    
+    t += dt0
+    m.t_back[m.ptr] = t
+    
+    for k=1:m.N
+       if k==m.ptr continue end
+       propagate_A!(m.rhs_back[k], dt0)
+    end   
+    (t, dt)
+end    
+
