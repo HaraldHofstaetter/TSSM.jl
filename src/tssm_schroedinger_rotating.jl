@@ -27,9 +27,9 @@ if DIM==2
         V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), 
-                   ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T)), 
+                   ($T), ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T)), 
                    nx, xmin, xmax, ny, ymin, ymax, 
-                   hbar, mass, V_c, with_potential, 
+                   Omega, hbar, mass, V_c, with_potential, 
                    V_t_c, with_potential_t, V_t_derivative_c, with_potential_t_derivative,
                    cubic_coupling) 
         m = ($METHOD){$T}(c)
@@ -48,7 +48,7 @@ if T == :Float64
                        potential_t_derivative::Function=none_3D,
                        cubic_coupling::Real=0.0)
         ($METHOD)(($T), nx, xmin, xmax,  ny, ymin, ymax,
-                       hbar=hbar, mass=mass, potential=potential, 
+                       Omega=Omega, hbar=hbar, mass=mass, potential=potential, 
                        potential_t=potential_t, potential_t_derivative=potential_t_derivative,
                        cubic_coupling=cubic_coupling)
     end      
@@ -72,9 +72,9 @@ elseif DIM==3
         V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), Int32, ($T), ($T), 
-                   ($T), ($T), Ptr{Void}, Bool,  Ptr{Void}, Bool, Ptr{Void}, Bool, ($T)), 
+                   ($T), ($T), ($T), Ptr{Void}, Bool,  Ptr{Void}, Bool, Ptr{Void}, Bool, ($T)), 
                    nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax,  
-                   hbar, mass, V_c, with_potential, 
+                   Omega, hbar, mass, V_c, with_potential, 
                    V_t_c, with_potential_t, V_t_derivative_c, with_potential_t_derivative,
                    cubic_coupling) 
         m = ($METHOD){$T}(c)
@@ -94,7 +94,7 @@ if T == :Float64
                        potential_t_derivative::Function=none_4D,
                        cubic_coupling::Real=0.0)
         ($METHOD)(($T), nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax,
-                       hbar=hbar, mass=mass, potential=potential,
+                       Omega=Omega, hbar=hbar, mass=mass, potential=potential,
                        potential_t=potential_t, potential_t_derivative=potential_t_derivative,
                        cubic_coupling=cubic_coupling)
     end      
