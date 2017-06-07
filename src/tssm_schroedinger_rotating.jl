@@ -3,6 +3,8 @@ println("including tssm_schroedinger_rotating.jl for type ", T)
 for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:SchroedingerRotating2D, :_schroedinger_rotating_2d, true, 2 ),             
                  (:SchroedingerRotating3D, :_schroedinger_rotating_3d, true, 3 ),             
+                 (:SchroedingerRotatingReal2D, :_schroedinger_rotating_real_2d, false, 2 ),             
+                 (:SchroedingerRotatingReal3D, :_schroedinger_rotating_real_3d, false, 3 ),             
                 )
 println("    ", METHOD)     
 if T == :Float128

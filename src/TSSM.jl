@@ -36,6 +36,8 @@ export SchroedingerReal3D, WfSchroedingerReal3D
 
 export SchroedingerRotating2D, WfSchroedingerRotating2D 
 export SchroedingerRotating3D, WfSchroedingerRotating3D 
+export SchroedingerRotatingReal2D, WfSchroedingerRotatingReal2D 
+export SchroedingerRotatingReal3D, WfSchroedingerRotatingReal3D 
 
 export SchroedingerHermite1D, WfSchroedingerHermite1D 
 export SchroedingerHermite2D, WfSchroedingerHermite2D 
@@ -298,6 +300,25 @@ type WfSchroedingerRotating3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
     p::Ptr{Void}
     m::SchroedingerRotating3D{T}
 end
+
+type SchroedingerRotatingReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Void}
+end 
+
+type SchroedingerRotatingReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Void}
+end 
+
+type WfSchroedingerRotatingReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Void}
+    m::SchroedingerRotatingReal2D{T}
+end
+
+type WfSchroedingerRotatingReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Void}
+    m::SchroedingerRotatingReal3D{T}
+end
+
 
 ## SchroedingerHermite types ############################################################################
 

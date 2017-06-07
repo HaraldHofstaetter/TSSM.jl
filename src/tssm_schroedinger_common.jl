@@ -8,6 +8,8 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (:SchroedingerReal3D, :_schroedinger_real_3d, false, 3 ),
                  (:SchroedingerRotating2D, :_schroedinger_rotating_2d, true, 2 ),             
                  (:SchroedingerRotating3D, :_schroedinger_rotating_3d, true, 3 ),                       
+                 (:SchroedingerRotatingReal2D, :_schroedinger_rotating_real_2d, false, 2 ),             
+                 (:SchroedingerRotatingReal3D, :_schroedinger_rotating_real_3d, false, 3 ),                       
                  (:SchroedingerHermite1D, :_schroedinger_hermite_1d, true, 1 ),             
                  (:SchroedingerHermite2D, :_schroedinger_hermite_2d, true, 2 ),             
                  (:SchroedingerHermite3D, :_schroedinger_hermite_3d, true, 3 ),             

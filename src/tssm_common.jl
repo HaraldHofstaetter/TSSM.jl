@@ -49,6 +49,8 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                  (:SchroedingerReal3D, :_schroedinger_real_3d, false, 3, 0 ),
                  (:SchroedingerRotating2D, :_schroedinger_rotating_2d, true, 2, 0 ),             
                  (:SchroedingerRotating3D, :_schroedinger_rotating_3d, true, 3, 0 ),                           
+                 (:SchroedingerRotatingReal2D, :_schroedinger_rotating_real_2d, false, 2, 0 ),             
+                 (:SchroedingerRotatingReal3D, :_schroedinger_rotating_real_3d, false, 3, 0 ),                           
                  (:SchroedingerHermite1D, :_schroedinger_hermite_1d, true, 1, 0 ),             
                  (:SchroedingerHermite2D, :_schroedinger_hermite_2d, true, 2, 0 ),             
                  (:SchroedingerHermite3D, :_schroedinger_hermite_3d, true, 3, 0 ),             
