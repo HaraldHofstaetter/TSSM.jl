@@ -67,7 +67,7 @@ export set_time!, get_time, propagate_time!
 export set_propagate_time_together_with_A!, get_propagate_time_together_with_A
 export propagate_A!, propagate_B!, propagate_C!, add_apply_A!, add_apply_B!, add_apply_C!
 export add_phi_A!
-export propagate_A_derivative!, propagate_B_derivative!, poropagate_C_derivative!
+export propagate_A_derivative!, propagate_B_derivative!, propagate_C_derivative!
 export norm, norm_in_frequency_space, normalize!, distance, scale!, axpy! 
 export inner_product, eigen_function!, evaluate
 export save, load!, get_data, set!, copy!

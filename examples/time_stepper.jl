@@ -91,38 +91,43 @@ function step_defect_based!(psi::WaveFunction, h::WaveFunction, dt::Real, scheme
     set!(h, 0.0) #TODO: set is_real_space=false for AB, true for BA
     set_time!(h, 0.0)
     s = length(scheme)
-    if operator_sequence=="AB"
-        for k = 1:s
-            which_operator = operator_sequence[mod(k-1, 2) + 1]
+    m =  length(operator_sequence)
+    which_operator = 'X'
+    for k = 1:s
+        which_operator = operator_sequence[mod(k-1, m) + 1]
+        if k==1
             if which_operator == 'A'
-                add_apply_A!(psi, h, scheme[k])
+                propagate_A!(psi, dt*scheme[k])
+            elseif which_operator == 'B'
+                propagate_B!(psi, dt*scheme[k])
+            elseif which_operator == 'C'
+                propagate_C!(psi, dt*scheme[k])
+            end    
+        else
+            if which_operator == 'A'
                 propagate_A_derivative!(psi, h, dt*scheme[k])
-            else # if which_operator == 'B'
+            elseif which_operator == 'B'
                 propagate_B_derivative!(psi, h, dt*scheme[k])
-                add_apply_B!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
-            end
+            elseif which_operator == 'C'
+                propagate_C_derivative!(psi, h, dt*scheme[k])
+            end    
         end
-        if isodd(s)
-            add_apply_B!(psi, h, -1.0)
-        end    
+        if which_operator == 'A'
+            add_apply_A!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
+        elseif which_operator == 'B'
+            add_apply_B!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
+        elseif which_operator == 'C'
+            add_apply_C!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
+        end
+    end
+    if 'A' in operator_sequence && which_operator != 'A' 
         add_apply_A!(psi, h, -1.0)
-    elseif operator_sequence=="BA"
-        for k = 1:s
-            which_operator = operator_sequence[mod(k-1, 2) + 1]
-            if which_operator == 'B'
-                add_apply_B!(psi, h, scheme[k])
-                propagate_B_derivative!(psi, h, dt*scheme[k])
-            else # if which_operator == 'A'
-                propagate_A_derivative!(psi, h, dt*scheme[k])
-                add_apply_A!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
-            end
-        end
-        if isodd(s)
-            add_apply_A!(psi, h, -1.0)
-        end    
+    end
+    if 'B' in operator_sequence && which_operator != 'B' 
         add_apply_B!(psi, h, -1.0)
-    else
-        # TODO! Error or Warning
+    end
+    if 'C' in operator_sequence && which_operator != 'C' 
+        add_apply_C!(psi, h, -1.0)
     end
 end
  
