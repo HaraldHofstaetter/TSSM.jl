@@ -91,29 +91,28 @@ export kinetic_matrix_element, potential_matrix_element
 export selfconsistent_nonlinear_step!
 
 ## abstract types ############################################################################
-
-abstract TimeSplittingSpectralMethod{T<:AbstractFloat}
-abstract TimeSplittingSpectralMethodReal{T<:AbstractFloat} <: TimeSplittingSpectralMethod{T}
-abstract TimeSplittingSpectralMethodReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal{T}
-abstract TimeSplittingSpectralMethodReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal{T}
-abstract TimeSplittingSpectralMethodReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal{T}
-abstract TimeSplittingSpectralMethodComplex{T<:AbstractFloat} <: TimeSplittingSpectralMethod{T}
-abstract TimeSplittingSpectralMethodComplex1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex{T}
-abstract TimeSplittingSpectralMethodComplex2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex{T}
-abstract TimeSplittingSpectralMethodComplex3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex{T}
+abstract type TimeSplittingSpectralMethod{T<:AbstractFloat} end
+abstract type TimeSplittingSpectralMethodReal{T<:AbstractFloat}<:TimeSplittingSpectralMethod{T} end
+abstract type TimeSplittingSpectralMethodReal1D{T<:AbstractFloat}<:TimeSplittingSpectralMethodReal{T} end
+abstract type TimeSplittingSpectralMethodReal2D{T<:AbstractFloat}<:TimeSplittingSpectralMethodReal{T} end
+abstract type TimeSplittingSpectralMethodReal3D{T<:AbstractFloat}<:TimeSplittingSpectralMethodReal{T} end
+abstract type TimeSplittingSpectralMethodComplex{T<:AbstractFloat}<:TimeSplittingSpectralMethod{T} end
+abstract type TimeSplittingSpectralMethodComplex1D{T<:AbstractFloat}<:TimeSplittingSpectralMethodComplex{T} end
+abstract type TimeSplittingSpectralMethodComplex2D{T<:AbstractFloat}<:TimeSplittingSpectralMethodComplex{T} end
+abstract type TimeSplittingSpectralMethodComplex3D{T<:AbstractFloat}<:TimeSplittingSpectralMethodComplex{T} end
 TimeSplittingSpectralMethod1D = Union{TimeSplittingSpectralMethodReal1D, TimeSplittingSpectralMethodComplex1D}
 TimeSplittingSpectralMethod2D = Union{TimeSplittingSpectralMethodReal2D, TimeSplittingSpectralMethodComplex2D}
 TimeSplittingSpectralMethod3D = Union{TimeSplittingSpectralMethodReal3D, TimeSplittingSpectralMethodComplex3D}
 
-abstract WaveFunction{T<:AbstractFloat}
-abstract WaveFunctionReal{T<:AbstractFloat} <: WaveFunction{T}
-abstract WaveFunctionReal1D{T<:AbstractFloat} <: WaveFunctionReal{T}
-abstract WaveFunctionReal2D{T<:AbstractFloat} <: WaveFunctionReal{T}
-abstract WaveFunctionReal3D{T<:AbstractFloat} <: WaveFunctionReal{T}
-abstract WaveFunctionComplex{T<:AbstractFloat} <: WaveFunction{T}
-abstract WaveFunctionComplex1D{T<:AbstractFloat} <: WaveFunctionComplex{T}
-abstract WaveFunctionComplex2D{T<:AbstractFloat} <: WaveFunctionComplex{T}
-abstract WaveFunctionComplex3D{T<:AbstractFloat} <: WaveFunctionComplex{T}
+abstract type WaveFunction{T<:AbstractFloat} end
+abstract type WaveFunctionReal{T<:AbstractFloat}<:WaveFunction{T} end
+abstract type WaveFunctionReal1D{T<:AbstractFloat}<:WaveFunctionReal{T} end
+abstract type WaveFunctionReal2D{T<:AbstractFloat}<:WaveFunctionReal{T} end
+abstract type WaveFunctionReal3D{T<:AbstractFloat}<:WaveFunctionReal{T} end
+abstract type WaveFunctionComplex{T<:AbstractFloat}<:WaveFunction{T} end
+abstract type WaveFunctionComplex1D{T<:AbstractFloat}<:WaveFunctionComplex{T} end
+abstract type WaveFunctionComplex2D{T<:AbstractFloat}<:WaveFunctionComplex{T} end
+abstract type WaveFunctionComplex3D{T<:AbstractFloat}<:WaveFunctionComplex{T} end
 WaveFunction1D = Union{WaveFunctionReal1D, WaveFunctionComplex1D}
 WaveFunction2D = Union{WaveFunctionReal2D, WaveFunctionComplex2D}
 WaveFunction3D = Union{WaveFunctionReal3D, WaveFunctionComplex3D}
@@ -449,7 +448,7 @@ const use_Float128 = __use_Float128
 #const use_Float128 = false 
 
 function __init__()
-    if searchindex(readall(`uname -a`), "juliabox")>0
+    if searchindex(readstring(`uname -a`), "juliabox")>0
         # In JuliaBox only 8 out of 16 cores are available.
         ENV["OMP_NUM_THREADS"] = "8"
     end

@@ -64,9 +64,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 )
     println("    ", METHOD)
     if T == :Float128
-        SUF = symbol(SUF, "_wf128")
+        SUF = Symbol(SUF, "_wf128")
     end
-    WF = symbol(:Wf,METHOD)
+    WF = Symbol(:Wf,METHOD)
     @eval begin
         # wave function constructor
 
@@ -111,14 +111,14 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                     (Ptr{Void},), psi.p)
         end
 
-        function save(psi::($WF){$T}, filename::ASCIIString)
+        function save(psi::($WF){$T}, filename::AbstractString)
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save_wf",SUF))), Void,
-                 (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
+                 (Ptr{Void}, Cstring, Int32,), psi.p, filename, length(filename))
         end         
 
-        function load!(psi::($WF){$T}, filename::ASCIIString)
+        function load!(psi::($WF){$T}, filename::AbstractString)
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"load_wf",SUF))), Void,
-                 (Ptr{Void}, Ptr{UInt8}, Int32,), psi.p, filename, length(filename))
+                 (Ptr{Void}, Cstring, Int32,), psi.p, filename, length(filename))
         end    
 
         function copy!(target::($WF){$T}, source::($WF){$T})
@@ -299,20 +299,20 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
     if COMPLEX_METHOD
         @eval begin
 
-            function save(psi::($WF){$T}, filename::ASCIIString, 
-                         dset_name_real::ASCIIString, dset_name_imag::ASCIIString;
+            function save(psi::($WF){$T}, filename::AbstractString, 
+                         dset_name_real::AbstractString, dset_name_imag::AbstractString;
                          append::Bool=false)
    	         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save1_wf",SUF))), Void,
-                 	(Ptr{Void}, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32, Int32), 
+                 	(Ptr{Void}, Cstring, Int32, Cstring, Int32, Cstring, Int32, Int32), 
 	                  psi.p, filename, length(filename),
         	          dset_name_real, length(dset_name_real),
                 	  dset_name_imag, length(dset_name_imag), append)
             end         
 
-            function load!(psi::($WF){$T}, filename::ASCIIString, 
-                         dset_name_real::ASCIIString, dset_name_imag::ASCIIString)
+            function load!(psi::($WF){$T}, filename::AbstractString, 
+                         dset_name_real::AbstractString, dset_name_imag::AbstractString)
    	         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"load1_wf",SUF))), Void,
-                 	(Ptr{Void}, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32), 
+                 	(Ptr{Void}, Cstring, Int32, Cstring, Int32, Cstring, Int32), 
 	                  psi.p, filename, length(filename),
         	          dset_name_real, length(dset_name_real),
                 	  dset_name_imag, length(dset_name_imag))
@@ -549,18 +549,18 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
     else    
         @eval begin
 
-            function save(psi::($WF){$T}, filename::ASCIIString, 
-                         dset_name::ASCIIString;
+            function save(psi::($WF){$T}, filename::AbstractString, 
+                         dset_name::AbstractString;
 			 append::Bool=false)
    	         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save1_wf",SUF))), Void,
-                 	(Ptr{Void}, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32, Int32), 
+                 	(Ptr{Void}, Cstring, Int32, Cstring, Int32, Int32), 
 	                  psi.p, filename, length(filename), dset_name, length(dset_name))
             end         
 
-            function load!(psi::($WF){$T}, filename::ASCIIString, 
-                         dset_name::ASCIIString)
+            function load!(psi::($WF){$T}, filename::AbstractString, 
+                         dset_name::AbstractString)
    	         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"load1_wf",SUF))), Void,
-                 	(Ptr{Void}, Ptr{UInt8}, Int32, Ptr{UInt8}, Int32), 
+                 	(Ptr{Void}, Cstring, Int32, Cstring, Int32), 
 	                  psi.p, filename, length(filename), dset_name, length(dset_name))
             end         
 

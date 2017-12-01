@@ -23,9 +23,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                 )
     println("    ", METHOD)   
     if T == :Float128
-        SUF = symbol(SUF, "_wf128")
+        SUF = Symbol(SUF, "_wf128")
     end
-    WF = symbol(:Wf,METHOD)
+    WF = Symbol(:Wf,METHOD)
     @eval begin
 
         function get_hbar(m::($METHOD){($T)})
@@ -48,14 +48,14 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (Ptr{Void}, ($T)), m.m, cc )
         end
 
-        function load_potential!(m::($METHOD){($T)}, filename::ASCIIString)
+        function load_potential!(m::($METHOD){($T)}, filename::AbstractString)
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"load_potential",SUF))), Void,
-                 (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
+                 (Ptr{Void}, Cstring, Int32,), m.m, filename, length(filename))
         end    
 
-        function save_potential(m::($METHOD){($T)}, filename::ASCIIString)
+        function save_potential(m::($METHOD){($T)}, filename::AbstractString)
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save_potential",SUF))), Void,
-                 (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
+                 (Ptr{Void}, Cstring, Int32,), m.m, filename, length(filename))
         end
 
         function kinetic_energy(psi::($WF){$T})

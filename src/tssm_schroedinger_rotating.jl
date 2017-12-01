@@ -8,9 +8,9 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                 )
 println("    ", METHOD)     
 if T == :Float128
-    SUF = symbol(SUF, "_wf128")
+    SUF = Symbol(SUF, "_wf128")
 end
-WF = symbol(:Wf,METHOD)
+WF = Symbol(:Wf,METHOD)
 
 if DIM==2
 @eval begin

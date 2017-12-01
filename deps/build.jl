@@ -17,7 +17,7 @@ else
 end
 
 info("Building TSSM standard version")
-if searchindex(readall(`uname -a`), "juliabox")>0
+if searchindex(readstring(`uname -a`), "juliabox")>0
     run(`make -C TSSM/OPENMP JULIABOX_BUILD=1 all`)
     run(`mv TSSM/OPENMP/libtssm.$(Libdl.dlext) usr/lib`)
     run(`make -C TSSM/OPENMP clean`)
@@ -28,7 +28,7 @@ end
 
 if "TSSM_DEBUG" in keys(ENV) && ENV["TSSM_DEBUG"]=="1"
     info("Building TSSM debug version")
-    if searchindex(readall(`uname -a`), "juliabox")>0
+    if searchindex(readstring(`uname -a`), "juliabox")>0
         run(`make -C TSSM/DEBUG JULIABOX_BUILD=1 all`)
         run(`mv TSSM/DEBUG/libtssm.$(Libdl.dlext) usr/lib/libtssm_debug.$(Libdl.dlext)`)
         #run(`make -C TSSM/DEBUG clean`)
@@ -62,7 +62,7 @@ if use_Float128
         rm("fftw-3.3.4", recursive=true)
     end
 
-    if searchindex(readall(`uname -a`), "juliabox")>0
+    if searchindex(readstring(`uname -a`), "juliabox")>0
         run(`make -C TSSM/QUADPREC_OPENMP JULIABOX_BUILD=1 all`)
         run(`mv TSSM/QUADPREC_OPENMP/libtssmq.$(Libdl.dlext) usr/lib`)
         run(`make -C TSSM/QUADPREC_OPENMP clean`)

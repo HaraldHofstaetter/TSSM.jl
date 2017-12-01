@@ -8,7 +8,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                 )
 println("    ", METHOD)  
 if T == :Float128
-    SUF = symbol(SUF, "_wf128")
+    SUF = Symbol(SUF, "_wf128")
 end
 
 @eval begin
@@ -25,9 +25,9 @@ end
         m
     end
 
-    function ($METHOD)(T::Type{$T}, filename::ASCIIString)
+    function ($METHOD)(T::Type{$T}, filename::AbstractString)
         m = ($METHOD){$T}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new_from_file",SUF))), 
-                       Ptr{Void}, (Ptr{UInt8}, Int32,), filename, length(filename) ))
+                       Ptr{Void}, (Cstring, Int32,), filename, length(filename) ))
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
         m
@@ -45,7 +45,7 @@ if T == :Float64
                   quadrature_rule=quadrature_rule)
     end      
 
-    function ($METHOD)(filename::ASCIIString)
+    function ($METHOD)(filename::AbstractString)
         ($METHOD)(($T), filename)
     end
 
@@ -93,9 +93,9 @@ end # if
        end
     end
 
-    function save(m::($METHOD){$T}, filename::ASCIIString)
+    function save(m::($METHOD){$T}, filename::AbstractString)
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save",SUF))), Void,
-             (Ptr{Void}, Ptr{UInt8}, Int32,), m.m, filename, length(filename))
+             (Ptr{Void}, Cstring, Int32,), m.m, filename, length(filename))
     end          
 
 end # eval
@@ -109,7 +109,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                 )
 println("    ", METHOD)  
 if T == :Float128
-    SUF = symbol(SUF, "_wf128")
+    SUF = Symbol(SUF, "_wf128")
 end
 
 @eval begin
