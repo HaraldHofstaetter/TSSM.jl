@@ -74,14 +74,14 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
         end
 
         function get_energy_expectation_deviation(psi::($WF){$T})
-           ans =Array(($T), 2)
+           ans = zeros(($T), 2)
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_energy_expectation_deviation_wf",SUF))), Void,
                 (Ptr{Void}, Ptr{($T)}), psi.p, ans )
            tuple(ans...)
         end
 
         function get_realspace_observables(psi::($WF){$T})
-           ans =Array(($T), 2+2*($DIM))
+           ans = zeros(($T), 2+2*($DIM))
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_realspace_observables_wf",SUF))), Void,
                 (Ptr{Void}, Ptr{($T)}), psi.p, ans )
            tuple(ans...)
@@ -205,13 +205,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
 
  
             function get_potential(m::($METHOD){($T)}, unsafe_access::Bool=false)
-               dims =Array(Int32, 1)
+               dims = zeros(Int32, 1)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential",SUF))), Ptr{($T)},
                      (Ptr{Void}, Ptr{Int32}), m.m, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1])
                end
-               V = pointer_to_array(Vp, dims[1], false)   
+               V = unsafe_wrap(Array, Vp, dims[1], false)   
                if unsafe_access
                   return V 
                else
@@ -241,24 +241,24 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             end
 
             function get_potential_t(m::($METHOD){($T)}, t::Real)
-               dims =Array(Int32, 1)
+               dims = zeros(Int32, 1)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
                      (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, false, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1])
                end
-               V = pointer_to_array(Vp, dims[1], false)   
+               V = unsafe_wrap(Array, Vp, dims[1], false)   
                return copy(V)
             end
 
             function get_potential_t_derivative(m::($METHOD){($T)}, t::Real)
-               dims =Array(Int32, 1)
+               dims = zeros(Int32, 1)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
                      (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, true, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1])
                end
-               V = pointer_to_array(Vp, dims[1], false)   
+               V = unsafe_wrap(Array, Vp, dims[1], false)   
                return copy(V)
             end
 
@@ -273,13 +273,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             end
             
             function get_potential(m::($METHOD){($T)}, unsafe_access::Bool=false)
-               dims =Array(Int32, 2)
+               dims = zeros(Int32, 2)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential",SUF))), Ptr{($T)},
                      (Ptr{Void}, Ptr{Int32}), m.m, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1], dims[2])
                end
-               V = pointer_to_array(Vp, dims[1], dims[2], false)   
+               V = unsafe_wrap(Array, Vp, dims[1], dims[2], false)   
                if unsafe_access
                   return V 
                else
@@ -309,24 +309,24 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             end
 
             function get_potential_t(m::($METHOD){($T)}, t::Real)
-               dims =Array(Int32, 2)
+               dims = zeros(Int32, 2)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
                      (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, false, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1], dims[2])
                end
-               V = pointer_to_array(Vp, dims[2], false)   
+               V = unsafe_wrap(Array, Vp, dims[2], false)   
                return copy(V)
             end
 
             function get_potential_t_derivative(m::($METHOD){($T)}, t::Real)
-               dims =Array(Int32, 2)
+               dims = zeros(Int32, 2)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
                      (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, true, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1], dims[2])
                end
-               V = pointer_to_array(Vp, dims[2], false)   
+               V = unsafe_wrap(Array, Vp, dims[2], false)   
                return copy(V)
             end
             
@@ -342,13 +342,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             end
 
             function get_potential(m::($METHOD){($T)}, unsafe_access::Bool=false)
-               dims =Array(Int32, 3)
+               dims = zeros(Int32, 3)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential",SUF))), Ptr{($T)},
                      (Ptr{Void}, Ptr{Int32}), m.m, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1], dims[2], dims[3])
                end
-               V = pointer_to_array(Vp, dims[1], dims[2], dims[3], false)   
+               V = unsafe_wrap(Array, Vp, dims[1], dims[2], dims[3], false)   
                if unsafe_access
                   return V 
                else
@@ -378,24 +378,24 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             end
 
             function get_potential_t(m::($METHOD){($T)}, t::Real)
-               dims =Array(Int32, 3)
+               dims = zeros(Int32, 3)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
                      (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, false, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1], dims[2], dims[3])
                end
-               V = pointer_to_array(Vp, dims[3], false)   
+               V = unsafe_wrap(Array, Vp, dims[3], false)   
                return copy(V)
             end 
 
             function get_potential_t_derivative(m::($METHOD){($T)}, t::Real)
-               dims =Array(Int32, 3)
+               dims = zeros(Int32, 3)
                Vp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_potential_t",SUF))), Ptr{($T)},
                      (Ptr{Void}, ($T), Bool, Ptr{Int32}), m.m, t, true, dims )
                if Vp==C_NULL
                    return zeros(($T), dims[1], dims[2], dims[3])
                end
-               V = pointer_to_array(Vp, dims[3], false)   
+               V = unsafe_wrap(Array, Vp, dims[3], false)   
                return copy(V)
             end 
             

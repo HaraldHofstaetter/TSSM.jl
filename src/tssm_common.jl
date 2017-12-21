@@ -153,10 +153,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
         end
 
         function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
-           dim =Array(Int32, 1)
+           dim = zeros(Int32, 1)
            evp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                  (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-           ev = pointer_to_array(evp, dim[1], false)   
+           ev = unsafe_wrap(Array, evp, dim[1], false)
            if unsafe_access
                return ev
            else    
@@ -170,10 +170,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
         if DIM==1
             @eval begin
                 function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
-                   dim =Array(Int32, 1)
+                   dim = zeros(Int32, 1)
                    evp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-                   ev = pointer_to_array(evp, dim[1], false)   
+                   ev = unsafe_wrap(Array, evp, dim[1], false)
                    if unsafe_access
                        return ev
                    else    
@@ -185,13 +185,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
         elseif DIM==2
             @eval begin
                function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
-                   dim =Array(Int32, 1)
+                   dim = zeros(Int32, 1)
                    evp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-                   ev1 = pointer_to_array(evp1, dim[1], false)   
+                   ev1 = unsafe_wrap(Array, evp1, dim[1], false)
                    evp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
-                   ev2 = pointer_to_array(evp2, dim[1], false)   
+                   ev2 = unsafe_wrap(Array, evp2, dim[1], false)
                    if unsafe_access
                        return ev1, ev2
                    else    
@@ -203,16 +203,16 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
         elseif DIM==3
             @eval begin
                function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
-                   dim =Array(Int32, 1)
+                   dim = zeros(Int32, 1)
                    evp1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-                   ev1 = pointer_to_array(evp1, dim[1], false)   
+                   ev1 = unsafe_wrap(Array, evp1, dim[1], false)
                    evp2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
-                   ev2 = pointer_to_array(evp2, dim[1], false)   
+                   ev2 = unsafe_wrap(Array, evp2, dim[1], false)
                    evp3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 3 )
-                   ev3 = pointer_to_array(evp3, dim[1], false)   
+                   ev3 = unsafe_wrap(Array, evp3, dim[1], false)
                    if unsafe_access
                        return ev1, ev2, ev3
                    else    
@@ -226,10 +226,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
         if DIM==2
             @eval begin
                 function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
-                   dim =Array(Int32, 2)
+                   dim = zeros(Int32, 2)
                    evp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}), m.m, dim )
-                   ev = pointer_to_array(evp, (dim[1], dim[2]), false)   
+                   ev = unsafe_wrap(Array, evp, (dim[1], dim[2]), false)
                    if unsafe_access
                        return ev
                    else    
@@ -252,10 +252,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
         @eval begin
 
             function get_nodes(m::($METHOD){$T})
-               dim =Array(Int32, 1)
+               dim = zeros(Int32, 1)
                np = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-               n = pointer_to_array(np, dim[1], false)     
+               n = unsafe_wrap(Array, np, dim[1], false)
                copy(n)
             end
 
@@ -264,13 +264,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
         @eval begin
 
             function get_nodes(m::($METHOD){$T})
-               dim =Array(Int32, 1)
+               dim = zeros(Int32, 1)
                np1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-               n1 = pointer_to_array(np1, dim[1], false)     
+               n1 = unsafe_wrap(Array, np1, dim[1], false)
                np2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
-               n2 = pointer_to_array(np2, dim[1], false)     
+               n2 = unsafe_wrap(Array, np2, dim[1], false)
                copy(n1), copy(n2)
             end
 
@@ -279,16 +279,16 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
         @eval begin
 
             function get_nodes(m::($METHOD){$T})
-               dim =Array(Int32, 1)
+               dim = zeros(Int32, 1)
                np1 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-               n1 = pointer_to_array(np1, dim[1], false)     
+               n1 = unsafe_wrap(Array, np1, dim[1], false)
                np2 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 2 )
-               n2 = pointer_to_array(np2, dim[1], false)     
+               n2 = unsafe_wrap(Array, np2, dim[1], false)
                np3 = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nodes",SUF))), Ptr{$T},
                      (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 3 )
-               n3 = pointer_to_array(np3, dim[1], false)     
+               n3 = unsafe_wrap(Array, np3, dim[1], false)
                copy(n1), copy(n2), copy(n3)
             end
 
@@ -427,10 +427,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
             
                 function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
-                   dims =Array(Int32, 1)
+                   dims = zeros(Int32, 1)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_data_wf",SUF))), Ptr{Complex{$T}},
                          (Ptr{Void}, Ptr{Int32}), psi.p, dims )
-                   data = pointer_to_array(up, dims[1], false)     
+                   data = unsafe_wrap(Array, up, dims[1], false)
                    if unsafe_access
                       return data
                    else
@@ -478,10 +478,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                 function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
-                   dims =Array(Int32, 2)
+                   dims = zeros(Int32, 2)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_data_wf",SUF))), Ptr{Complex{$T}},
                          (Ptr{Void}, Ptr{Int32}), psi.p, dims )
-                   data = pointer_to_array(up, (dims[1], dims[2]), false)     
+                   data = unsafe_wrap(Array, up, (dims[1], dims[2]), false)
                    if unsafe_access
                       return data
                    else
@@ -527,10 +527,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
-                   dims =Array(Int32, 3)
+                   dims = zeros(Int32, 3)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_data_wf",SUF))), Ptr{Complex{$T}},
                          (Ptr{Void}, Ptr{Int32}), psi.p, dims )
-                   data = pointer_to_array(up, (dims[1], dims[2], dims[3]), false)     
+                   data = unsafe_wrap(Array, up, (dims[1], dims[2], dim[3]), false)
                    if unsafe_access
                       return data
                    else
@@ -660,10 +660,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                 function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
-                   dims =Array(Int32, 1)
+                   dims = zeros(Int32, 1)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_data_wf",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}), psi.p, dims )
-                   data = pointer_to_array(up, dims[1], false)     
+                   data = unsafe_wrap(Array, up, dims[1], false)
                    if unsafe_access
                       return data
                    else
@@ -697,10 +697,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                 function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
-                   dims =Array(Int32, 2)
+                   dims = zeros(Int32, 2)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_data_wf",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}), psi.p, dims )
-                   data = pointer_to_array(up, (dims[1], dims[2]), false)     
+                   data = unsafe_wrap(Array, up, (dims[1], dims[2]), false)
                    if unsafe_access
                       return data
                    else
@@ -734,10 +734,10 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
             
                 function get_data(psi::($WF){$T}, unsafe_access::Bool=false)
-                   dims =Array(Int32, 3)
+                   dims = zeros(Int32, 3)
                    up = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_data_wf",SUF))), Ptr{$T},
                          (Ptr{Void}, Ptr{Int32}), psi.p, dims )
-                   data = pointer_to_array(up, (dims[1], dims[2], dims[3]), false)     
+                   data = unsafe_wrap(Array, up, (dims[1], dims[2], dim[3]), false)
                    if unsafe_access
                       return data
                    else
