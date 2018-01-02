@@ -33,11 +33,6 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
                  (Ptr{Void}, ), m.m )
         end
 
-        function get_hbar(m::($METHOD){($T)})
-           ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_hbar",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
-        end
-
         function get_cubic_coupling(m::($METHOD){($T)})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_cubic_coupling",SUF))), ($T),
                  (Ptr{Void}, ), m.m )

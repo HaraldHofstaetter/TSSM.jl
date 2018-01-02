@@ -152,18 +152,6 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                  (Ptr{Void}, ), psi.p )
         end
 
-        function get_eigenvalues(m::($METHOD){$T}, unsafe_access::Bool=false)
-           dim = zeros(Int32, 1)
-           evp = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_eigenvalues",SUF))), Ptr{$T},
-                 (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
-           ev = unsafe_wrap(Array, evp, dim[1], false)
-           if unsafe_access
-               return ev
-           else    
-               return copy(ev)
-           end
-        end
-
     end #eval
 
     if NONSEPARATED_EIGENVALUES==0 # cartesian
@@ -403,26 +391,32 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                 function set!(psi::($WF){$T}, f::Function)
-                   try
+                   rt = Base.return_types(f, (($T),))
+                   if length(rt)==1 && rt[1]==($T)
                        f_c = cfunction(f, ($T), (($T),))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"rset_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}), psi.p, f_c )
-                   catch
+                   elseif length(rt)==1 && rt[1]==Complex{$T}
                        f_c = cfunction(f, Complex{$T}, (($T),))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                   else
+                       error("wrong return type of function")
                    end      
                 end
         
                 function set!(psi::($WF){$T}, f::Function, t::Real)
-                   try
+                   rt = Base.return_types(f, (($T),($T),))
+                   if length(rt)==1 && rt[1]==($T)
                        f_c = cfunction(f, ($T), (($T), ($T),))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"rset_t_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
-                   catch
+                   elseif length(rt)==1 && rt[1]==Complex{$T}
                        f_c = cfunction(f, Complex{$T}, (($T), ($T),))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_t_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                   else
+                       error("wrong return type of function")
                    end      
                 end
             
@@ -454,26 +448,32 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                 function set!(psi::($WF){$T}, f::Function)
-                   try
+                   rt = Base.return_types(f, (($T),($T),))
+                   if length(rt)==1 && rt[1]==($T)
                        f_c = cfunction(f, ($T), (($T),($T)))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"rset_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}), psi.p, f_c )
-                   catch
+                   elseif length(rt)==1 && rt[1]==Complex{$T}
                        f_c = cfunction(f, Complex{$T}, (($T),($T)))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                   else
+                       error("wrong return type of function")
                    end      
                 end
         
                 function set!(psi::($WF){$T}, f::Function, t::Real)
-                   try
+                   rt = Base.return_types(f, (($T),($T),($T),))
+                   if length(rt)==1 && rt[1]==($T)
                        f_c = cfunction(f, ($T), (($T), ($T),($T)))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"rset_t_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
-                   catch
+                   elseif length(rt)==1 && rt[1]==Complex{$T}
                        f_c = cfunction(f, Complex{$T}, (($T), ($T),($T)))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_t_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                   else
+                       error("wrong return type of function")
                    end      
                 end
 
@@ -503,26 +503,32 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                 function set!(psi::($WF){$T}, f::Function)
-                   try
+                   rt = Base.return_types(f, (($T),($T),($T),))
+                   if length(rt)==1 && rt[1]==($T)
                        f_c = cfunction(f, ($T), (($T),($T),($T)))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"rset_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}), psi.p, f_c )
-                   catch
+                   elseif length(rt)==1 && rt[1]==Complex{$T}
                        f_c = cfunction(f, Complex{$T}, (($T),($T),($T)))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}), psi.p, f_c )
+                   else
+                       error("wrong return type of function")
                    end      
                 end
         
                 function set!(psi::($WF){$T}, f::Function, t::Real)
-                   try
+                   rt = Base.return_types(f, (($T),($T),($T),($T)))
+                   if length(rt)==1 && rt[1]==($T)
                        f_c = cfunction(f, ($T), (($T), ($T),($T),($T)))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"rset_t_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
-                   catch
+                   elseif length(rt)==1 && rt[1]==Complex{$T}
                        f_c = cfunction(f, Complex{$T}, (($T), ($T),($T),($T)))
                        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_t_wf",SUF))), Void,
                              (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
+                   else
+                       error("wrong return type of function")
                    end      
                 end
 
