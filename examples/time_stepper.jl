@@ -342,7 +342,7 @@ function global_orders(psi::WaveFunction, reference_solution::WaveFunction,
                        t0::Real, tend::Real, dt::Real;
                        scheme::Tuple=Strang, operator_sequence="AB", rows=8)
     @assert psi.m==reference_solution.m
-    tab = Array(Float64, rows, 3)
+    tab = zeros(Float64, rows, 3)
 
     wf_save_initial_value = clone(psi)
     copy!(wf_save_initial_value, psi)
@@ -357,7 +357,7 @@ function global_orders(psi::WaveFunction, reference_solution::WaveFunction,
            step!(psi, dt1, scheme, operator_sequence)
         end   
         err = distance(psi, reference_solution)
-        if (row==1) then
+        if (row==1) 
             @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
             tab[row,1] = dt1
             tab[row,2] = err
@@ -382,7 +382,7 @@ function local_orders(psi::WaveFunction, t0::Real, dt::Real;
                       reference_scheme::Tuple=scheme, reference_operator_sequence=operator_sequence,
                       reference_steps=10,
                       rows=8)
-    tab = Array(Float64, rows, 3)
+    tab = zeros(Float64, rows, 3)
 
     wf_save_initial_value = clone(psi)
     psi_ref = clone(psi)
@@ -399,7 +399,7 @@ function local_orders(psi::WaveFunction, t0::Real, dt::Real;
             step!(psi_ref, dt1/reference_steps, reference_scheme, reference_operator_sequence)
         end    
         err = distance(psi, psi_ref)
-        if (row==1) then
+        if (row==1) 
             @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
             tab[row,1] = dt1
             tab[row,2] = err
@@ -422,7 +422,7 @@ end
 function local_orders(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real; 
                        scheme::Tuple=Strang, operator_sequence="AB", rows=8)
-    tab = Array(Float64, rows, 3)
+    tab = zeros(Float64, rows, 3)
 
     wf_save_initial_value = clone(psi)
     reference_solution = clone(psi)
@@ -435,7 +435,7 @@ function local_orders(psi::WaveFunction, get_reference_solution::Function,
         step!(psi, dt1, scheme, operator_sequence)
         set!(reference_solution, get_reference_solution, t0+dt1)
         err = distance(psi, reference_solution)
-        if (row==1) then
+        if (row==1) 
             @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
             tab[row,1] = dt1
             tab[row,2] = err
@@ -458,7 +458,7 @@ end
 function local_orders_0(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
                        scheme1, scheme2; operator_sequence="AB", rows=8, order=0)
-    tab = Array(Float64, rows, 5)
+    tab = zeros(Float64, rows, 5)
 
     wf_save_initial_value = clone(psi)
     psi2 = clone(psi)
@@ -485,7 +485,7 @@ function local_orders_0(psi::WaveFunction, get_reference_solution::Function,
         set!(reference_solution, get_reference_solution, t0+dt1)
         err1 = distance(psi, reference_solution)
         err2 = distance(psi2, reference_solution)
-        if (row==1) then
+        if (row==1) 
             @printf("%3i%12.3e%12.3e       %12.3e\n", row, Float64(dt1), Float64(err1), Float64(err2))
             tab[row,1] = dt1
             tab[row,2] = err1
