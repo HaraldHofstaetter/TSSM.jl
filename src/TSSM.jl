@@ -483,6 +483,12 @@ function set_fftw_planning_rigor(flag::Integer=FFTW.ESTIMATE)
    end
 end
 
+function cfunction_check_return_type(f, r, a)
+    rt = Base.return_types(f, a)
+    @assert(length(rt)==1 && rt[1]==r, "wrong return type of function")
+    cfunction(f, r, a)
+end
+
 
 T = :Float64
 TSSM_HANDLE = :tssm_handle

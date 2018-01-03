@@ -193,7 +193,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
     if DIM==1
         @eval begin
             function set_potential!(m::($METHOD){($T)}, f::Function)
-               f_c = cfunction(f, ($T), (($T),))
+               f_c = cfunction_check_return_type(f, ($T), (($T),))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}), m.m, f_c )
             end
@@ -215,7 +215,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             end
 
             function observable(psi::($WF){$T}, f::Function)
-               f_c = cfunction(f, ($T), (($T), ))
+               f_c = cfunction_check_return_type(f, ($T), (($T), ))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"observable_wf",SUF))), ($T),
                      (Ptr{Void}, Ptr{Void} ), psi.p, f_c )
             end
@@ -224,13 +224,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
         if COMPLEX_METHOD
         @eval begin
             function set_potential_t!(m::($METHOD){($T)}, f::Function)
-               f_c = cfunction(f, ($T), (($T),($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T),($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, false )
             end
 
             function set_potential_t_derivative!(m::($METHOD){($T)}, f::Function)
-               f_c = cfunction(f, ($T), (($T),($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T),($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, true )
             end
@@ -262,7 +262,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
     elseif DIM==2
         @eval begin
             function set_potential!(m::($METHOD){($T)}, f::Function)
-               f_c = cfunction(f, ($T), (($T), ($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T), ($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}), m.m, f_c )
             end
@@ -283,7 +283,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             end
 
             function observable(psi::($WF){$T}, f::Function)
-               f_c = cfunction(f, ($T), (($T), ($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T), ($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"observable_wf",SUF))), ($T),
                      (Ptr{Void}, Ptr{Void} ), psi.p, f_c)
             end
@@ -292,13 +292,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
         if COMPLEX_METHOD
         @eval begin
             function set_potential_t!(m::($METHOD){($T)}, f::Function)
-               f_c = cfunction(f, ($T), (($T),($T),($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T),($T),($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, false )
             end
 
             function set_potential_t_derivative!(m::($METHOD){($T)}, f::Function)
-               f_c = cfunction(f, ($T), (($T),($T),($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T),($T),($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, true )
             end
@@ -331,7 +331,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
     elseif DIM==3
         @eval begin
             function set_potential!(m::($METHOD){($T)}, f::Function)
-               f_c = cfunction(f, ($T), (($T), ($T), ($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T), ($T), ($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}), m.m, f_c )
             end
@@ -352,7 +352,7 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
             end
 
             function observable(psi::($WF){$T}, f::Function)
-               f_c = cfunction(f, ($T), (($T), ($T), ($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T), ($T), ($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"observable_wf",SUF))), ($T),
                      (Ptr{Void}, Ptr{Void} ), psi.p, f_c )
             end
@@ -361,13 +361,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM) in (
         if COMPLEX_METHOD
         @eval begin
             function set_potential_t!(m::($METHOD){($T)}, f::Function)
-               f_c = cfunction(f, ($T), (($T),($T),($T)($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T),($T),($T)($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, false )
             end
 
             function set_potential_t_derivative!(m::($METHOD){($T)}, f::Function)
-               f_c = cfunction(f, ($T), (($T),($T),($T)($T)))
+               f_c = cfunction_check_return_type(f, ($T), (($T),($T),($T)($T)))
                ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_potential_t",SUF))), Void,
                      (Ptr{Void}, Ptr{Void}, Bool), m.m, f_c, true )
             end

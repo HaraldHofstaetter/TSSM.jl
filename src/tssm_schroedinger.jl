@@ -26,9 +26,9 @@ if DIM==1
         with_potential = potential!=none_1D
         with_potential_t = potential_t!=none_2D
         with_potential_t_derivative = potential_t_derivative!=none_2D
-        V_c = cfunction(potential, ($T), (($T),))
-        V_t_c = cfunction(potential_t, ($T), (($T),($T)))
-        V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T)))
+        V_c = cfunction_check_return_type(potential, ($T), (($T),))
+        V_t_c = cfunction_check_return_type(potential_t, ($T), (($T),($T)))
+        V_t_derivative_c = cfunction_check_return_type(potential_t_derivative, ($T), (($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
                    nx, xmin, xmax, 
@@ -68,9 +68,9 @@ elseif DIM==2
         with_potential = potential!=none_2D
         with_potential_t = potential_t!=none_3D
         with_potential_t_derivative = potential_t_derivative!=none_3D
-        V_c = cfunction(potential, ($T), (($T),($T)))
-        V_t_c = cfunction(potential_t, ($T), (($T),($T),($T)))
-        V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T),($T)))
+        V_c = cfunction_check_return_type(potential, ($T), (($T),($T)))
+        V_t_c = cfunction_check_return_type(potential_t, ($T), (($T),($T),($T)))
+        V_t_derivative_c = cfunction_check_return_type(potential_t_derivative, ($T), (($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), 
                    ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
@@ -113,9 +113,9 @@ elseif DIM==3
         with_potential = potential!=none_3D
         with_potential_t = potential_t!=none_4D
         with_potential_t_derivative = potential_t_derivative!=none_4D
-        V_c = cfunction(potential, ($T), (($T),($T),($T)))
-        V_t_c = cfunction(potential_t, ($T), (($T),($T),($T),($T)))
-        V_t_derivative_c = cfunction(potential_t_derivative, ($T), (($T),($T),($T),($T)))
+        V_c = cfunction_check_return_type(potential, ($T), (($T),($T),($T)))
+        V_t_c = cfunction_check_return_type(potential_t, ($T), (($T),($T),($T),($T)))
+        V_t_derivative_c = cfunction_check_return_type(potential_t_derivative, ($T), (($T),($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), Int32, ($T), ($T), 
                    ($T), ($T), Ptr{Void}, Bool,  Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
@@ -158,7 +158,7 @@ if DIM==1
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
         with_potential = potential!=none_1D
-        V_c = cfunction(potential, ($T), (($T),))
+        V_c = cfunction_check_return_type(potential, ($T), (($T),))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
                    nx, xmin, xmax, 
@@ -190,7 +190,7 @@ elseif DIM==2
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
         with_potential = potential!=none_2D
-        V_c = cfunction(potential, ($T), (($T),($T)))
+        V_c = cfunction_check_return_type(potential, ($T), (($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), 
                    ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
@@ -225,7 +225,7 @@ elseif DIM==3
                        cubic_coupling::Real=0.0,
                        boundary_conditions::Integer=periodic)
         with_potential = potential!=none_3D
-        V_c = cfunction(potential, ($T), (($T),($T),($T)))
+        V_c = cfunction_check_return_type(potential, ($T), (($T),($T),($T)))
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), Int32, ($T), ($T), 
                    ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 

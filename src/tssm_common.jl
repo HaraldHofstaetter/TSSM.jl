@@ -654,13 +654,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                 function set!(psi::($WF){$T}, f::Function)
-                   f_c = cfunction(f, ($T), (($T),))
+                   f_c = cfunction_check_return_type(f, ($T), (($T),))
                    ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_wf",SUF))), Void,
                          (Ptr{Void}, Ptr{Void}), psi.p, f_c )
                 end
     
                 function set!(psi::($WF){$T}, f::Function, t::Real)
-                   f_c = cfunction(f, ($T), (($T), ($T),))
+                   f_c = cfunction_check_return_type(f, ($T), (($T), ($T),))
                    ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_t_wf",SUF))), Void,
                          (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
                 end
@@ -691,13 +691,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                 function set!(psi::($WF){$T}, f::Function)
-                   f_c = cfunction(f, ($T), (($T),($T)))
+                   f_c = cfunction_check_return_type(f, ($T), (($T),($T)))
                    ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_wf",SUF))), Void,
                          (Ptr{Void}, Ptr{Void}), psi.p, f_c )
                 end
     
                 function set!(psi::($WF){$T}, f::Function, t::Real)
-                   f_c = cfunction(f, ($T), (($T), ($T),($T)))
+                   f_c = cfunction_check_return_type(f, ($T), (($T), ($T),($T)))
                    ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_t_wf",SUF))), Void,
                          (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
                 end
@@ -728,13 +728,13 @@ for (METHOD, SUF, COMPLEX_METHOD, DIM, NONSEPARATED_EIGENVALUES) in (
                 end
 
                 function set!(psi::($WF){$T}, f::Function)
-                   f_c = cfunction(f, ($T), (($T),($T),($T)))
+                   f_c = cfunction_check_return_type(f, ($T), (($T),($T),($T)))
                    ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_wf",SUF))), Void,
                          (Ptr{Void}, Ptr{Void}), psi.p, f_c )
                 end
     
                 function set!(psi::($WF){$T}, f::Function, t::Real)
-                   f_c = cfunction(f, ($T), (($T), ($T),($T),($T)))
+                   f_c = cfunction_check_return_type(f, ($T), (($T), ($T),($T),($T)))
                    ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"set_t_wf",SUF))), Void,
                          (Ptr{Void}, Ptr{Void}, ($T)), psi.p, f_c, t )
                 end
