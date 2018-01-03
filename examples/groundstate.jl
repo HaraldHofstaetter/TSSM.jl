@@ -34,8 +34,8 @@ function step_imaginary_time_extrapolated!(this::WaveFunction, dt::Real, extrapo
 
     if operator_sequence[1]=='A'
        to_frequency_space!(this)
-       copy!(psi0, this)
-       copy!(psi1, this)
+       TSSM.copy!(psi0, this)
+       TSSM.copy!(psi1, this)
 
        imaginary_time_propagate_A!(this, 0.5*dt)
        imaginary_time_propagate_B!(this, dt, 2)
@@ -45,7 +45,7 @@ function step_imaginary_time_extrapolated!(this::WaveFunction, dt::Real, extrapo
 
        for k = 2:extrapolation_order
            dt1 = dt/k
-           copy!(psi1, psi0)
+           TSSM.copy!(psi1, psi0)
            imaginary_time_propagate_A!(psi1, 0.5*dt1)
            for j = 1:k-1
                imaginary_time_propagate_B!(psi1, dt1, 2)
@@ -54,12 +54,12 @@ function step_imaginary_time_extrapolated!(this::WaveFunction, dt::Real, extrapo
            imaginary_time_propagate_B!(psi1, dt1, 2)
            imaginary_time_propagate_A!(psi1, 0.5*dt1)
 
-           axpy!(this, psi1, c[k])
+           TSSM.axpy!(this, psi1, c[k])
        end 
     else
        to_real_space!(this)
-       copy!(psi0, this)
-       copy!(psi1, this)
+       TSSM.copy!(psi0, this)
+       TSSM.copy!(psi1, this)
 
        imaginary_time_propagate_B!(this, 0.5*dt, 2)
        imaginary_time_propagate_A!(this, dt)
@@ -84,19 +84,23 @@ function step_imaginary_time_extrapolated!(this::WaveFunction, dt::Real, extrapo
     end   
 end
 
+_init(x) = 1.0
+_init(x,y) = 1.0
+_init(x,y,z) = 1.0
+
 #########################################
 
 function  groundstate!(this::WaveFunction; dt::Real=0.05, 
                        tol::Real=1e-8, max_iters::Integer=10000, 
                        extrapolation_order::Integer=2, scheme=Strang, operator_sequence="AB")
     time0 =time()
-    if dim(this)==1    
-        init(x) = 1.0
-    elseif dim(this)==2    
-        init(x,y) = 1.0
-    elseif dim(this)==3    
-        init(x,y,z) = 1.0
-    end     
+    #if dim(this)==1    
+    #    init(x) = 1.0
+    #elseif dim(this)==2    
+    #    init(x,y) = 1.0
+    #elseif dim(this)==3    
+    #    init(x,y,z) = 1.0
+    #end     
 
    psi1 = clone(this)
    if extrapolation_order >= 2
@@ -105,9 +109,9 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
    end 
    psi_old = clone(this) 
 
-   set!(this, init)
+   set!(this, _init)
 
-   copy!(psi_old, this)
+   TSSM.copy!(psi_old, this)
 
    k = 0
    k_check = 20
@@ -115,7 +119,7 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
 
    for k=0:max_iters
        if mod(k, k_check)==0
-           copy!(psi1, this)
+           TSSM.copy!(psi1, this)
 
            if extrapolation_order==1 
                step_imaginary_time!(psi1, 0.5*dt, scheme, operator_sequence)
@@ -129,7 +133,7 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
            normalize!(psi1)
            E_mu1, E_dev1 = get_energy_expectation_deviation(psi1)
            E1 = E_mu1 - interaction_energy(psi1)
-           err1 = E_dev1/E1
+           err1 = abs(E_dev1/E1)
        end 
 
        if extrapolation_order==1 
@@ -145,9 +149,9 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
        normalize!(this)           
        E_mu, E_dev = get_energy_expectation_deviation(this)
        E = E_mu - interaction_energy(this)
-       err = E_dev/E
+       err = abs(E_dev/E)
 
-       ddd = distance(this, psi_old)
+       ddd = TSSM.distance(this, psi_old)
        calc_time = time() - time0
        if mod(k,k_check)==0 
            @printf("%5i%24.15e%24.15e%12.3e%12.3e%12.3e%10.2f%24.15e%12.3e%12.3e\n",
@@ -156,7 +160,7 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
                @printf("changed step size, old:%24.15e  new:%24.15e\n", dt, 0.5*dt)
                  
                dt = 0.5*dt
-               copy!(this,psi1)
+               TSSM.copy!(this,psi1)
                #Note that if extrapolation_step>1, then psi1 has been overwritten and
                #cannot be used anymore
            end 
@@ -170,7 +174,7 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
        end   
 
        E_old = E
-       copy!(psi_old,this)
+       TSSM.copy!(psi_old,this)
         
     end #for 
 end

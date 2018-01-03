@@ -53,7 +53,7 @@ function density2_tensor_from_full_coeffs(psi::WfMCTDHF1D)
 end
 
 
-type Schroedinger2Electrons <: TSSM.TimeSplittingSpectralMethodComplex2D
+mutable struct Schroedinger2Electrons <: TSSM.TimeSplittingSpectralMethodComplex2D{Float64}
     m::Schroedinger2D
     function Schroedinger2Electrons(nx::Integer, xmin::Real, xmax::Real; 
                                     potential::Function=TSSM.none_2D,
@@ -64,7 +64,7 @@ end
 
 TSSM.set_potential!(m::Schroedinger2Electrons, V::Function) = set_potential!(m.m, V)
 
-type WfSchroedinger2Electrons <: TSSM.WaveFunctionComplex2D
+mutable struct WfSchroedinger2Electrons <: TSSM.WaveFunctionComplex2D{Float64}
     m::Schroedinger2Electrons
     singlet::WfSchroedinger2D
     triplet_up::WfSchroedinger2D

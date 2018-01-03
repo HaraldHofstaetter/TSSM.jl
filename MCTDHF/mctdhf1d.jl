@@ -251,7 +251,7 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
 end
 
 
-type MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D
+mutable struct MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D{Float64}
     m::Schroedinger1D
     f::Int # number of electrons
     N::Int # number of orbitals
@@ -319,7 +319,7 @@ type Orbital
     spin::Int 
 end
 
-type WfMCTDHF1D <: TSSM.WaveFunctionComplex1D
+mutable struct WfMCTDHF1D <: TSSM.WaveFunctionComplex1D{Float64}
     a::Array{Complex{Float64}, 1}
     o::Array{Orbital, 1}
     m::MCTDHF1D
@@ -355,7 +355,7 @@ end
 
 using HDF5
 
-function save(psi::WfMCTDHF1D, filename::ASCIIString)
+function save(psi::WfMCTDHF1D, filename::AbstractString)
     st = psi.m.spin_restricted ? 2 : 1
     for k=1:st:psi.m.N
        TSSM.save(psi.o[k].phi, filename, string("orbital_",k, "_real"),
@@ -372,7 +372,7 @@ function save(psi::WfMCTDHF1D, filename::ASCIIString)
     filename
 end
 
-function load!(psi::WfMCTDHF1D, filename::ASCIIString)
+function load!(psi::WfMCTDHF1D, filename::AbstractString)
     st = psi.m.spin_restricted ? 2 : 1
     for k=1:st:psi.m.N
        TSSM.load!(psi.o[k].phi, filename, string("orbital_",k, "_real"),
