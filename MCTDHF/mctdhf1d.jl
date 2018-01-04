@@ -259,20 +259,21 @@ mutable struct MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D{Float64}
     spins::Array{Int, 1}
     spin_restricted::Bool
     
-    slater_indices
-    density_rules 
-    density2_rules
-    slater_exchange
-    slater1_rules
-    slater2_rules
-    orthogonalization_rules
+    slater_indices    :: Array{Array{Int64,1},1}
+    density_rules     :: Array{Array{Tuple{Int64,Int64,Int64},1},2}
+    density2_rules    :: Array{Array{Tuple{Int64,Int64,Int64},1},4}
+    slater_exchange   :: Array{Tuple{Array{Int64,1},Int64},2}
+    slater1_rules     :: Array{Array{Tuple{Int64,Int64,Float64},1},2}
+    slater2_rules     :: Array{Array{Tuple{Int64,Int64,Float64},1},4}
+    orthogonalization_rules :: Array{Array{Tuple{Int64,Int64,Int64},1},2}
 
-    Vee
-    density_matrix
-    density2_tensor
-    u_pq
-    u_pqs
-    k1
+    Vee               :: Array{Float64,2}
+    density_matrix    :: Array{Complex{Float64},2}
+    density2_tensor   :: Array{Complex{Float64},4}
+    u_pq              :: Array{Complex{Float64},1}
+    u_pqs	      :: Array{Complex{Float64},1}
+
+    k1 
     k2
     k3
     k4
@@ -979,7 +980,7 @@ function axpy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D, f::Number)
     psi1.a[:] += f*psi2.a[:]
 end
 
-function copy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
+function TSSM.copy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
     st = psi1.m.spin_restricted ? 2 : 1
     for j=1:st:psi1.m.N
         TSSM.copy!(psi1.o[j].phi, psi2.o[j].phi)

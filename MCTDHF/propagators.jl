@@ -1,25 +1,27 @@
 function RK2_step!(psi::WfMCTDHF1D, dt::Number; include_kinetic_part::Bool=false, 
-    include_one_particle_potential_part::Bool=true, freeze_time::Bool=!include_kinetic_part)
+    include_one_particle_potential_part::Bool=true, freeze_time::Bool=!include_kinetic_part,
+    k1::WfMCTDHF1D=psi.m.k1,  k2::WfMCTDHF1D=psi.m.k2 )
     # Usually time is frozen if the kinetic part is not included, because in this case
     # time is propagated by the A (=kinetic) part of the time splitting method.
     m = psi.m
     t = get_time(psi)
     t1 = freeze_time ? t : t+0.5*dt
     t2 = freeze_time ? t : t+dt
-    gen_rhs!(m.k1, psi, include_kinetic_part=include_kinetic_part,
+    gen_rhs!(k1, psi, include_kinetic_part=include_kinetic_part,
                         include_one_particle_potential_part=include_one_particle_potential_part)
-    scale!(m.k1, 0.5*dt)
-    axpy!(m.k1, psi, 1.0)
-    set_time!(m.k1, t) 
-    gen_rhs!(m.k2, m.k1, include_kinetic_part=include_kinetic_part,
+    scale!(k1, 0.5*dt)
+    axpy!(k1, psi, 1.0)
+    set_time!(k1, t) 
+    gen_rhs!(k2, k1, include_kinetic_part=include_kinetic_part,
                          include_one_particle_potential_part=include_one_particle_potential_part)
-    axpy!(psi, m.k2, dt)
+    axpy!(psi, k2, dt)
     set_time!(psi, t2) 
     orthonormalize_orbitals!(psi)
 end
 
 function RK4_step!(psi::WfMCTDHF1D, dt::Number; include_kinetic_part::Bool=false, 
-    include_one_particle_potential_part::Bool=true, freeze_time::Bool=!include_kinetic_part)
+    include_one_particle_potential_part::Bool=true, freeze_time::Bool=!include_kinetic_part,
+    k1::WfMCTDHF1D=psi.m.k1,  k2::WfMCTDHF1D=psi.m.k2, k3::WfMCTDHF1D=psi.m.k3,  k4::WfMCTDHF1D=psi.m.k4 )
     # Usually time is frozen if the kinetic part is not included, because in this case
     # time is propagated by the A (=kinetic) part of the time splitting method.
     m = psi.m
@@ -30,34 +32,34 @@ function RK4_step!(psi::WfMCTDHF1D, dt::Number; include_kinetic_part::Bool=false
     t4 = freeze_time ? t : t+dt
     #For this storage-efficient implementation, see
     #E. K. Blum: A  Modification of the  Runge-Kutta Fourth-Order Method
-    gen_rhs!(m.k3, psi, include_kinetic_part=include_kinetic_part,
+    gen_rhs!(k3, psi, include_kinetic_part=include_kinetic_part,
                         include_one_particle_potential_part=include_one_particle_potential_part)
-    scale!(m.k3, dt)
-    copy!(m.k2, m.k3)
-    copy!(m.k1, psi)
-    axpy!(m.k1, m.k3, 0.5)
-    set_time!(m.k1, t2) 
-    gen_rhs!(m.k3, m.k1, include_kinetic_part=include_kinetic_part,
+    scale!(k3, dt)
+    copy!(k2, k3)
+    copy!(k1, psi)
+    axpy!(k1, k3, 0.5)
+    set_time!(k1, t2) 
+    gen_rhs!(k3, k1, include_kinetic_part=include_kinetic_part,
                          include_one_particle_potential_part=include_one_particle_potential_part)
-    scale!(m.k3, dt)
-    axpy!(m.k1, m.k3, 0.5)
-    axpy!(m.k1, m.k2, -0.5)
-    scale!(m.k2,1.0/6)
-    scale!(m.k3, -0.5)
-    set_time!(m.k1, t3) 
-    gen_rhs!(m.k4, m.k1, include_kinetic_part=include_kinetic_part,
+    scale!(k3, dt)
+    axpy!(k1, k3, 0.5)
+    axpy!(k1, k2, -0.5)
+    scale!(k2,1.0/6)
+    scale!(k3, -0.5)
+    set_time!(k1, t3) 
+    gen_rhs!(k4, k1, include_kinetic_part=include_kinetic_part,
                          include_one_particle_potential_part=include_one_particle_potential_part)
-    axpy!(m.k3, m.k4, dt)
-    axpy!(m.k1, m.k3, 1.0)
-    axpy!(m.k2, m.k3, -1.0)
-    scale!(m.k3, 2.0)
-    set_time!(m.k1, t4)     
-    gen_rhs!(m.k4, m.k1, include_kinetic_part=include_kinetic_part,
+    axpy!(k3, k4, dt)
+    axpy!(k1, k3, 1.0)
+    axpy!(k2, k3, -1.0)
+    scale!(k3, 2.0)
+    set_time!(k1, t4)     
+    gen_rhs!(k4, k1, include_kinetic_part=include_kinetic_part,
                          include_one_particle_potential_part=include_one_particle_potential_part)
-    axpy!(m.k3, m.k4, dt)
-    axpy!(m.k1, m.k2, 1.0)
-    axpy!(m.k1, m.k3, 1.0/6)
-    copy!(psi,m.k1)
+    axpy!(k3, k4, dt)
+    axpy!(k1, k2, 1.0)
+    axpy!(k1, k3, 1.0/6)
+    copy!(psi,k1)
     set_time!(psi, t4) 
     orthonormalize_orbitals!(psi)
 end
@@ -68,8 +70,8 @@ end
 function groundstate!(psi::WfMCTDHF1D;  dt::Float64=0.05, max_iter::Int=2000, output_step::Int=20, tol=1e-5,
                       keep_initial_value::Bool=false)
     m = psi.m
-    m.k1 = wave_function(m)
-    m.k2 = wave_function(m)
+    k1 = wave_function(m)
+    k2 = wave_function(m)
     psi1 = wave_function(m)
     
 
@@ -102,18 +104,14 @@ function groundstate!(psi::WfMCTDHF1D;  dt::Float64=0.05, max_iter::Int=2000, ou
         if mod(k,output_step)==0
             copy!(psi1, psi)
             imaginary_time_propagate_A!(psi1, 0.25*dt)
-            orthonormalize_orbitals!(psi1)
-            RK2_step!(psi1, -0.5im*dt)
-            orthonormalize_orbitals!(psi1)
+            RK2_step!(psi1, -0.5im*dt, k1=k1, k2=k2)
             imaginary_time_propagate_A!(psi1, 0.25*dt)
             normalize!(psi1)
-            E1, dev1 = get_energy_expectation_deviation(psi1)
+            E1, dev1 = get_energy_expectation_deviation(psi1, tmp=k1)
             err1 = dev1/max(abs(E1),1.0)
         end
         imaginary_time_propagate_A!(psi, 0.5*dt)
-        orthonormalize_orbitals!(psi)
-        RK2_step!(psi, -1im*dt)
-        orthonormalize_orbitals!(psi)
+        RK2_step!(psi, -1im*dt, k1=k1, k2=k2)
         imaginary_time_propagate_A!(psi, 0.5*dt)
         normalize!(psi)
         
@@ -123,7 +121,7 @@ function groundstate!(psi::WfMCTDHF1D;  dt::Float64=0.05, max_iter::Int=2000, ou
             #E = E_pot + E_kin
             #ctime = time() - time0
             #@printf("step=%4i  E_pot=%14.10f  E_kin=%14.10f  E=%14.10f ctime=%10.2f\n", k, E_pot, E_kin, E, ctime)               
-            E, dev = get_energy_expectation_deviation(psi)
+            E, dev = get_energy_expectation_deviation(psi, tmp=k1)
             err = dev/max(abs(E),1.0)
             ctime = time() - time0
             @printf("step=%4i  E=%14.10f  err=%12.3e  E1=%14.10f  err1=%12.3e  ctime=%10.2f\n", k, E, err, E1, err1, ctime)
@@ -139,8 +137,6 @@ function groundstate!(psi::WfMCTDHF1D;  dt::Float64=0.05, max_iter::Int=2000, ou
         
     end
     
-    m.k1 = nothing
-    m.k2 = nothing
 end
 
 
