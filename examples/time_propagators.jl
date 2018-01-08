@@ -1,4 +1,4 @@
-abstract TimePropagationMethod
+abstract type TimePropagationMethod end
 
 type EquidistantTimeStepper
     method::TimePropagationMethod
@@ -860,7 +860,7 @@ end
 # Adaptive Propagators
 ###########################################################################################
 
-abstract AdaptiveTimePropagationMethod
+abstract type AdaptiveTimePropagationMethod end
 
 type AdaptiveTimeStepper
     method::AdaptiveTimePropagationMethod
@@ -937,32 +937,38 @@ type AdaptiveAdamsLawson <: AdaptiveTimePropagationMethod
     psi0 #::WaveFunction
     psi1 #::WaveFunction
     starting_method #::TimePropagationMethod
+    bootstrap_mode::Bool
+    N1_final::Int
      
     function AdaptiveAdamsLawson(N1::Int; starting_method::Union{Void,TimePropagationMethod}=nothing)
-        N = N1+1
-        ptr = N        
-        t_back = zeros(Float64, N)
-        new(N, N1, ptr, t_back, nothing, nothing, nothing, starting_method)
+        new(N1+1, N1, N1, Float64[], nothing, nothing, nothing, starting_method, starting_method==nothing, N1)
     end
 end    
 
-function initialize!(method::AdaptiveAdamsLawson, psi::WaveFunction, 
-         t0::Real, tend::Real, tol::Real, dt::Real)
-    method.rhs_back = WaveFunction[wave_function(psi.m) for j=1:method.N]              
-    gen_rhs!(method.rhs_back[1], psi)
-    k=1  
-    for I in EquidistantTimeStepper(method.starting_method, psi, t0, dt, method.N1-1) 
-        k += 1
-        gen_rhs!(method.rhs_back[k], psi)
+function initialize!(m::AdaptiveAdamsLawson, psi::WaveFunction, 
+         t0::Real, tend::Real, tol::Real, dt::Real)    
+    N_final = m.N1_final+1
+    m.t_back = zeros(Float64, N_final)
+    m.rhs_back = WaveFunction[wave_function(psi.m) for j=1:N_final]              
+    m.psi0 = wave_function(psi.m)
+    m.psi1 = wave_function(psi.m)
+    gen_rhs!(m.rhs_back[1], psi)
+    if m.bootstrap_mode
+        m.N = 2
+        m.N1 = 1
+    else    
+        k=1   
+        for I in EquidistantTimeStepper(m.starting_method, psi, t0, dt, m.N1-1) 
+            k += 1
+            gen_rhs!(m.rhs_back[k], psi)
+        end
+        m.t_back[:] = Float64[dt*k for k=0:m.N1] 
+        for k=0:m.N1-1
+            propagate_A!(m.rhs_back[m.N1-k], dt*k)
+        end         
     end
-    method.t_back[:] = Float64[dt*k for k=0:method.N1] 
-    for k=0:method.N1-1
-        propagate_A!(method.rhs_back[method.N1-k], dt*k)
-    end         
-    method.psi0 = wave_function(psi.m)
-    method.psi1 = wave_function(psi.m)
-    method.ptr = method.N1
-    (method.N1-1)*dt 
+    m.ptr = m.N1
+    (m.N1-1)*dt 
 end    
 
 function finalize!(method::AdaptiveAdamsLawson, psi::WaveFunction, 
@@ -999,7 +1005,11 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
         end
         propagate_A!(m.psi1, dt)    
         
-        m.ptr = mod(m.ptr, m.N) + 1
+        if m.bootstrap_mode
+            m.ptr += 1
+        else
+            m.ptr = mod(m.ptr, m.N) + 1
+        end
         gen_rhs!(m.rhs_back[m.ptr], m.psi1)    
         m.t_back[m.ptr] = t+dt
         propagate_A!(m.rhs_back[m.ptr], -dt)
@@ -1035,6 +1045,14 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
        if k==m.ptr continue end
        propagate_A!(m.rhs_back[k], dt0)
     end   
+    if m.bootstrap_mode 
+        if m.N1_final>m.N1
+            m.N1 += 1
+            m.N += 1
+        else
+            m.bootstrap_mode = false
+        end
+    end    
     (t, dt)
 end    
 
