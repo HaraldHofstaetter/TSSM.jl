@@ -947,6 +947,7 @@ end
 
 function initialize!(m::AdaptiveAdamsLawson, psi::WaveFunction, 
          t0::Real, tend::Real, tol::Real, dt::Real)    
+    m.bootstrap_mode = m.starting_method==nothing
     N_final = m.N1_final+1
     m.t_back = zeros(Float64, N_final)
     m.rhs_back = WaveFunction[wave_function(psi.m) for j=1:N_final]              
