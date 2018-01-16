@@ -887,6 +887,7 @@ function Base.start(tsi::AdaptiveTimeStepper)
     set_propagate_time_together_with_A!(tsi.psi.m, true)
     set_time!(tsi.psi, tsi.t0)
     initialize!(tsi.method, tsi.psi, tsi.t0, tsi.tend, tsi.tol, tsi.dt)
+    tsi.t0
 end
 
 function Base.done(tsi::AdaptiveTimeStepper, t::Real) 
@@ -987,6 +988,7 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
     
     copy!(m.psi0, psi)
     copy!(m.psi1, psi)
+
     ptr0 = m.ptr
     dt0 = dt
     
