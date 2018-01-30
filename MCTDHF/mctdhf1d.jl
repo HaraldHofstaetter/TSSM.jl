@@ -471,11 +471,24 @@ function TSSM.inner_product(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
     d
 end
 
-function distance(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)  
-    n2 = norm(psi1)^2+norm(psi2)^2-2*real(TSSM.inner_product(psi1,psi2))
-    if n2<0.0
-        return sqrt(complex(n2))
+function distance(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D; expanded::Bool=false)  
+    m = psi1.m
+    if m ≠ psi2.m
+        error("psi1 and psi2 must belong to the same method")
+    end
+    if expanded
+        n2 = norm(psi1)^2+norm(psi2)^2-2*real(TSSM.inner_product(psi1,psi2))
+        if n2<0.0
+            return sqrt(complex(n2))
+        else
+            return sqrt(n2)
+        end     
     else
+        n2 = Base.norm(psi1.a-psi2.a).^2
+        st = m.spin_restricted ? 2 : 1
+        for j=1:st:m.N     
+            n2 += TSSM.distance(psi1.o[j].phi, psi2.o[j].phi)^2
+        end
         return sqrt(n2)
     end
 end
