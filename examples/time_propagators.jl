@@ -43,7 +43,7 @@ function global_orders(method::TimePropagationMethod,
                        psi::WaveFunction, reference_solution::WaveFunction, 
                        t0::Real, tend::Real, dt::Real; rows=8)
     @assert psi.m==reference_solution.m
-    tab = Array(Float64, rows, 3)
+    tab = zeros(Float64, rows, 3)
 
     wf_save_initial_value = clone(psi)
     copy!(wf_save_initial_value, psi)
@@ -56,7 +56,7 @@ function global_orders(method::TimePropagationMethod,
     for row=1:rows
         for t in EquidistantTimeStepper(method, psi, t0, dt1, steps) end
         err = distance(psi, reference_solution)
-        if (row==1) then
+        if (row==1) 
             @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
             tab[row,1] = dt1
             tab[row,2] = err
@@ -551,7 +551,7 @@ function gen_interpolation_matrix(x::Vector{Float64}, z::Vector{Float64})
     L = zeros(n, m)
     for j=1:m
         for i=1:n
-            L[i,j] = prod([(z[j]-x[k])/(x[i]-x[k]) for k=1:i-1])*prod([(z[j]-x[k])/(x[i]-x[k]) for k=i+1:n])
+            L[i,j] = prod(Float64[(z[j]-x[k])/(x[i]-x[k]) for k=1:i-1])*prod(Float64[(z[j]-x[k])/(x[i]-x[k]) for k=i+1:n])
         end
     end
     L
