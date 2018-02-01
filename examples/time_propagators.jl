@@ -109,6 +109,11 @@ end
 #######################################################################################
 #Composition methods
 
+function gen_rhs!(rhs::WaveFunction, psi::WaveFunction)
+    set!(rhs, 0)
+    add_apply_B!(psi,rhs)
+end
+
 
 function get_coeffs_composition(g::Vector{Float64})
     n = length(g)
