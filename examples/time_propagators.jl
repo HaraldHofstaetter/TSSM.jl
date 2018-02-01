@@ -942,12 +942,18 @@ type AdaptiveAdamsLawson <: AdaptiveTimePropagationMethod
     rhs_back #::Vector{WaveFunction} # storage for previous solution values
     psi0 #::WaveFunction
     psi1 #::WaveFunction
+    acc  #::WaveFunction
     starting_method #::TimePropagationMethod
     bootstrap_mode::Bool
     N1_final::Int
+
+    combine_first::Bool
+    version::Int
+    
      
-    function AdaptiveAdamsLawson(N1::Int; starting_method::Union{Void,TimePropagationMethod}=nothing)
-        new(N1+1, N1, N1, Float64[], nothing, nothing, nothing, starting_method, starting_method==nothing, N1)
+    function AdaptiveAdamsLawson(N1::Int; starting_method::Union{Void,TimePropagationMethod}=nothing,
+                                combine_first::Bool=true, version::Int=2)
+        new(N1+1, N1, N1, Float64[], nothing, nothing, nothing, nothing, starting_method, starting_method==nothing, N1, combine_first, version)
     end
 end    
 
@@ -959,6 +965,9 @@ function initialize!(m::AdaptiveAdamsLawson, psi::WaveFunction,
     m.rhs_back = WaveFunction[wave_function(psi.m) for j=1:N_final]              
     m.psi0 = wave_function(psi.m)
     m.psi1 = wave_function(psi.m)
+    if m.version==1 
+        m.acc = wave_function(psi.m)
+    end
     gen_rhs!(m.rhs_back[1], psi)
     if m.bootstrap_mode
         m.N = 2
@@ -969,10 +978,12 @@ function initialize!(m::AdaptiveAdamsLawson, psi::WaveFunction,
             k += 1
             gen_rhs!(m.rhs_back[k], psi)
         end
-        m.t_back[:] = Float64[dt*k for k=0:m.N1] 
-        for k=0:m.N1-1
-            propagate_A!(m.rhs_back[m.N1-k], dt*k)
-        end         
+        m.t_back[:] = Float64[dt*k for k=0:m.N1]
+        if m.version==2 #Lawson
+            for k=0:m.N1-1
+                propagate_A!(m.rhs_back[m.N1-k], dt*k)
+            end         
+        end
     end
     m.ptr = m.N1
     (m.N1-1)*dt 
@@ -982,6 +993,7 @@ function finalize!(method::AdaptiveAdamsLawson, psi::WaveFunction,
          t0::Real, tend::Real, tol::Real, dt::Real, t::Real)
     method.psi0 = nothing
     method.psi1 = nothing
+    method.acc = nothing
     method.rhs_back = nothing
 end     
 
@@ -1005,13 +1017,34 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
         #predictor 
         tt = Float64[m.t_back[mod(k-m.N1+m.ptr-1, m.N)+1] for k=1:m.N1]
         tt = tt - tt[end]
-        C = Float64[dt^m/(m+1) for m=0:m.N1-1]
-        solve_vander_trans(tt, C)
-        for k=1:m.N1
-            k1 = mod(k-m.N1+m.ptr-1, m.N)+1
-            axpy!(m.psi1, m.rhs_back[k1], C[k]*dt)
+        if m.version==2 # Lawson
+            C = Float64[dt^m/(m+1) for m=0:m.N1-1]
+            solve_vander_trans(tt, C)
+            for k=1:m.N1
+                k1 = mod(k-m.N1+m.ptr-1, m.N)+1
+                axpy!(m.psi1, m.rhs_back[k1], C[k]*dt)
+            end
+            propagate_A!(m.psi1, dt)    
+        elseif m.version==1
+            C = inv([(t/dt)^m/factorial(m) for t in tt, m=0:m.N1-1])
+            if m.combine_first
+                k1 = mod(m.ptr-1, m.N)+1
+                copy!(m.acc, m.rhs_back[k1])
+                add_apply_A!(m.psi1, m.acc, 1.0)
+                add_phi_A!(m.acc, m.psi1, dt, 1, dt)
+                set_time!(m.psi1, get_time(m.psi1)+dt)
+            else
+                propagate_A!(m.psi1, dt)
+            end
+            for n=(m.combine_first?2:1):m.N1
+                set!(m.acc, 0.0)
+                for k=1:m.N1
+                    k1 = mod(k-m.N1+m.ptr-1, m.N)+1
+                    axpy!(m.acc, m.rhs_back[k1], C[n,k])
+                end
+                add_phi_A!(m.acc, m.psi1, dt, n, dt)
+            end
         end
-        propagate_A!(m.psi1, dt)    
         
         if m.bootstrap_mode
             m.ptr += 1
@@ -1020,18 +1053,42 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
         end
         gen_rhs!(m.rhs_back[m.ptr], m.psi1)    
         m.t_back[m.ptr] = t+dt
-        propagate_A!(m.rhs_back[m.ptr], -dt)
+        if m.version==2 
+            propagate_A!(m.rhs_back[m.ptr], -dt)
+        end
         
         #corrector
         tt = Float64[m.t_back[mod(k-m.N1+m.ptr-2, m.N)+1] for k=1:m.N1+1]
         tt = tt - tt[end-1]
-        C = Float64[dt^m/(m+1) for m=0:m.N1]       
-        solve_vander_trans(tt, C)
-        for k=1:m.N1+1
-            k1 = mod(k-m.N1+m.ptr-2, m.N)+1
-            axpy!(psi, m.rhs_back[k1], C[k]*dt)
+        if m.version==2 # Lawson
+            C = Float64[dt^m/(m+1) for m=0:m.N1]       
+            solve_vander_trans(tt, C)
+            for k=1:m.N1+1
+                k1 = mod(k-m.N1+m.ptr-2, m.N)+1
+                axpy!(psi, m.rhs_back[k1], C[k]*dt)
+            end
+            propagate_A!(psi, dt)                        
+        elseif m.version==1
+            C = inv([(t/dt)^m/factorial(m) for t in tt, m=0:m.N1])
+            if m.combine_first
+                k1 = mod(m.ptr-2, m.N)+1
+                copy!(m.acc, m.rhs_back[k1])
+                add_apply_A!(psi, m.acc, 1.0)
+                add_phi_A!(m.acc, psi, dt, 1, dt)
+                set_time!(psi, get_time(psi)+dt)
+            else
+                propagate_A!(psi, dt)
+            end        
+            for n=(m.combine_first?2:1):m.N1+1
+                set!(m.acc, 0.0)
+                for k=1:m.N1+1
+                    k1 = mod(k-m.N1+m.ptr-2, m.N)+1
+                    axpy!(m.acc, m.rhs_back[k1], C[n,k])
+                end
+                add_phi_A!(m.acc, psi, dt, n, dt)
+            end  
+
         end
-        propagate_A!(psi, dt)                        
         
         err = distance(psi, m.psi1)/tol
         dt = dt*min(facmax, max(facmin, fac*(1.0/err)^(1.0/(m.N1+1)))) # CHECK m.N+1=p+1 !!!
@@ -1049,10 +1106,12 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
     t += dt0
     m.t_back[m.ptr] = t
     
-    for k=1:m.N
-       if k==m.ptr continue end
-       propagate_A!(m.rhs_back[k], dt0)
-    end   
+    if m.version==2
+        for k=1:m.N
+            if k==m.ptr continue end
+            propagate_A!(m.rhs_back[k], dt0)
+        end   
+    end
     if m.bootstrap_mode 
         if m.N1_final>m.N1
             m.N1 += 1
