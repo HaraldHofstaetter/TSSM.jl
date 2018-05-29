@@ -87,47 +87,61 @@ function step_palindromic!(psi1::WaveFunction, psi2::WaveFunction, dt::Real, sch
     step!(psi2, dt, scheme, reverse(operator_sequence))
 end
 
-function step_defect_based!(psi::WaveFunction, h::WaveFunction, dt::Real, scheme, operator_sequence="AB")
-    set!(h, 0.0) #TODO: set is_real_space=false for AB, true for BA
+function step_defect_based!(psi::WaveFunction, h::WaveFunction, dt::Real, scheme, 
+                            operator_sequence="AB"; symmetrized_defect::Bool=false )
+    set!(h, 0.0) #TODO: set is_real_space=false for AB, true for BA    
     set_time!(h, 0.0)
     s = length(scheme)
     m =  length(operator_sequence)
+
+    f = 1.0
+    if symmetrized_defect
+        f = 0.5
+        which_operator = operator_sequence[1]
+        if 'A' in operator_sequence && which_operator != 'A' 
+            add_apply_A!(psi, h, -f)
+        end
+        if 'B' in operator_sequence && which_operator != 'B' 
+            add_apply_B!(psi, h, -f)
+        end
+        if 'C' in operator_sequence && which_operator != 'C' 
+            add_apply_C!(psi, h, -f)
+        end
+    end
     which_operator = 'X'
     for k = 1:s
         which_operator = operator_sequence[mod(k-1, m) + 1]
-        if k==1
-            if which_operator == 'A'
-                propagate_A!(psi, dt*scheme[k])
-            elseif which_operator == 'B'
-                propagate_B!(psi, dt*scheme[k])
-            elseif which_operator == 'C'
-                propagate_C!(psi, dt*scheme[k])
-            end    
-        else
-            if which_operator == 'A'
-                propagate_A_derivative!(psi, h, dt*scheme[k])
-            elseif which_operator == 'B'
-                propagate_B_derivative!(psi, h, dt*scheme[k])
-            elseif which_operator == 'C'
-                propagate_C_derivative!(psi, h, dt*scheme[k])
-            end    
+
+        y = scheme[k]
+        if (symmetrized_defect && k==1) || (k==s)
+            y-=f
         end
+
         if which_operator == 'A'
-            add_apply_A!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
+            add_apply_A!(psi, h, y)
         elseif which_operator == 'B'
-            add_apply_B!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
+            add_apply_B!(psi, h, y)
         elseif which_operator == 'C'
-            add_apply_C!(psi, h, (k==s ? scheme[k]-1.0 : scheme[k]))
+            add_apply_C!(psi, h, y)
         end
+
+        if which_operator == 'A'
+            propagate_A_derivative!(psi, h, dt*scheme[k])
+        elseif which_operator == 'B'
+            propagate_B_derivative!(psi, h, dt*scheme[k])
+        elseif which_operator == 'C'
+            propagate_C_derivative!(psi, h, dt*scheme[k])
+        end    
+
     end
     if 'A' in operator_sequence && which_operator != 'A' 
-        add_apply_A!(psi, h, -1.0)
+        add_apply_A!(psi, h, -f)
     end
     if 'B' in operator_sequence && which_operator != 'B' 
-        add_apply_B!(psi, h, -1.0)
+        add_apply_B!(psi, h, -f)
     end
     if 'C' in operator_sequence && which_operator != 'C' 
-        add_apply_C!(psi, h, -1.0)
+        add_apply_C!(psi, h, -f)
     end
 end
  
@@ -183,6 +197,9 @@ function Base.next(tsi::AdaptiveTimeStepperIterator, state::AdaptiveTimeStepperS
            err = 0.5*distance(tsi.psi, tsi.psi2)/tsi.tol
         elseif tsi.scheme2=="defect_based"
            step_defect_based!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.operator_sequence)
+           err = dt*norm(tsi.psi2)/(tsi.order+1)/tsi.tol
+        elseif tsi.scheme2=="symmetrized_defect_based"
+           step_defect_based!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.operator_sequence, symmetrized_defect=true)
            err = dt*norm(tsi.psi2)/(tsi.order+1)/tsi.tol
         else
            step_embedded!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.scheme2, tsi.operator_sequence)
@@ -255,6 +272,9 @@ function Base.next(tsi::AdaptiveTimeStepper2Iterator, state::AdaptiveTimeStepper
         elseif tsi.scheme2=="defect_based"
            step_defect_based!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.operator_sequence)
            err = dt*norm(tsi.psi2)/(tsi.order+1)/tsi.tol
+        elseif tsi.scheme2=="symmetrized_defect_based"
+           step_defect_based!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.operator_sequence, symmetrized_defect=true)
+           err = dt*norm(tsi.psi2)/(tsi.order+1)/tsi.tol
         else
            step_embedded!(tsi.psi, tsi.psi2, dt, tsi.scheme1, tsi.scheme2, tsi.operator_sequence)
            err = distance(tsi.psi, tsi.psi2)/tsi.tol
@@ -289,6 +309,7 @@ end
 immutable DefectBasedScheme
     scheme
     order :: Integer
+    symmetrized :: Bool
 end
 
 function adaptive_time_stepper(psi::WaveFunction, t0::Real, tend::Real, 
@@ -308,7 +329,7 @@ end
 function adaptive_time_stepper(psi::WaveFunction, t0::Real, tend::Real, 
                          dt::Real, tol::Real, ds::DefectBasedScheme, 
                          operator_sequence="AB")
-    adaptive_time_stepper(psi, t0, tend, dt, tol, ds.scheme, "defect_based", ds.order,
+    adaptive_time_stepper(psi, t0, tend, dt, tol, ds.scheme, (ds.symmetrized?"symmetrized_defect_based":"defect_based"), ds.order,
                          operator_sequence)
 end    
 
@@ -330,7 +351,7 @@ end
 function adaptive_time_stepper2(psi::WaveFunction, t0::Real, tend::Real, 
                          dt::Real, tol::Real, ds::DefectBasedScheme, 
                          operator_sequence="AB")
-    adaptive_time_stepper2(psi, t0, tend, dt, tol, ds.scheme, "defect_based", ds.order,
+    adaptive_time_stepper2(psi, t0, tend, dt, tol, ds.scheme, (ds.symmetrized?"symmetrized_defect_based":"defect_based"), ds.order,
                          operator_sequence)
 end    
                  
@@ -479,6 +500,10 @@ function local_orders_0(psi::WaveFunction, get_reference_solution::Function,
             step_defect_based!(psi, psi2, dt1, scheme1, operator_sequence)
             scale!(psi2, -dt1/(order+1))
             axpy!(psi2, psi, +1.0)
+        elseif scheme2=="symmetrized_defect_based"
+            step_defect_based!(psi, psi2, dt1, scheme1, operator_sequence, symmetrized_defect=true)
+            scale!(psi2, -dt1/(order+1))
+            axpy!(psi2, psi, +1.0)
         else
             step_embedded!(psi, psi2, dt1, scheme1, scheme2 , operator_sequence)
         end
@@ -528,6 +553,7 @@ end
 function local_orders(psi::WaveFunction, get_reference_solution::Function, 
                        t0::Real, dt::Real, 
                        defect_based_scheme::DefectBasedScheme; operator_sequence="AB", rows=8)
-    local_orders_0(psi, get_reference_solution, t0, dt, defect_based_scheme.scheme, "defect_based",
+    local_orders_0(psi, get_reference_solution, t0, dt, defect_based_scheme.scheme, 
+                   (defect_based_scheme.symmetrized?"symmetrized_defect_based":"defect_based"),
                    operator_sequence=operator_sequence, rows=rows, order=defect_based_scheme.order)
 end    
