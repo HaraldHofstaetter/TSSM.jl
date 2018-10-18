@@ -27,16 +27,16 @@ if DIM==2
         V_c = cfunction_check_return_type(potential, ($T), (($T),($T)))
         V_t_c = cfunction_check_return_type(potential_t, ($T), (($T),($T),($T)))
         V_t_derivative_c = cfunction_check_return_type(potential_t_derivative, ($T), (($T),($T),($T)))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Nothing}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), 
-                   ($T), ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T)), 
+                   ($T), ($T), ($T), Ptr{Nothing}, Bool, Ptr{Nothing}, Bool, Ptr{Nothing}, Bool, ($T)), 
                    nx, xmin, xmax, ny, ymin, ymax, 
                    Omega, hbar, mass, V_c, with_potential, 
                    V_t_c, with_potential_t, V_t_derivative_c, with_potential_t_derivative,
                    cubic_coupling) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+                        $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m) )
         m
     end
 end # eval
@@ -72,16 +72,16 @@ elseif DIM==3
         V_c = cfunction_check_return_type(potential, ($T), (($T),($T),($T)))
         V_t_c = cfunction_check_return_type(potential_t, ($T), (($T),($T),($T),($T)))
         V_t_derivative_c = cfunction_check_return_type(potential_t_derivative, ($T), (($T),($T),($T),($T)))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Nothing}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), Int32, ($T), ($T), 
-                   ($T), ($T), ($T), Ptr{Void}, Bool,  Ptr{Void}, Bool, Ptr{Void}, Bool, ($T)), 
+                   ($T), ($T), ($T), Ptr{Nothing}, Bool,  Ptr{Nothing}, Bool, Ptr{Nothing}, Bool, ($T)), 
                    nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax,  
                    Omega, hbar, mass, V_c, with_potential, 
                    V_t_c, with_potential_t, V_t_derivative_c, with_potential_t_derivative,
                    cubic_coupling) 
         m = ($METHOD){$T}(c)
         finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+                        $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m) )
         m
     end
 end # eval
@@ -109,12 +109,12 @@ end # if
 
     function get_Omega(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_Omega",SUF))), ($T),
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function propagate_C!(psi::($WF){$T}, dt::Number)
-        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_C_wf",SUF))), Void,
-                (Ptr{Void}, Complex{$T},), psi.p, dt)
+        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_C_wf",SUF))), Nothing,
+                (Ptr{Nothing}, Complex{$T},), psi.p, dt)
     end
 
     function propagate_C_derivative!(this::($WF){$T}, other::($WF){$T},
@@ -122,8 +122,8 @@ end # if
        if this.m ≠ other.m
            error("this and other must belong to the same method")
        end
-       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_C_derivative_wf",SUF))), Void,
-                (Ptr{Void}, Ptr{Void}, Complex{$T}), 
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"propagate_C_derivative_wf",SUF))), Nothing,
+                (Ptr{Nothing}, Ptr{Nothing}, Complex{$T}), 
                  this.p, other.p, dt)
     end
 
@@ -132,49 +132,49 @@ end # if
        if this.m ≠ other.m
            error("this and other must belong to the same method")
        end
-       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_C_wf",SUF))), Void,
-                (Ptr{Void}, Ptr{Void}, Complex{$T}), 
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"add_apply_C_wf",SUF))), Nothing,
+                (Ptr{Nothing}, Ptr{Nothing}, Complex{$T}), 
                  this.p, other.p, coefficient)
     end
 
     function imaginary_time_propagate_C!(psi::($WF){$T}, dt::Number)
-       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_C_wf",SUF))), Void,
-                        (Ptr{Void}, Complex{($T)},), psi.p, dt)
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"imaginary_time_propagate_C_wf",SUF))), Nothing,
+                        (Ptr{Nothing}, Complex{($T)},), psi.p, dt)
     end
     
     function get_nx(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nx",SUF))), Int32,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_xmin(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_xmin",SUF))), ($T),
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_xmax(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_xmax",SUF))), $T,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function is_real_space_x(psi::($WF){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"is_real_space_x_wf",SUF))), Int32,
-           (Ptr{Void},), psi.p) == 1
+           (Ptr{Nothing},), psi.p) == 1
     end
 
     function is_frequency_space_x(psi::($WF){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"is_real_space_x_wf",SUF))), Int32,
-           (Ptr{Void},), psi.p) != 1
+           (Ptr{Nothing},), psi.p) != 1
     end
 
     function to_real_space_x!(psi::($WF){$T})
-         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_real_space_x_wf",SUF))), Void,
-                (Ptr{Void},), psi.p)
+         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_real_space_x_wf",SUF))), Nothing,
+                (Ptr{Nothing},), psi.p)
     end
 
     function to_frequency_space_x!(psi::($WF){$T})
-         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_frequency_space_x_wf",SUF))), Void,
-                (Ptr{Void},), psi.p)
+         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_frequency_space_x_wf",SUF))), Nothing,
+                (Ptr{Nothing},), psi.p)
     end
 end # eval    
 
@@ -183,36 +183,36 @@ if DIM>=2
     
         function get_ny(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ny",SUF))), Int32,
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_ymin(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ymin",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_ymax(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ymax",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
         function is_real_space_y(psi::($WF){$T})
         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"is_real_space_y_wf",SUF))), Int32,
-            (Ptr{Void},), psi.p) == 1
+            (Ptr{Nothing},), psi.p) == 1
         end
 
         function is_frequency_space_y(psi::($WF){$T})
         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"is_real_space_y_wf",SUF))), Int32,
-            (Ptr{Void},), psi.p) != 1
+            (Ptr{Nothing},), psi.p) != 1
         end
 
         function to_real_space_y!(psi::($WF){$T})
-            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_real_space_y_wf",SUF))), Void,
-                    (Ptr{Void},), psi.p)
+            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_real_space_y_wf",SUF))), Nothing,
+                    (Ptr{Nothing},), psi.p)
         end
 
         function to_frequency_space_y!(psi::($WF){$T})
-            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_frequency_space_y_wf",SUF))), Void,
-                    (Ptr{Void},), psi.p)
+            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_frequency_space_y_wf",SUF))), Nothing,
+                    (Ptr{Nothing},), psi.p)
         end
     end # eval    
 end
@@ -221,37 +221,37 @@ if DIM>=3
     @eval begin
         function get_nz(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nz",SUF))), Int32,
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_zmin(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_zmin",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_zmax(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_zmax",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function is_real_space_z(psi::($WF){$T})
         ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"is_real_space_z_wf",SUF))), Int32,
-            (Ptr{Void},), psi.p) == 1
+            (Ptr{Nothing},), psi.p) == 1
         end
 
         function is_frequency_space_z(psi::($WF){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"is_real_space_z_wf",SUF))), Int32,
-            (Ptr{Void},), psi.p) != 1
+            (Ptr{Nothing},), psi.p) != 1
         end
     
         function to_real_space_z!(psi::($WF){$T})
-            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_real_space_z_wf",SUF))), Void,
-                    (Ptr{Void},), psi.p)
+            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_real_space_z_wf",SUF))), Nothing,
+                    (Ptr{Nothing},), psi.p)
         end
 
         function to_frequency_space_z!(psi::($WF){$T})
-            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_frequency_space_z_wf",SUF))), Void,
-                    (Ptr{Void},), psi.p)
+            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"to_frequency_space_z_wf",SUF))), Nothing,
+                    (Ptr{Nothing},), psi.p)
         end
         
     end # eval    

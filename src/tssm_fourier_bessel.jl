@@ -18,18 +18,18 @@ end
                        quadrature_rule::Integer = 
                        (boundary_conditions==neumann ? radau : lobatto))
         m = ($METHOD){$T}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), 
-                       Ptr{Void}, (Int32, Int32, Int32, ($T), Int32, Int32), 
+                       Ptr{Nothing}, (Int32, Int32, Int32, ($T), Int32, Int32), 
                        ntheta, nr, nfr, rmax, boundary_conditions, quadrature_rule))
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
         m
     end
 
     function ($METHOD)(T::Type{$T}, filename::AbstractString)
         m = ($METHOD){$T}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new_from_file",SUF))), 
-                       Ptr{Void}, (Cstring, Int32,), filename, length(filename) ))
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+                       Ptr{Nothing}, (Cstring, Int32,), filename, length(filename) ))
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
         m
     end
 end # eval
@@ -55,28 +55,28 @@ end # if
 @eval begin
     function get_ntheta(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ntheta",SUF))), Int32,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_nr(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nr",SUF))), Int32,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_nfr(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nfr",SUF))), Int32,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_rmax(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_rmax",SUF))), ($T),
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
     
     function get_weights(m::($METHOD){$T})
        dim =Array(Int32, 1)
        np = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_weights",SUF))), Ptr{$T},
-             (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
+             (Ptr{Nothing}, Ptr{Int32}, Int32), m.m, dim, 1 )
        n = pointer_to_array(np, dim[1], false)     
        copy(n)
     end
@@ -84,7 +84,7 @@ end # if
     function get_transformation_matrices(m::($METHOD){$T}, unsafe_access::Bool=false)
        dims =Array(Int32, 3)
        Lp = ccall( Libdl.dlsym(tssm_handle, $(string(PRE,"get_L",SUF))), Ptr{$T},
-             (Ptr{Void}, Ptr{Int32}), m.m, dims )
+             (Ptr{Nothing}, Ptr{Int32}), m.m, dims )
        L = pointer_to_array(Lp, (dims[1], dims[2], dims[3]), false)  
        if unsafe_access
            return L
@@ -94,8 +94,8 @@ end # if
     end
 
     function save(m::($METHOD){$T}, filename::AbstractString)
-       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save",SUF))), Void,
-             (Ptr{Void}, Cstring, Int32,), m.m, filename, length(filename))
+       ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"save",SUF))), Nothing,
+             (Ptr{Nothing}, Cstring, Int32,), m.m, filename, length(filename))
     end          
 
 end # eval
@@ -116,10 +116,10 @@ end
     function ($METHOD)(T::Type{$T}, nr::Integer; rmax::Real=1.0, #one($T),
                        boundary_conditions::Integer = dirichlet)
         m = ($METHOD){$T}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), 
-                       Ptr{Void}, (Int32, ($T), Int32), 
+                       Ptr{Nothing}, (Int32, ($T), Int32), 
                        nr,  rmax, boundary_conditions))
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                       $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), n)
         m
     end
 end # eval
@@ -135,18 +135,18 @@ end # if
 @eval begin
     function get_nr(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nr",SUF))), Int32,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_rmax(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_rmax",SUF))), ($T),
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
     
     function get_weights(m::($METHOD){$T})
        dim =Array(Int32, 1)
        np = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_weights",SUF))), Ptr{$T},
-            (Ptr{Void}, Ptr{Int32}, Int32), m.m, dim, 1 )
+            (Ptr{Nothing}, Ptr{Int32}, Int32), m.m, dim, 1 )
        n = pointer_to_array(np, dim[1], false)     
        copy(n)
     end
@@ -154,7 +154,7 @@ end # if
     function get_transformation_matrices(m::($METHOD){$T}, unsafe_access::Bool=false)
        dims =Array(Int32, 2)
        Lp = ccall( dlsym(tssm_handle, $(string(PRE,"get_L",SUF))), Ptr{$T},
-             (Ptr{Void}, Ptr{Int32}), m.m, dims )
+             (Ptr{Nothing}, Ptr{Int32}), m.m, dims )
        L = pointer_to_array(Lp, (dims[1], dims[2]), false)  
        if unsafe_access
            return L

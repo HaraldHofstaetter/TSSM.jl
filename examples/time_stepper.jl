@@ -18,7 +18,7 @@ function step!(psi::WaveFunction, dt::Real, scheme=Strang, operator_sequence="AB
     end 
 end
 
-immutable EquidistantTimeStepperIterator
+struct EquidistantTimeStepperIterator
    psi::WaveFunction
    t0::Real
    tend::Real
@@ -146,7 +146,7 @@ function step_defect_based!(psi::WaveFunction, h::WaveFunction, dt::Real, scheme
 end
  
 
-immutable AdaptiveTimeStepperIterator
+struct AdaptiveTimeStepperIterator
    psi::WaveFunction
    t0::Real
    tend::Real
@@ -160,7 +160,7 @@ immutable AdaptiveTimeStepperIterator
    psi0::WaveFunction
 end
 
-immutable AdaptiveTimeStepperState
+struct AdaptiveTimeStepperState
    t::Real
    dt::Real
 end   
@@ -180,10 +180,12 @@ function Base.done(tsi::AdaptiveTimeStepperIterator, state::AdaptiveTimeStepperS
   state.t >= tsi.tend
 end  
 
+using Printf
+
 function Base.next(tsi::AdaptiveTimeStepperIterator, state::AdaptiveTimeStepperState)
-    const facmin = 0.25
-    const facmax = 4.0
-    const fac = 0.9
+    facmin = 0.25
+    facmax = 4.0
+    fac = 0.9
 
     dt = state.dt
     dt0 = dt
@@ -215,7 +217,7 @@ function Base.next(tsi::AdaptiveTimeStepperIterator, state::AdaptiveTimeStepperS
 end
 
 ################################################################################
-immutable AdaptiveTimeStepper2Iterator
+struct AdaptiveTimeStepper2Iterator
    psi::WaveFunction
    t0::Real
    tend::Real
@@ -229,7 +231,7 @@ immutable AdaptiveTimeStepper2Iterator
    psi0::WaveFunction
 end
 
-immutable AdaptiveTimeStepper2State
+struct AdaptiveTimeStepper2State
    t::Real
    dt::Real
    dt_old::Real
@@ -252,12 +254,13 @@ function Base.done(tsi::AdaptiveTimeStepper2Iterator, state::AdaptiveTimeStepper
 end  
 
 function Base.next(tsi::AdaptiveTimeStepper2Iterator, state::AdaptiveTimeStepper2State)
-    const facmin = 0.25
-    const facmax = 4.0
-    const fac = 0.9
-    const beta1=0.25
-    const beta2=0.25
-    const alpha2=0.25
+    facmin = 0.25
+    facmax = 4.0
+    fac = 0.9
+    beta1=0.25
+    beta2=0.25
+    alpha2=0.25
+
     dt = state.dt
     dt0 = dt
     dt_old=dt
@@ -295,18 +298,18 @@ end
 
 
 ################################################################################
-immutable EmbeddedScheme
+struct EmbeddedScheme
     scheme1
     scheme2
     order :: Integer
 end
 
-immutable PalindromicScheme
+struct PalindromicScheme
     scheme
     order :: Integer
 end
 
-immutable DefectBasedScheme
+struct DefectBasedScheme
     scheme
     order :: Integer
     symmetrized :: Bool
@@ -329,7 +332,7 @@ end
 function adaptive_time_stepper(psi::WaveFunction, t0::Real, tend::Real, 
                          dt::Real, tol::Real, ds::DefectBasedScheme, 
                          operator_sequence="AB")
-    adaptive_time_stepper(psi, t0, tend, dt, tol, ds.scheme, (ds.symmetrized?"symmetrized_defect_based":"defect_based"), ds.order,
+    adaptive_time_stepper(psi, t0, tend, dt, tol, ds.scheme, (ds.symmetrized ? "symmetrized_defect_based" : "defect_based"), ds.order,
                          operator_sequence)
 end    
 
@@ -351,7 +354,7 @@ end
 function adaptive_time_stepper2(psi::WaveFunction, t0::Real, tend::Real, 
                          dt::Real, tol::Real, ds::DefectBasedScheme, 
                          operator_sequence="AB")
-    adaptive_time_stepper2(psi, t0, tend, dt, tol, ds.scheme, (ds.symmetrized?"symmetrized_defect_based":"defect_based"), ds.order,
+    adaptive_time_stepper2(psi, t0, tend, dt, tol, ds.scheme, (ds.symmetrized ? "symmetrized_defect_based" : "defect_based"), ds.order,
                          operator_sequence)
 end    
                  
@@ -554,6 +557,6 @@ function local_orders(psi::WaveFunction, get_reference_solution::Function,
                        t0::Real, dt::Real, 
                        defect_based_scheme::DefectBasedScheme; operator_sequence="AB", rows=8)
     local_orders_0(psi, get_reference_solution, t0, dt, defect_based_scheme.scheme, 
-                   (defect_based_scheme.symmetrized?"symmetrized_defect_based":"defect_based"),
+                   (defect_based_scheme.symmetrized ? "symmetrized_defect_based" : "defect_based"),
                    operator_sequence=operator_sequence, rows=rows, order=defect_based_scheme.order)
 end    

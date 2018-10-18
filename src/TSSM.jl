@@ -4,9 +4,6 @@ module TSSM
 push!(LOAD_PATH, dirname(@__FILE__))
 
 import Base.copy!
-import Base.scale!
-import Base.norm
-import Base.normalize!
 
 export WaveFunction, WaveFunction1D, WaveFunction2D, WaveFunction3D
 export WaveFunctionComplex, WaveFunctionComplex1D, WaveFunctionComplex2D, WaveFunctionComplex3D
@@ -132,285 +129,285 @@ propagate_C!(psi::WaveFunction, dt::Number) = psi
 
 ## Fourier types ############################################################################
 
-type Fourier1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
-    m::Ptr{Void}
+mutable struct Fourier1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
+    m::Ptr{Nothing}
 end 
 
-type Fourier2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
-    m::Ptr{Void}
+mutable struct Fourier2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Nothing}
 end 
 
-type Fourier3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
-    m::Ptr{Void}
+mutable struct Fourier3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Nothing}
 end 
 
-type FourierReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
-    m::Ptr{Void}
+mutable struct FourierReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
+    m::Ptr{Nothing}
 end 
 
-type FourierReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
-    m::Ptr{Void}
+mutable struct FourierReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Nothing}
 end 
 
-type FourierReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
-    m::Ptr{Void}
+mutable struct FourierReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Nothing}
 end 
 
-type WfFourier1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
-    p::Ptr{Void}
+mutable struct WfFourier1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
+    p::Ptr{Nothing}
     m::Fourier1D{T}
 end
 
-type WfFourier2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
-    p::Ptr{Void}
+mutable struct WfFourier2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Nothing}
     m::Fourier2D{T}
 end
 
-type WfFourier3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
-    p::Ptr{Void}
+mutable struct WfFourier3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Nothing}
     m::Fourier3D{T}
 end
 
-type WfFourierReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
-    p::Ptr{Void}
+mutable struct WfFourierReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
+    p::Ptr{Nothing}
     m::FourierReal1D{T}
 end
 
-type WfFourierReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
-    p::Ptr{Void}
+mutable struct WfFourierReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Nothing}
     m::FourierReal2D{T}
 end
 
-type WfFourierReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
-    p::Ptr{Void}
+mutable struct WfFourierReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Nothing}
     m::FourierReal3D{T}
 end
 
 ## FourierBessel types ###########################################################################
 
-type FourierBessel2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
-    m::Ptr{Void}
+mutable struct FourierBessel2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Nothing}
 end 
 
-type FourierBesselReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
-    m::Ptr{Void}
+mutable struct FourierBesselReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Nothing}
 end 
 
-type BesselRotSym1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
-    m::Ptr{Void}
+mutable struct BesselRotSym1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
+    m::Ptr{Nothing}
 end 
 
-type BesselRotSymReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
-    m::Ptr{Void}
+mutable struct BesselRotSymReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
+    m::Ptr{Nothing}
 end 
 
-type WfFourierBessel2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
-    p::Ptr{Void}
+mutable struct WfFourierBessel2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Nothing}
     m::FourierBessel2D{T}
 end
 
-type WfFourierBesselReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
-    p::Ptr{Void}
+mutable struct WfFourierBesselReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Nothing}
     m::FourierBesselReal2D{T}
 end
 
-type WfBesselRotSym1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
-    p::Ptr{Void}
+mutable struct WfBesselRotSym1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
+    p::Ptr{Nothing}
     m::BesselRotSym1D{T}
 end
 
-type WfBesselRotSymReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
-    p::Ptr{Void}
+mutable struct WfBesselRotSymReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
+    p::Ptr{Nothing}
     m::BesselRotSymReal1D{T}
 end
 
 ## Schroedinger types ############################################################################
 
-type Schroedinger1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
-    m::Ptr{Void}
+mutable struct Schroedinger1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
+    m::Ptr{Nothing}
 end 
 
-type Schroedinger2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
-    m::Ptr{Void}
+mutable struct Schroedinger2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Nothing}
 end 
 
-type Schroedinger3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
-    m::Ptr{Void}
+mutable struct Schroedinger3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Nothing}
 end 
 
-type WfSchroedinger1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedinger1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
+    p::Ptr{Nothing}
     m::Schroedinger1D{T}
 end
 
-type WfSchroedinger2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedinger2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Nothing}
     m::Schroedinger2D{T}
 end
 
-type WfSchroedinger3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedinger3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Nothing}
     m::Schroedinger3D{T}
 end
 
-type WfSchroedingerReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
+    p::Ptr{Nothing}
     m::SchroedingerReal1D{T}
 end
 
-type WfSchroedingerReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Nothing}
     m::SchroedingerReal2D{T}
 end
 
-type WfSchroedingerReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Nothing}
     m::SchroedingerReal3D{T}
 end
 
 ## SchroedingerRotating types ############################################################################
 
-type SchroedingerRotating2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerRotating2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerRotating3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerRotating3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Nothing}
 end 
 
-type WfSchroedingerRotating2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerRotating2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Nothing}
     m::SchroedingerRotating2D{T}
 end
 
-type WfSchroedingerRotating3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerRotating3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Nothing}
     m::SchroedingerRotating3D{T}
 end
 
-type SchroedingerRotatingReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerRotatingReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerRotatingReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerRotatingReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Nothing}
 end 
 
-type WfSchroedingerRotatingReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerRotatingReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Nothing}
     m::SchroedingerRotatingReal2D{T}
 end
 
-type WfSchroedingerRotatingReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerRotatingReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Nothing}
     m::SchroedingerRotatingReal3D{T}
 end
 
 
 ## SchroedingerHermite types ############################################################################
 
-type SchroedingerHermite1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerHermite1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex1D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerHermite2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerHermite2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerHermite3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerHermite3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerHermiteReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerHermiteReal1D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal1D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerHermiteReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerHermiteReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerHermiteReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerHermiteReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Nothing}
 end 
 
-type WfSchroedingerHermite1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerHermite1D{T<:AbstractFloat} <: WaveFunctionComplex1D{T}
+    p::Ptr{Nothing}
     m::SchroedingerHermite1D{T}
 end
 
-type WfSchroedingerHermite2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerHermite2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Nothing}
     m::SchroedingerHermite2D{T}
 end
 
-type WfSchroedingerHermite3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerHermite3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Nothing}
     m::SchroedingerHermite3D{T}
 end
 
-type WfSchroedingerHermiteReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerHermiteReal1D{T<:AbstractFloat} <: WaveFunctionReal1D{T}
+    p::Ptr{Nothing}
     m::SchroedingerHermiteReal1D{T}
 end
 
-type WfSchroedingerHermiteReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerHermiteReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Nothing}
     m::SchroedingerHermiteReal2D{T}
 end
 
-type WfSchroedingerHermiteReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerHermiteReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Nothing}
     m::SchroedingerHermiteReal3D{T}
 end
 
 ## SchroedingerGeneralizedLaguerre(Hermite) types ########################################################
 
 
-type SchroedingerGeneralizedLaguerre2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerGeneralizedLaguerre2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex2D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerGeneralizedLaguerreHermite3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerGeneralizedLaguerreHermite3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodComplex3D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerGeneralizedLaguerreReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerGeneralizedLaguerreReal2D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal2D{T}
+    m::Ptr{Nothing}
 end 
 
-type SchroedingerGeneralizedLaguerreHermiteReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
-    m::Ptr{Void}
+mutable struct SchroedingerGeneralizedLaguerreHermiteReal3D{T<:AbstractFloat} <: TimeSplittingSpectralMethodReal3D{T}
+    m::Ptr{Nothing}
 end 
 
-type WfSchroedingerGeneralizedLaguerre2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerGeneralizedLaguerre2D{T<:AbstractFloat} <: WaveFunctionComplex2D{T}
+    p::Ptr{Nothing}
     m::SchroedingerGeneralizedLaguerre2D{T}
 end
 
-type WfSchroedingerGeneralizedLaguerreHermite3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerGeneralizedLaguerreHermite3D{T<:AbstractFloat} <: WaveFunctionComplex3D{T}
+    p::Ptr{Nothing}
     m::SchroedingerGeneralizedLaguerreHermite3D{T}
 end
 
-type WfSchroedingerGeneralizedLaguerreReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerGeneralizedLaguerreReal2D{T<:AbstractFloat} <: WaveFunctionReal2D{T}
+    p::Ptr{Nothing}
     m::SchroedingerGeneralizedLaguerreReal2D{T}
 end
 
-type WfSchroedingerGeneralizedLaguerreHermiteReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
-    p::Ptr{Void}
+mutable struct WfSchroedingerGeneralizedLaguerreHermiteReal3D{T<:AbstractFloat} <: WaveFunctionReal3D{T}
+    p::Ptr{Nothing}
     m::SchroedingerGeneralizedLaguerreHermiteReal3D{T}
 end
 
@@ -424,62 +421,62 @@ const gauss = 1
 const radau = 2
 const lobatto = 3
 
+const MEASURE         = UInt32(0)
+const PATIENT         = UInt32(1 << 5)
+const ESTIMATE        = UInt32(1 << 6)
 
 none_1D(x)=zero(x)
 none_2D(x,y)=zero(x)
 none_3D(x,y,z)=zero(x)
 none_4D(x,y,z,t)=zero(x)
 
-const libtssm = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
-                     string("libtssm.", Libdl.dlext))
-const libtssm_debug = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
-                     string("libtssm_debug.", Libdl.dlext))
-const libtssmq = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
-                     string("libtssmq.", Libdl.dlext))
+using Libdl
 
-__use_Float128 = false
-try
-   h=Libdl.dlopen(libtssmq);
-   using Quadmath
-   __use_Float128 = true
-   Libdl.dlclose(h);
-end   
-const use_Float128 = __use_Float128                     
-#const use_Float128 = false 
+const libtssm = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
+                     string("libtssm.", dlext))
+const libtssm_debug = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
+                     string("libtssm_debug.", dlext))
+const libtssmq = joinpath(dirname(@__FILE__),  "..", "deps", "usr", "lib",
+                     string("libtssmq.", dlext))
+
+# __use_Float128 = false
+#try
+#   h=dlopen(libtssmq);
+#   using Quadmath
+#   __use_Float128 = true
+#   dlclose(h);
+#finally   
+#end   
+#const use_Float128 = __use_Float128                     
+const use_Float128 = false 
 
 function __init__()
-    if searchindex(readstring(`uname -a`), "juliabox")>0
-        # In JuliaBox only 8 out of 16 cores are available.
-        ENV["OMP_NUM_THREADS"] = "8"
-    end
-
     global tssm_handle
     if "TSSM_DEBUG" in keys(ENV) && ENV["TSSM_DEBUG"]=="1"
         warn("using TSSM debug version")
-        tssm_handle = Libdl.dlopen(libtssm_debug) 
+        tssm_handle = dlopen(libtssm_debug) 
     else
-        tssm_handle = Libdl.dlopen(libtssm) 
+        tssm_handle = dlopen(libtssm) 
     end    
-    ccall( Libdl.dlsym(tssm_handle, "tssm_initialize"), Void, ())
-    ccall( Libdl.dlsym(tssm_handle, "tssm_fourier_initialize"), Void, ())
+    ccall( dlsym(tssm_handle, "tssm_initialize"), Nothing, ())
+    ccall( dlsym(tssm_handle, "tssm_fourier_initialize"), Nothing, ())
 
     global tssmq_handle 
     if use_Float128
-        tssmq_handle = Libdl.dlopen(libtssmq) 
-        ccall( Libdl.dlsym(tssmq_handle, "tssmq_initialize"), Void, ())
-        ccall( Libdl.dlsym(tssmq_handle, "tssmq_fourier_initialize"), Void, ())
+        tssmq_handle = dlopen(libtssmq) 
+        ccall( dlsym(tssmq_handle, "tssmq_initialize"), Nothing, ())
+        ccall( dlsym(tssmq_handle, "tssmq_fourier_initialize"), Nothing, ())
     end    
-    set_fftw_planning_rigor(FFTW.ESTIMATE)
+    set_fftw_planning_rigor(ESTIMATE)
 end
 
-
-function set_fftw_planning_rigor(flag::Integer=FFTW.ESTIMATE)
-   if !(flag in [ FFTW.ESTIMATE, FFTW.PATIENT, FFTW.MEASURE])
+function set_fftw_planning_rigor(flag::Integer=ESTIMATE)
+   if !(flag in [ ESTIMATE, PATIENT, MEASURE])
        error("wrong planning rigor flag")
    end
-   ccall( Libdl.dlsym(tssm_handle, "tssm_set_fftw_planning_rigor"), Void, (Int32,), flag )
+   ccall( dlsym(tssm_handle, "tssm_set_fftw_planning_rigor"), Nothing, (Int32,), flag )
     if use_Float128
-       ccall( Libdl.dlsym(tssmq_handle, "tssmq_set_fftw_planning_rigor"), Void, (Int32,), flag )
+       ccall( dlsym(tssmq_handle, "tssmq_set_fftw_planning_rigor"), Nothing, (Int32,), flag )
    end
 end
 

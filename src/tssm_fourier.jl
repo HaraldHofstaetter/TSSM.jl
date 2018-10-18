@@ -19,10 +19,10 @@ if DIM==1
     function ($METHOD)(T::Type{$T}, nx::Integer, xmin::Real, xmax::Real; 
                        boundary_conditions::Integer=periodic)
         c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))),
-            Ptr{Void}, (Int32, ($T), ($T), Int32), nx, xmin, xmax, boundary_conditions)
+            Ptr{Nothing}, (Int32, ($T), ($T), Int32), nx, xmin, xmax, boundary_conditions)
         m = ($METHOD){$T}(c)
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
        m
     end
 end # eval
@@ -36,14 +36,14 @@ end # eval
 end #if
 elseif DIM==2
 @eval begin
-    function ($METHOD)(T::Type{($T)}, nx::Integer, xmin::Real, xmax::Real,
+    function ($METHOD)(T::Type{$T}, nx::Integer, xmin::Real, xmax::Real,
                                        ny::Integer, ymin::Real, ymax::Real; 
                        boundary_conditions::Integer=periodic)
         m = ($METHOD){$T}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), 
-                        Ptr{Void}, (Int32, ($T), ($T), Int32, ($T), ($T), Int32), 
+                        Ptr{Nothing}, (Int32, ($T), ($T), Int32, ($T), ($T), Int32), 
                         nx, xmin, xmax, ny, ymin, ymax, boundary_conditions))
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
         m
     end
 end # eval
@@ -59,17 +59,17 @@ end # eval
 end #if
 elseif DIM==3
 @eval begin
-    function ($METHOD)(T::Type{($T)}, nx::Integer, xmin::Real, xmax::Real,
+    function ($METHOD)(T::Type{$T}, nx::Integer, xmin::Real, xmax::Real,
                                        ny::Integer, ymin::Real, ymax::Real, 
                                        nz::Integer, zmin::Real, zmax::Real; 
                        boundary_conditions::Integer=periodic)
         m = ($METHOD){$T}( ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), 
-                        Ptr{Void}, (Int32, ($T), ($T), Int32, ($T), ($T), 
+                        Ptr{Nothing}, (Int32, ($T), ($T), Int32, ($T), ($T), 
                         Int32, ($T), ($T), Int32), 
                         nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax, 
                         boundary_conditions))
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
         m
     end
 end # eval
@@ -90,17 +90,17 @@ end # if
 @eval begin
     function get_nx(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nx",SUF))), Int32,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_xmin(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_xmin",SUF))), ($T),
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_xmax(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_xmax",SUF))), $T,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 end # eval    
 
@@ -109,17 +109,17 @@ if DIM>=2
     
         function get_ny(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ny",SUF))), Int32,
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_ymin(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ymin",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_ymax(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ymax",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
     end # eval    
 end
@@ -128,17 +128,17 @@ if DIM>=3
     @eval begin
         function get_nz(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nz",SUF))), Int32,
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_zmin(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_zmin",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_zmax(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_zmax",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
     end # eval    
 end 

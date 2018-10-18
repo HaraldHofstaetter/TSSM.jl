@@ -28,16 +28,16 @@ if DIM==1
         with_potential_t_derivative = potential_t_derivative!=none_2D
         V_c = cfunction_check_return_type(potential, ($T), (($T),))
         V_t_c = cfunction_check_return_type(potential_t, ($T), (($T),($T)))
-        V_t_derivative_c = cfunction_check_return_type(potential_t_derivative, ($T), (($T),($T)))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
-                   (Int32, ($T), ($T), ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
+        V_t_derivative_c = cfunction_check_return_type(potential_t_derivative, ($T), (($T),($T)))        
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Nothing}, 
+                   (Int32, ($T), ($T), ($T), ($T), Ptr{Nothing}, Bool, Ptr{Nothing}, Bool, Ptr{Nothing}, Bool, ($T), Int32), 
                    nx, xmin, xmax, 
                    hbar, mass, V_c, with_potential, 
                    V_t_c, with_potential_t, V_t_derivative_c, with_potential_t_derivative,
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
        m
     end
 end # eval
@@ -71,16 +71,16 @@ elseif DIM==2
         V_c = cfunction_check_return_type(potential, ($T), (($T),($T)))
         V_t_c = cfunction_check_return_type(potential_t, ($T), (($T),($T),($T)))
         V_t_derivative_c = cfunction_check_return_type(potential_t_derivative, ($T), (($T),($T),($T)))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Nothing}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), 
-                   ($T), ($T), Ptr{Void}, Bool, Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
+                   ($T), ($T), Ptr{Nothing}, Bool, Ptr{Nothing}, Bool, Ptr{Nothing}, Bool, ($T), Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, 
                    hbar, mass, V_c, with_potential, 
                    V_t_c, with_potential_t, V_t_derivative_c, with_potential_t_derivative,
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
         m
     end
 end # eval
@@ -116,16 +116,16 @@ elseif DIM==3
         V_c = cfunction_check_return_type(potential, ($T), (($T),($T),($T)))
         V_t_c = cfunction_check_return_type(potential_t, ($T), (($T),($T),($T),($T)))
         V_t_derivative_c = cfunction_check_return_type(potential_t_derivative, ($T), (($T),($T),($T),($T)))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Nothing}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), Int32, ($T), ($T), 
-                   ($T), ($T), Ptr{Void}, Bool,  Ptr{Void}, Bool, Ptr{Void}, Bool, ($T), Int32), 
+                   ($T), ($T), Ptr{Nothing}, Bool,  Ptr{Nothing}, Bool, Ptr{Nothing}, Bool, ($T), Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax,  
                    hbar, mass, V_c, with_potential, 
                    V_t_c, with_potential_t, V_t_derivative_c, with_potential_t_derivative,
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
         m
     end
 end # eval
@@ -159,14 +159,14 @@ if DIM==1
                        boundary_conditions::Integer=periodic)
         with_potential = potential!=none_1D
         V_c = cfunction_check_return_type(potential, ($T), (($T),))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
-                   (Int32, ($T), ($T), ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Nothing}, 
+                   (Int32, ($T), ($T), ($T), ($T), Ptr{Nothing}, Bool, ($T), Int32), 
                    nx, xmin, xmax, 
                    hbar, mass, V_c, with_potential,
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
        m
     end
 end # eval
@@ -191,15 +191,15 @@ elseif DIM==2
                        boundary_conditions::Integer=periodic)
         with_potential = potential!=none_2D
         V_c = cfunction_check_return_type(potential, ($T), (($T),($T)))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Nothing}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), 
-                   ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
+                   ($T), ($T), Ptr{Nothing}, Bool, ($T), Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, 
                    hbar, mass, V_c, with_potential, 
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
         m
     end
 end # eval
@@ -226,15 +226,15 @@ elseif DIM==3
                        boundary_conditions::Integer=periodic)
         with_potential = potential!=none_3D
         V_c = cfunction_check_return_type(potential, ($T), (($T),($T),($T)))
-        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Void}, 
+        c = ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"new",SUF))), Ptr{Nothing}, 
                    (Int32, ($T), ($T), Int32, ($T), ($T), Int32, ($T), ($T), 
-                   ($T), ($T), Ptr{Void}, Bool, ($T), Int32), 
+                   ($T), ($T), Ptr{Nothing}, Bool, ($T), Int32), 
                    nx, xmin, xmax, ny, ymin, ymax, nz, zmin, zmax,  
                    hbar, mass, V_c, with_potential,
                    cubic_coupling, boundary_conditions) 
         m = ($METHOD){$T}(c)
-        finalizer(m, x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
-                        $(string(PRE,"finalize",SUF))), Void, (Ptr{Void},), x.m) )
+        finalizer(x -> ccall( Libdl.dlsym(($TSSM_HANDLE), 
+                       $(string(PRE,"finalize",SUF))), Nothing, (Ptr{Nothing},), x.m), m)
         m
     end
 end # eval
@@ -260,17 +260,17 @@ end # if !COMPLEX_METHOD
 @eval begin
     function get_nx(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nx",SUF))), Int32,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_xmin(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_xmin",SUF))), ($T),
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 
     function get_xmax(m::($METHOD){$T})
        ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_xmax",SUF))), $T,
-             (Ptr{Void}, ), m.m )
+             (Ptr{Nothing}, ), m.m )
     end
 end # eval    
 
@@ -279,17 +279,17 @@ if DIM>=2
     
         function get_ny(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ny",SUF))), Int32,
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_ymin(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ymin",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_ymax(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_ymax",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
     end # eval    
 end
@@ -298,17 +298,17 @@ if DIM>=3
     @eval begin
         function get_nz(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_nz",SUF))), Int32,
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_zmin(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_zmin",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
 
         function get_zmax(m::($METHOD){$T})
            ccall( Libdl.dlsym(($TSSM_HANDLE), $(string(PRE,"get_zmax",SUF))), ($T),
-                 (Ptr{Void}, ), m.m )
+                 (Ptr{Nothing}, ), m.m )
         end
     end # eval    
 end 
