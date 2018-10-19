@@ -13,7 +13,7 @@ export TimeSplittinSpectralMethod, TimeSplittinSpectralMethod1D, TimeSplittinSpe
 export TimeSplittinSpectralMethodComplex, TimeSplittinSpectralMethodComplex1D, TimeSplittinSpectralMethodComplex2D, TimeSplittinSpectralMethodComplex3D
 export TimeSplittinSpectralMethodReal, TimeSplittinSpectralMethodReal1D, TimeSplittinSpectralMethodReal2D, TimeSplittinSpectralMethodReal3D
 
-export dim
+export dim, is_real
 
 export periodic, dirichlet, neumann
 
@@ -120,6 +120,12 @@ dim(psi::WaveFunction3D) = 3
 dim(psi::TimeSplittingSpectralMethod1D) = 1
 dim(psi::TimeSplittingSpectralMethod2D) = 2
 dim(psi::TimeSplittingSpectralMethod3D) = 3
+
+
+is_real(psi::WaveFunctionReal) = true
+is_real(psi::WaveFunctionComplex) = false 
+is_real(psi::TimeSplittingSpectralMethodReal) = true
+is_real(psi::TimeSplittingSpectralMethodComplex) = false
 
 
 # Dummy propagators, to be overloaded

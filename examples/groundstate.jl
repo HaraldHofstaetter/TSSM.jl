@@ -84,32 +84,22 @@ function step_imaginary_time_extrapolated!(this::WaveFunction, dt::Real, extrapo
     end   
 end
 
-_init(x) = 1.0
-_init(x,y) = 1.0
-_init(x,y,z) = 1.0
 
 #########################################
+
+using Printf
 
 function  groundstate!(this::WaveFunction; dt::Real=0.05, 
                        tol::Real=1e-8, max_iters::Integer=10000, 
                        extrapolation_order::Integer=2, scheme=Strang, operator_sequence="AB")
-    time0 =time()
-    #if dim(this)==1    
-    #    init(x) = 1.0
-    #elseif dim(this)==2    
-    #    init(x,y) = 1.0
-    #elseif dim(this)==3    
-    #    init(x,y,z) = 1.0
-    #end     
-
+   time0 =time() 
+   
    psi1 = clone(this)
    if extrapolation_order >= 2
        psi2 = clone(this)
        psi3 = clone(this)
    end 
    psi_old = clone(this) 
-
-   set!(this, _init)
 
    TSSM.copy!(psi_old, this)
 
@@ -126,10 +116,7 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
            else
                step_imaginary_time_extrapolated!(psi1, 0.5*dt, extrapolation_order, operator_sequence, psi2, psi3,)
            end
-#ifndef _REAL_
-#           to_recompute_groundstate(psi, extrapolation_order=2)al_space(psi1)
-#           psi1%u = real(psi1%u, prec)
-#endif 
+
            normalize!(psi1)
            E_mu1, E_dev1 = get_energy_expectation_deviation(psi1)
            E1 = E_mu1 - interaction_energy(psi1)
@@ -142,10 +129,6 @@ function  groundstate!(this::WaveFunction; dt::Real=0.05,
            step_imaginary_time_extrapolated!(this, dt, extrapolation_order, operator_sequence, psi2, psi3,)
        end 
 
-#ifndef _REAL_
-#       call this%to_real_space()
-#       this%u = real(this%u, prec)
-#endif 
        normalize!(this)           
        E_mu, E_dev = get_energy_expectation_deviation(this)
        E = E_mu - interaction_energy(this)
