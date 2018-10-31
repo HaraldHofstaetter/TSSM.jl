@@ -659,8 +659,8 @@ mutable struct ExponentialMultistep <: TimePropagationMethod
     starting_method #::TimePropagationMethod
      
     function ExponentialMultistep(N1::Int; version::Int=1, iters::Int=0,
-        final_iteration::Bool=false, combine_first::Bool=true, starting_method::Union{Void,TimePropagationMethod}=nothing, 
-        quadrature::Union{Void,QuadratureRule}=nothing)
+        final_iteration::Bool=false, combine_first::Bool=true, starting_method::Union{Nothing,TimePropagationMethod}=nothing, 
+        quadrature::Union{Nothing,QuadratureRule}=nothing)
         N = iters==0 ? N1 : N1+1
         @assert version>=0 && version<=2
         a = Float64[]
@@ -1029,7 +1029,7 @@ mutable struct AdaptiveAdamsLawson <: AdaptiveTimePropagationMethod
     version::Int
     
      
-    function AdaptiveAdamsLawson(N1::Int; starting_method::Union{Void,TimePropagationMethod}=nothing,
+    function AdaptiveAdamsLawson(N1::Int; starting_method::Union{Nothing,TimePropagationMethod}=nothing,
                                 combine_first::Bool=true, version::Int=2)
         new(N1+1, N1, N1, Float64[], nothing, nothing, nothing, nothing, starting_method, starting_method==nothing, N1, combine_first, version)
     end
