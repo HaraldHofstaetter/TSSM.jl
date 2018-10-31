@@ -85,9 +85,9 @@ function global_orders(method::TimePropagationMethod,
     end
 end
 
-#######################################################################################
+#######################################
 #Splitting methods
-
+#######################################
 
 mutable struct SplittingMethod <: TimePropagationMethod
     s::Int
@@ -113,9 +113,80 @@ function step!(m::SplittingMethod, psi::WaveFunction,
     end         
 end
 
-#######################################################################################
-#Composition methods
 
+# Splitting with RK4 for B step
+mutable struct SplittingRK4BMethod <: TimePropagationMethod
+    s::Int
+    a::Vector{Float64}
+    b::Vector{Float64}
+    G #::WaveFunction
+    U #::Vector{WaveFunction}
+    function SplittingRK4BMethod(a::Vector{Float64}, b::Vector{Float64})         
+         s = length(a)
+         @assert s==length(b)
+         new(s, a, b)
+    end     
+end
+
+function initialize!(method::SplittingRK4BMethod, psi::WaveFunction, 
+         t0::Real, dt::Real, steps::Int)
+    method.G = wave_function(psi.m)
+    method.U = WaveFunction[wave_function(psi.m) for j=1:4]
+    0 # iteration  starts with step 0
+end
+
+function finalize!(method::SplittingRK4BMethod, psi::WaveFunction, 
+         t0::Real, dt::Real, steps::Int, step::Int)
+    method.G = nothing
+    method.U = nothing
+end     
+
+function step!(m::SplittingRK4BMethod, psi::WaveFunction, 
+         t0::Real, dt::Real, steps::Int, step::Int)
+    for j = 1:m.s
+        if m.a[j]!=0.0
+            propagate_A!(psi, m.a[j]*dt)
+        end
+        if m.b[j]!=0.0
+            RK4_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
+        end    
+    end         
+end
+
+function RK4_stepB!(psi::WaveFunction, dt::Number; 
+    # classical explicit Runge-Kutta method for propagating B by dt, using time at t+dt as implied
+    # by autonomization for splitting methods.
+    G::WaveFunction=wave_function(psi.m),
+    U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:4])
+
+    t = get_time(psi)
+    set_time!(psi, t+dt)
+    for j=1:4
+        copy!(U[j], psi)
+        set_time!(U[j], t)
+    end
+    set_time!(psi, t)
+
+    gen_rhs!(G, U[1])
+    axpy!(U[2], G, 0.5*dt)
+    axpy!(psi, G, 1/6*dt)
+
+    gen_rhs!(G, U[2])
+    axpy!(U[3], G, 0.5*dt)
+    axpy!(psi, G, 1/3*dt)
+
+    gen_rhs!(G, U[3])
+    axpy!(U[4], G, dt)
+    axpy!(psi, G, 1/3*dt)
+
+    gen_rhs!(G, U[4])
+    axpy!(psi, G, 1/6*dt)
+    psi
+end
+
+#######################################
+#Composition methods
+#######################################
 function gen_rhs!(rhs::WaveFunction, psi::WaveFunction)
     set!(rhs, 0)
     add_apply_B!(psi,rhs)
@@ -200,9 +271,9 @@ function step!(m::CompositionMethod, psi::WaveFunction,
 end  
 
 
-#######################################################################################
+#######################################
 #(Exponential) Runge-Kutta
-
+#######################################
 
 mutable struct ExponentialRungeKutta <: TimePropagationMethod
     scheme::Int
@@ -547,8 +618,9 @@ function step!(m::ExponentialRungeKutta, psi::WaveFunction,
     end
  end
 
-########################################################################################
+#######################################
 # Exponential multistep
+#######################################
 
 struct QuadratureRule
     c::Vector{Float64} # nodes normed to interval [0,1]
@@ -867,9 +939,9 @@ function step!(m::ExponentialMultistep, psi::WaveFunction,
     end
 end
     
-###########################################################################################
+###############################################################################
 # Adaptive Propagators
-###########################################################################################
+###############################################################################
 
 abstract type AdaptiveTimePropagationMethod end
 
