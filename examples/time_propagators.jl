@@ -28,12 +28,11 @@ function finalize!(method::TimePropagationMethod, psi::WaveFunction,
          t0::Real, dt::Real, steps::Int, step::Int)
 end     
 
-function iterate(tsi::EquidistantTimeStepper, state=0)
-    step = state
-    if step == 0:
-        set_propagate_time_together_with_A(tsi.psi.m, true)
+function Base.iterate(tsi::EquidistantTimeStepper, step=0)
+    if step == 0
+        set_propagate_time_together_with_A!(tsi.psi.m, true)
         set_time!(tsi.psi, tsi.t0)
-        initialize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps)
+        step = initialize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps)
     end
     
     if step >= tsi.steps
