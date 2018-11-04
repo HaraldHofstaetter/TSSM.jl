@@ -28,23 +28,20 @@ function finalize!(method::TimePropagationMethod, psi::WaveFunction,
          t0::Real, dt::Real, steps::Int, step::Int)
 end     
 
-function Base.start(tsi::EquidistantTimeStepper) 
-    set_propagate_time_together_with_A!(tsi.psi.m, true)
-    set_time!(tsi.psi, tsi.t0)
-    initialize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps)
-end
-
-function Base.done(tsi::EquidistantTimeStepper, step::Int) 
-    f = (step>=tsi.steps )
-    if f 
-        finalize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps, step)
+function Base.iterate(tsi::EquidistantTimeStepper, step=0)
+    if step == 0
+        set_propagate_time_together_with_A!(tsi.psi.m, true)
+        set_time!(tsi.psi, tsi.t0)
+        step = initialize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps)
     end
-    f    
-end
     
-function Base.next(tsi::EquidistantTimeStepper, step::Int)    
+    if step >= tsi.steps
+        finalize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps, step)
+        return nothing
+    end
+    
     step!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps, step)
-    (step+1, tsi), step+1
+    return (step+1, tsi), step+1
 end
 
 function global_orders(method::TimePropagationMethod, 
