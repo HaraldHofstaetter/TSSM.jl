@@ -1,12 +1,20 @@
+using Printf
+
 abstract type TimePropagationMethod end
 
-type EquidistantTimeStepper
-    method::TimePropagationMethod
+COUNT_B = 0
 
+mutable struct EquidistantTimeStepper
+    method::TimePropagationMethod
     psi::WaveFunction
     t0::Real
     dt::Real
     steps::Int
+    function EquidistantTimeStepper(method::TimePropagationMethod, psi::WaveFunction,
+        t0::Real, dt::Real, steps::Int)
+        global COUNT_B = 0
+        new(method, psi, t0, dt, steps)
+    end
 end
 
 #default initializer 
@@ -20,23 +28,20 @@ function finalize!(method::TimePropagationMethod, psi::WaveFunction,
          t0::Real, dt::Real, steps::Int, step::Int)
 end     
 
-function Base.start(tsi::EquidistantTimeStepper) 
-    set_propagate_time_together_with_A!(tsi.psi.m, true)
-    set_time!(tsi.psi, tsi.t0)
-    initialize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps)
-end
-
-function Base.done(tsi::EquidistantTimeStepper, step::Int) 
-    f = (step>=tsi.steps )
-    if f 
-        finalize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps, step)
+function Base.iterate(tsi::EquidistantTimeStepper, step=0)
+    if step == 0
+        set_propagate_time_together_with_A!(tsi.psi.m, true)
+        set_time!(tsi.psi, tsi.t0)
+        step = initialize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps)
     end
-    f    
-end
     
-function Base.next(tsi::EquidistantTimeStepper, step::Int)    
+    if step >= tsi.steps
+        finalize!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps, step)
+        return nothing
+    end
+    
     step!(tsi.method, tsi.psi, tsi.t0, tsi.dt, tsi.steps, step)
-    (step+1, tsi), step+1
+    return (step+1, tsi), step+1
 end
 
 function global_orders(method::TimePropagationMethod, 
@@ -51,20 +56,21 @@ function global_orders(method::TimePropagationMethod,
     steps = Int(floor((tend-t0)/dt))
     dt1 = dt
     err_old = 0.0
-    println("             dt         err           C      p")
-    println("-----------------------------------------------")
+    println("             dt         err           C      p      B calls")
+    println("-----------------------------------------------------------")
     for row=1:rows
         for t in EquidistantTimeStepper(method, psi, t0, dt1, steps) end
         err = distance(psi, reference_solution)
         if (row==1) 
-            @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
+            @Printf.printf("%3i%12.3e%12.3e                   %13i\n", row, Float64(dt1), Float64(err), Int64(COUNT_B))
             tab[row,1] = dt1
             tab[row,2] = err
             tab[row,3] = 0 
         else
             p = log(err_old/err)/log(2.0)
             C = err/dt1^p
-            @printf("%3i%12.3e%12.3e%12.3e%7.2f\n", row, Float64(dt1), Float64(err), Float64(C), Float64(p))
+            @Printf.printf("%3i%12.3e%12.3e%12.3e%7.2f%13i\n", row, Float64(dt1), Float64(err),
+                                                       Float64(C), Float64(p), Int64(COUNT_B))
             tab[row,1] = dt1
             tab[row,2] = err
             tab[row,3] = p 
@@ -76,11 +82,11 @@ function global_orders(method::TimePropagationMethod,
     end
 end
 
-#######################################################################################
+#######################################
 #Splitting methods
+#######################################
 
-
-type SplittingMethod <: TimePropagationMethod
+mutable struct SplittingMethod <: TimePropagationMethod
     s::Int
     a::Vector{Float64}
     b::Vector{Float64}
@@ -88,30 +94,100 @@ type SplittingMethod <: TimePropagationMethod
          s = length(a)
          @assert s==length(b)
          new(s, a, b)
-    end     
+    end
 end
 
 function step!(m::SplittingMethod, psi::WaveFunction, 
          t0::Real, dt::Real, steps::Int, step::Int)
     for j = 1:m.s
         if m.a[j]!=0.0
-            propagate_A!(psi, m.a[j]*dt)            
+            propagate_A!(psi, m.a[j]*dt)
         end
         if m.b[j]!=0.0
-            propagate_B!(psi, m.b[j]*dt) 
+            propagate_B!(psi, m.b[j]*dt)
+            global COUNT_B += 1
         end    
     end         
-end  
+end
 
 
+# Splitting with RK4 for B step
+mutable struct SplittingRK4BMethod <: TimePropagationMethod
+    s::Int
+    a::Vector{Float64}
+    b::Vector{Float64}
+    G #::WaveFunction
+    U #::Vector{WaveFunction}
+    function SplittingRK4BMethod(a::Vector{Float64}, b::Vector{Float64})         
+         s = length(a)
+         @assert s==length(b)
+         new(s, a, b)
+    end     
+end
 
+function initialize!(method::SplittingRK4BMethod, psi::WaveFunction, 
+         t0::Real, dt::Real, steps::Int)
+    method.G = wave_function(psi.m)
+    method.U = WaveFunction[wave_function(psi.m) for j=1:4]
+    0 # iteration  starts with step 0
+end
 
-#######################################################################################
+function finalize!(method::SplittingRK4BMethod, psi::WaveFunction, 
+         t0::Real, dt::Real, steps::Int, step::Int)
+    method.G = nothing
+    method.U = nothing
+end     
+
+function step!(m::SplittingRK4BMethod, psi::WaveFunction, 
+         t0::Real, dt::Real, steps::Int, step::Int)
+    for j = 1:m.s
+        if m.a[j]!=0.0
+            propagate_A!(psi, m.a[j]*dt)
+        end
+        if m.b[j]!=0.0
+            RK4_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
+        end    
+    end         
+end
+
+function RK4_stepB!(psi::WaveFunction, dt::Number; 
+    # classical explicit Runge-Kutta method for propagating B by dt, using time at t+dt as implied
+    # by autonomization for splitting methods.
+    G::WaveFunction=wave_function(psi.m),
+    U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:4])
+
+    t = get_time(psi)
+    set_time!(psi, t+dt)
+    for j=1:4
+        copy!(U[j], psi)
+        set_time!(U[j], t)
+    end
+    set_time!(psi, t)
+
+    gen_rhs!(G, U[1])
+    axpy!(U[2], G, 0.5*dt)
+    axpy!(psi, G, 1/6*dt)
+
+    gen_rhs!(G, U[2])
+    axpy!(U[3], G, 0.5*dt)
+    axpy!(psi, G, 1/3*dt)
+
+    gen_rhs!(G, U[3])
+    axpy!(U[4], G, dt)
+    axpy!(psi, G, 1/3*dt)
+
+    gen_rhs!(G, U[4])
+    axpy!(psi, G, 1/6*dt)
+    psi
+end
+
+#######################################
 #Composition methods
-
+#######################################
 function gen_rhs!(rhs::WaveFunction, psi::WaveFunction)
     set!(rhs, 0)
     add_apply_B!(psi,rhs)
+    global COUNT_B += 1
 end
 
 
@@ -128,7 +204,7 @@ function get_coeffs_composition(g::Vector{Float64})
     a,b
 end
 
-type CompositionMethod <: TimePropagationMethod
+mutable struct CompositionMethod <: TimePropagationMethod
     s::Int
     c::Vector{Float64}    
     a::Vector{Float64}
@@ -192,17 +268,17 @@ function step!(m::CompositionMethod, psi::WaveFunction,
 end  
 
 
-#######################################################################################
+#######################################
 #(Exponential) Runge-Kutta
+#######################################
 
-
-type ExponentialRungeKutta <: TimePropagationMethod
+mutable struct ExponentialRungeKutta <: TimePropagationMethod
     scheme::Int
     s::Int
     iters::Int    
     G #::WaveFunction
     U #::Vector{WaveFunction}
-    function ExponentialRungeKutta(scheme::Symbol=:krogstad; iters::Int=(scheme==:gauss_lawson? 4: 0))
+    function ExponentialRungeKutta(scheme::Symbol=:krogstad; iters::Int=(scheme==:gauss_lawson ? 4 : 0))
         scheme1 = 42
         s = 4
         if scheme==:rk4
@@ -306,7 +382,6 @@ function ERK4_step_krogstad!(psi::WaveFunction, dt::Number;
     #Krogstad, eq. (2.42) in Hochbruck/Ostermann
     G::WaveFunction=wave_function(psi.m),
     U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:4])
-    
     s = 4
     c = [0.0, 0.5, 0.5, 1.0]*dt
     t = get_time(psi)
@@ -350,7 +425,6 @@ function RK4_step!(psi::WaveFunction, dt::Number;
     #classical explicit Runge-Kutta method (NOT exponential!)
     G::WaveFunction=wave_function(psi.m),
     U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:4])
-    
     s = 4
     c = [0.0, 0.5, 0.5, 1.0]*dt
     t = get_time(psi)
@@ -541,10 +615,11 @@ function step!(m::ExponentialRungeKutta, psi::WaveFunction,
     end
  end
 
-########################################################################################
+#######################################
 # Exponential multistep
+#######################################
 
-immutable QuadratureRule
+struct QuadratureRule
     c::Vector{Float64} # nodes normed to interval [0,1]
     b::Vector{Float64} # weights 
 end
@@ -563,7 +638,7 @@ function gen_interpolation_matrix(x::Vector{Float64}, z::Vector{Float64})
 end
 
 
-type ExponentialMultistep <: TimePropagationMethod
+mutable struct ExponentialMultistep <: TimePropagationMethod
     N::Int
     N1::Int
     iters::Int    
@@ -581,8 +656,8 @@ type ExponentialMultistep <: TimePropagationMethod
     starting_method #::TimePropagationMethod
      
     function ExponentialMultistep(N1::Int; version::Int=1, iters::Int=0,
-        final_iteration::Bool=false, combine_first::Bool=true, starting_method::Union{Void,TimePropagationMethod}=nothing, 
-        quadrature::Union{Void,QuadratureRule}=nothing)
+        final_iteration::Bool=false, combine_first::Bool=true, starting_method::Union{Nothing,TimePropagationMethod}=nothing, 
+        quadrature::Union{Nothing,QuadratureRule}=nothing)
         N = iters==0 ? N1 : N1+1
         @assert version>=0 && version<=2
         a = Float64[]
@@ -615,7 +690,7 @@ function gen_exponential_multistep_starting_values(psi::WaveFunction, dt::Number
     t0 = get_time(psi)
     copy!(psi0, psi)
     for K=2:N
-        for R=1:(final_iteration&&K==N?2:1)
+        for R=1:(final_iteration&&K==N ? 2 : 1)
             copy!(psi, psi0)            
             for J=2:K
                 C  = Matrix{Float64}(inv(Rational{Int}[k^m//factorial(m) for k=-J+2:K-J, m=0:K-2])) 
@@ -627,7 +702,7 @@ function gen_exponential_multistep_starting_values(psi::WaveFunction, dt::Number
                 else
                     propagate_A!(psi, dt)
                 end
-                for m=(combine_first?2:1):K-1                
+                for m=(combine_first ? 2 : 1):K-1                
                     set!(acc, 0.0)
                     for k=1:K-1
                         axpy!(acc, rhs_back[k], C[m,k])
@@ -649,7 +724,7 @@ function gen_exponential_multistep2_starting_values(psi::WaveFunction, dt::Numbe
     t0 = get_time(psi)
     copy!(psi0, psi)
     for K=2:N
-        for R=1:(final_iteration&&K==N?2:1)
+        for R=1:(final_iteration && K==N ? 2 : 1)
             copy!(psi, psi0)            
             for k=1:K-1
                 propagate_A!(rhs_back[k], -(K-2)*dt) 
@@ -692,7 +767,7 @@ function gen_exponential_multistep3_starting_values(psi::WaveFunction, dt::Numbe
     gen_rhs!(rhs_back[1], psi)
     t0 = get_time(psi)
     for K=2:N
-        for R=1:(final_iteration&&K==N?2:1)
+        for R=1:(final_iteration && K==N ? 2 : 1)
             copy!(psi, psi0)
             for J=2:K
                 L = gen_interpolation_matrix(collect(0.0:(K-2.0)), J-2.0+aa) # TODO: check order->order+/-1            
@@ -779,7 +854,7 @@ function step!(m::ExponentialMultistep, psi::WaveFunction,
         else
             propagate_A!(psi, dt)
         end
-        for n=(m.combine_first?2:1):m.N1
+        for n=(m.combine_first ? 2 : 1):m.N1
             set!(m.acc, 0.0)
             for k=1:m.N1
                 k1 = mod(k-m.N1+m.ptr-1, m.N)+1
@@ -825,7 +900,7 @@ function step!(m::ExponentialMultistep, psi::WaveFunction,
             else
                 propagate_A!(psi, dt)
             end        
-            for n=(m.combine_first?2:1):m.N1+1
+            for n=(m.combine_first ? 2 : 1):m.N1+1
                 set!(m.acc, 0.0)
                 for k=1:m.N1+1
                     k1 = mod(k-m.N1+m.ptr-2, m.N)+1
@@ -861,13 +936,13 @@ function step!(m::ExponentialMultistep, psi::WaveFunction,
     end
 end
     
-###########################################################################################
+###############################################################################
 # Adaptive Propagators
-###########################################################################################
+###############################################################################
 
 abstract type AdaptiveTimePropagationMethod end
 
-type AdaptiveTimeStepper
+mutable struct AdaptiveTimeStepper
     method::AdaptiveTimePropagationMethod
 
     psi::WaveFunction
@@ -934,7 +1009,7 @@ end
 #c
 
 
-type AdaptiveAdamsLawson <: AdaptiveTimePropagationMethod
+mutable struct AdaptiveAdamsLawson <: AdaptiveTimePropagationMethod
     N::Int
     N1::Int
     ptr::Int
@@ -951,7 +1026,7 @@ type AdaptiveAdamsLawson <: AdaptiveTimePropagationMethod
     version::Int
     
      
-    function AdaptiveAdamsLawson(N1::Int; starting_method::Union{Void,TimePropagationMethod}=nothing,
+    function AdaptiveAdamsLawson(N1::Int; starting_method::Union{Nothing,TimePropagationMethod}=nothing,
                                 combine_first::Bool=true, version::Int=2)
         new(N1+1, N1, N1, Float64[], nothing, nothing, nothing, nothing, starting_method, starting_method==nothing, N1, combine_first, version)
     end
@@ -999,9 +1074,9 @@ end
 
 function step!(m::AdaptiveAdamsLawson, psi::WaveFunction, 
          t0::Real, tend::Real, tol::Real, dt::Real, t::Real)
-    const facmin = 0.25
-    const facmax = 4.0
-    const fac = 0.9
+    facmin = 0.25
+    facmax = 4.0
+    fac = 0.9
     
     copy!(m.psi0, psi)
     copy!(m.psi1, psi)
@@ -1036,7 +1111,7 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
             else
                 propagate_A!(m.psi1, dt)
             end
-            for n=(m.combine_first?2:1):m.N1
+            for n=(m.combine_first ? 2 : 1):m.N1
                 set!(m.acc, 0.0)
                 for k=1:m.N1
                     k1 = mod(k-m.N1+m.ptr-1, m.N)+1
@@ -1079,7 +1154,7 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
             else
                 propagate_A!(psi, dt)
             end        
-            for n=(m.combine_first?2:1):m.N1+1
+            for n=(m.combine_first ? 2 : 1):m.N1+1
                 set!(m.acc, 0.0)
                 for k=1:m.N1+1
                     k1 = mod(k-m.N1+m.ptr-2, m.N)+1
@@ -1097,7 +1172,7 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
             copy!(m.psi1, m.psi0)
             copy!(psi, m.psi0)
             m.ptr = ptr0
-            @printf("t=%17.9e  err=%17.8e  dt=%17.8e  rejected...\n", 
+            @Printf.printf("t=%17.9e  err=%17.8e  dt=%17.8e  rejected...\n", 
                     Float64(t), Float64(err), Float64(dt))
         end
     end    

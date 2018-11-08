@@ -1,3 +1,4 @@
+using Libdl
 cd(dirname(@__FILE__))
 
 if (!ispath("usr"))
@@ -16,8 +17,8 @@ else
     cd("..")
 end
 
-info("Building TSSM standard version")
-if searchindex(readstring(`uname -a`), "juliabox")>0
+@info "Building TSSM standard version"
+if occursin("juliabox", read(`uname -a`, String))
     run(`make -C TSSM/OPENMP JULIABOX_BUILD=1 all`)
     run(`mv TSSM/OPENMP/libtssm.$(Libdl.dlext) usr/lib`)
     run(`make -C TSSM/OPENMP clean`)
@@ -27,8 +28,8 @@ else
 end
 
 if "TSSM_DEBUG" in keys(ENV) && ENV["TSSM_DEBUG"]=="1"
-    info("Building TSSM debug version")
-    if searchindex(readstring(`uname -a`), "juliabox")>0
+    @info "Building TSSM debug version"
+    if occursin("juliabox", read(`uname -a`))
         run(`make -C TSSM/DEBUG JULIABOX_BUILD=1 all`)
         run(`mv TSSM/DEBUG/libtssm.$(Libdl.dlext) usr/lib/libtssm_debug.$(Libdl.dlext)`)
         #run(`make -C TSSM/DEBUG clean`)
@@ -46,7 +47,7 @@ use_Float128 = false
 #end
 
 if use_Float128
-    info("Building TSSM quadprecision version")
+    @info "Building TSSM quadprecision version"
     if (   !ispath("usr/lib/libfftw3q.so.3.4.4")
         || !ispath("usr/lib/libfftw3q_omp.so.3.4.4"))
         if (!ispath("fftw-3.3.4"))
