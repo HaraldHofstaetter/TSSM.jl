@@ -364,12 +364,14 @@ end
 
 function global_orders(psi::WaveFunction, reference_solution::WaveFunction, 
                        t0::Real, tend::Real, dt::Real;
-                       scheme::Tuple=Strang, operator_sequence="AB", rows=8)
+                       scheme::Tuple=Strang, operator_sequence="AB", rows=8, corrector::String="none", order::Integer=2)
     @assert psi.m==reference_solution.m
     tab = zeros(Float64, rows, 3)
 
     wf_save_initial_value = clone(psi)
     copy!(wf_save_initial_value, psi)
+
+    psi2 = clone(psi)
 
     steps = floor((tend-t0)/dt)
     dt1 = dt
@@ -378,8 +380,22 @@ function global_orders(psi::WaveFunction, reference_solution::WaveFunction,
     println("-----------------------------------")
     for row=1:rows
         for k=1:steps
-           step!(psi, dt1, scheme, operator_sequence)
-        end   
+            if corrector=="palindromic"
+                step_palindromic!(psi, psi2, dt1, scheme, operator_sequence)
+                axpy!(psi, psi2, 1.0)
+                scale!(psi, 0.5)
+            elseif corrector=="defect_based"
+                step_defect_based!(psi, psi2, dt1, scheme, operator_sequence)
+                scale!(psi2, -dt1/(order+1))
+                axpy!(psi, psi2, +1.0)
+            elseif corrector=="symmetrized_defect_based"
+                step_defect_based!(psi, psi2, dt1, scheme, operator_sequence, symmetrized_defect=true)
+                scale!(psi2, -dt1/(order+1))
+                axpy!(psi, psi2, +1.0)
+            else
+                step!(psi, dt1, scheme, operator_sequence)
+            end  
+        end
         err = distance(psi, reference_solution)
         if (row==1) 
             @printf("%3i%12.3e%12.3e\n", row, Float64(dt1), Float64(err))
