@@ -1,3 +1,5 @@
+using Printf
+
 function RK2_step!(psi::WfMCTDHF1D, dt::Number; include_kinetic_part::Bool=false, 
     include_one_particle_potential_part::Bool=true, freeze_time::Bool=!include_kinetic_part,
     k1::WfMCTDHF1D=psi.m.k1,  k2::WfMCTDHF1D=psi.m.k2 )
@@ -97,7 +99,7 @@ function groundstate!(psi::WfMCTDHF1D;  dt::Float64=0.05, max_iter::Int=2000, ou
     end
 
     orthonormalize_orbitals!(psi)
-    psi.a[:] = psi.a[:]/Base.norm(psi.a)
+    psi.a[:] = psi.a[:]/norm(psi.a)
     time0 = time()
 
     for k=1:max_iter

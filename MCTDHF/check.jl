@@ -92,10 +92,10 @@ function convert_to_full!(psi2::WfSchroedinger2Electrons, psi::WfMCTDHF1D)
     u_triplet_up = get_data(psi2.triplet_up, true)
     u_triplet_down = get_data(psi2.triplet_down, true)
     u_triplet_symm = get_data(psi2.triplet_symm, true)
-    u_singlet[:,:] = 0.0
-    u_triplet_up[:,:] = 0.0
-    u_triplet_down[:,:] = 0.0
-    u_triplet_symm[:,:] = 0.0
+    u_singlet[:,:] .= 0.0
+    u_triplet_up[:,:] .= 0.0
+    u_triplet_down[:,:] .= 0.0
+    u_triplet_symm[:,:] .= 0.0
     f = 1/sqrt(2)
     to_real_space!(psi)
     for j = 1:m.lena # eval slater determinants

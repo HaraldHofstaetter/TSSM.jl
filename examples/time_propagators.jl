@@ -1091,7 +1091,7 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
         
         #predictor 
         tt = Float64[m.t_back[mod(k-m.N1+m.ptr-1, m.N)+1] for k=1:m.N1]
-        tt = tt - tt[end]
+        tt = tt .- tt[end]
         if m.version==2 # Lawson
             C = Float64[dt^m/(m+1) for m=0:m.N1-1]
             solve_vander_trans(tt, C)
@@ -1134,7 +1134,7 @@ function step!(m::AdaptiveAdamsLawson, psi::WaveFunction,
         
         #corrector
         tt = Float64[m.t_back[mod(k-m.N1+m.ptr-2, m.N)+1] for k=1:m.N1+1]
-        tt = tt - tt[end-1]
+        tt = tt .- tt[end-1]
         if m.version==2 # Lawson
             C = Float64[dt^m/(m+1) for m=0:m.N1]       
             solve_vander_trans(tt, C)

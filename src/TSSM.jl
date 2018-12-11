@@ -4,14 +4,18 @@ module TSSM
 push!(LOAD_PATH, dirname(@__FILE__))
 
 import Base.copy!
+import LinearAlgebra.norm
+import LinearAlgebra.scale!
+import LinearAlgebra.axpy!
+import LinearAlgebra.normalize!
 
 export WaveFunction, WaveFunction1D, WaveFunction2D, WaveFunction3D
 export WaveFunctionComplex, WaveFunctionComplex1D, WaveFunctionComplex2D, WaveFunctionComplex3D
 export WaveFunctionReal, WaveFunctionReal1D, WaveFunctionReal2D, WaveFunctionReal3D
 
-export TimeSplittinSpectralMethod, TimeSplittinSpectralMethod1D, TimeSplittinSpectralMethod2D, TimeSplittinSpectralMethod3D
-export TimeSplittinSpectralMethodComplex, TimeSplittinSpectralMethodComplex1D, TimeSplittinSpectralMethodComplex2D, TimeSplittinSpectralMethodComplex3D
-export TimeSplittinSpectralMethodReal, TimeSplittinSpectralMethodReal1D, TimeSplittinSpectralMethodReal2D, TimeSplittinSpectralMethodReal3D
+export TimeSplittingSpectralMethod, TimeSplittingSpectralMethod1D, TimeSplittingSpectralMethod2D, TimeSplittingSpectralMethod3D
+export TimeSplittingSpectralMethodComplex, TimeSplittingSpectralMethodComplex1D, TimeSplittingSpectralMethodComplex2D, TimeSplittingSpectralMethodComplex3D
+export TimeSplittingSpectralMethodReal, TimeSplittingSpectralMethodReal1D, TimeSplittingSpectralMethodReal2D, TimeSplittingSpectralMethodReal3D
 
 export dim, is_real
 
@@ -65,9 +69,9 @@ export set_propagate_time_together_with_A!, get_propagate_time_together_with_A
 export propagate_A!, propagate_B!, propagate_C!, add_apply_A!, add_apply_B!, add_apply_C!
 export add_phi_A!
 export propagate_A_derivative!, propagate_B_derivative!, propagate_C_derivative!
-export norm, norm_in_frequency_space, normalize!, distance, scale!, axpy! 
+export norm_in_frequency_space, distance 
 export inner_product, eigen_function!, evaluate
-export save, load!, get_data, set!, copy!
+export save, load!, get_data, set!
 export get_eigenvalues, get_nodes, get_weights, get_transformation_matrices
 export get_nx, get_ny, get_nz
 export get_xmin, get_xmax

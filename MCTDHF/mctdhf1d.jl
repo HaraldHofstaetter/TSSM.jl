@@ -1,6 +1,8 @@
+using TSSM
 using Combinatorics
+using LinearAlgebra
 
-function Base.sign(p::Array{Int,1})
+function sign(p::Array{Int,1})
     n = length(p)
     k = 0    
     for i=1:n
@@ -14,15 +16,14 @@ function Base.sign(p::Array{Int,1})
 end
 
 
-immutable MultiFor
+struct MultiFor
     k::Array{Int,1}
 end
 
-Base.start(MF::MultiFor) = Int[]
-
-Base.done(MF::MultiFor, k::Array{Int,1}) = MF.k==k
-
-function Base.next(MF::MultiFor, k::Array{Int,1}) 
+function Base.iterate(MF::MultiFor, k::Array{Int,1}=Int[]) 
+    if k==MF.k
+        return nothing
+    end
     if k==Int[]
         k = ones(Int, length(MF.k))
         return(copy(k), k)
@@ -80,9 +81,11 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
             for l=j:N
                 J1 = vcat(j,J)
                 J2 = vcat(l,J)
-                j1 = findfirst(slater_indices, sort(J1))
+                #j1 = findfirst(slater_indices, sort(J1))
+                j1 = something(findfirst(isequal(sort(J1)), slater_indices), 0)
                 if j1>0
-                    j2 = findfirst(slater_indices, sort(J2))
+                    #j2 = findfirst(slater_indices, sort(J2))
+                    j2 = something(findfirst(isequal(sort(J2)), slater_indices), 0)
                     if j2>0
                         s1 = sign(J1)
                         s2 = sign(J2)
@@ -105,9 +108,11 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
                     for q=1:N
                         J1 = vcat(j, p)
                         J2 = vcat(l, q)
-                        j1 = findfirst(slater_indices, sort(J1))
+                        #j1 = findfirst(slater_indices, sort(J1))
+                        j1 = something(findfirst(isequal(sort(J1)), slater_indices), 0)
                         if j1>0
-                            j2 = findfirst(slater_indices, sort(J2))
+                            #j2 = findfirst(slater_indices, sort(J2))
+                            j2 = something(findfirst(isequal(sort(J2)), slater_indices), 0)
                             if j2>0
                                 s1 = sign(J1)
                                 s2 = sign(J2)
@@ -130,9 +135,11 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
                     for q=1:N
                         J1 = vcat(j, p, J)
                         J2 = vcat(l, q, J)
-                        j1 = findfirst(slater_indices, sort(J1))
+                        #j1 = findfirst(slater_indices, sort(J1))
+                        j1 = something(findfirst(isequal(sort(J1)), slater_indices), 0)
                         if j1>0
-                            j2 = findfirst(slater_indices, sort(J2))
+                            #j2 = findfirst(slater_indices, sort(J2))
+                            j2 = something(findfirst(isequal(sort(J2)), slater_indices), 0)
                             if j2>0
                                 s1 = sign(J1)
                                 s2 = sign(J2)
@@ -157,16 +164,22 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
         for l=1:lena
             u = symdiff(slater_indices[j], slater_indices[l])
             if length(u)==2
-                i1 = findfirst(slater_indices[j], u[1])
-                i2 = findfirst(slater_indices[l], u[2])
+                #i1 = findfirst(slater_indices[j], u[1])
+                i1 = something(findfirst(isequal(u[1]), slater_indices[j]), 0)
+                #i2 = findfirst(slater_indices[l], u[2])
+                i2 = something(findfirst(isequal(u[2]), slater_indices[l]), 0)
                 s = (-1)^(i1+i2)
                 slater_exchange[j,l] = (u, s)
             elseif length(u)==4
                 u = [u[1], u[3], u[2], u[4]]
-                i1 = findfirst(slater_indices[j], u[1])
-                i2 = findfirst(slater_indices[l], u[2])
-                i3 = findfirst(slater_indices[j], u[3])
-                i4 = findfirst(slater_indices[l], u[4])
+                #i1 = findfirst(slater_indices[j], u[1])
+                i1 = something(findfirst(isequal(u[1]), slater_indices[j]), 0)
+                #i2 = findfirst(slater_indices[l], u[2])
+                i2 = something(findfirst(isequal(u[2]), slater_indices[l]), 0)
+                #i3 = findfirst(slater_indices[j], u[3])
+                i3 = something(findfirst(isequal(u[3]), slater_indices[j]), 0)
+                #i4 = findfirst(slater_indices[l], u[4])
+                i4 = something(findfirst(isequal(u[4]), slater_indices[l]), 0)
                 s = (-1)^(i1+i2+i3+i4)
                 slater_exchange[j,l] = (u, s)
             end
@@ -231,13 +244,15 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
     orthogonalization_rules = [Tuple{Int,Int,Int}[] for p=1:N, q=1:N]
     for p=1:N
         for j=1:lena
-            k = findfirst(slater_indices[j], p)
+            #k = findfirst(slater_indices[j], p)
+            k = something(findfirst(isequal(p), slater_indices[j]), 0)
             if k>0
                 for q=1:p-1
                     J = copy(slater_indices[j])
                     J[k] = q
                     J1 = sort(J)
-                    l = findfirst(slater_indices, J1)
+                    #l = findfirst(slater_indices, J1)
+                    l = something(findfirst(isequal(J1), slater_indices), 0)
                     if l>0
                         s = sign(J)*sign(J1)
                         push!(orthogonalization_rules[p,q], (j,l, s))
@@ -251,7 +266,7 @@ function init_mctdhf_combinatorics(f::Int, N::Int)
 end
 
 
-mutable struct MCTDHF1D <: TSSM.TimeSplittingSpectralMethodComplex1D{Float64}
+mutable struct MCTDHF1D <: TimeSplittingSpectralMethodComplex1D{Float64}
     m::Schroedinger1D
     f::Int # number of electrons
     N::Int # number of orbitals
@@ -311,16 +326,16 @@ function set_potential2!(m::MCTDHF1D, V::Function)
     end
 end
 
-set_potential1!(m::MCTDHF1D, V::Function) = TSSM.set_potential!(m.m, V)
-set_potential1_t!(m::MCTDHF1D, V::Function) = TSSM.set_potential_t!(m.m, V)
+set_potential1!(m::MCTDHF1D, V::Function) = set_potential!(m.m, V)
+set_potential1_t!(m::MCTDHF1D, V::Function) = set_potential_t!(m.m, V)
 
 
-type Orbital
+mutable struct Orbital
     phi::WfSchroedinger1D
     spin::Int 
 end
 
-mutable struct WfMCTDHF1D <: TSSM.WaveFunctionComplex1D{Float64}
+mutable struct WfMCTDHF1D <: WaveFunctionComplex1D{Float64}
     a::Array{Complex{Float64}, 1}
     o::Array{Orbital, 1}
     m::MCTDHF1D
@@ -340,26 +355,52 @@ function TSSM.wave_function(m::MCTDHF1D )
     WfMCTDHF1D(m) 
 end
 
-Base.norm(o::Orbital) = Base.norm(o.phi)
-inner_product(o1::Orbital, o2::Orbital) = (o1.spin==o2.spin ? TSSM.inner_product(o1.phi, o2.phi) : 0.0im)
-potential_matrix_element(o1::Orbital, o2::Orbital) = (o1.spin==o2.spin ? TSSM.potential_matrix_element(o1.phi, o2.phi) : 0.0im)
-kinetic_matrix_element(o1::Orbital, o2::Orbital) = (o1.spin==o2.spin ? TSSM.kinetic_matrix_element(o1.phi, o2.phi) : 0.0im)
+LinearAlgebra.norm(o::Orbital) = norm(o.phi)
+TSSM.inner_product(o1::Orbital, o2::Orbital) = (o1.spin==o2.spin ? inner_product(o1.phi, o2.phi) : 0.0im)
+TSSM.potential_matrix_element(o1::Orbital, o2::Orbital) = (o1.spin==o2.spin ? potential_matrix_element(o1.phi, o2.phi) : 0.0im)
+TSSM.kinetic_matrix_element(o1::Orbital, o2::Orbital) = (o1.spin==o2.spin ? kinetic_matrix_element(o1.phi, o2.phi) : 0.0im)
 
-function Base.scale!(o::Orbital, f::Number) 
-    TSSM.scale!(o.phi, f)
+function LinearAlgebra.scale!(o::Orbital, f::Number) 
+    scale!(o.phi, f)
 end
 
-function axpy!(o1::Orbital, o2::Orbital, f::Number)
-    TSSM.axpy!(o1.phi, o2.phi, f)
+function LinearAlgebra.axpy!(o1::Orbital, o2::Orbital, f::Number)
+    axpy!(o1.phi, o2.phi, f)
 end
 
+function LinearAlgebra.scale!(psi::WfMCTDHF1D, f::Number)
+    st = psi.m.spin_restricted ? 2 : 1
+    for j=1:st:psi.m.N
+        scale!(psi.o[j], f)
+    end
+    psi.a[:] *= f
+end
+
+function LinearAlgebra.axpy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D, f::Number)
+    st = psi1.m.spin_restricted ? 2 : 1
+    for j=1:st:psi1.m.N
+        axpy!(psi1.o[j], psi2.o[j], f)
+    end
+    psi1.a[:] += f*psi2.a[:]
+end
+
+function Base.copy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
+    st = psi1.m.spin_restricted ? 2 : 1
+    for j=1:st:psi1.m.N
+        copy!(psi1.o[j].phi, psi2.o[j].phi)
+    end
+    for j=1:psi1.m.N
+        psi1.o[j].spin = psi2.o[j].spin
+    end
+    psi1.a[:] = psi2.a[:]
+end
 
 using HDF5
 
-function save(psi::WfMCTDHF1D, filename::AbstractString)
+function TSSM.save(psi::WfMCTDHF1D, filename::AbstractString)
     st = psi.m.spin_restricted ? 2 : 1
     for k=1:st:psi.m.N
-       TSSM.save(psi.o[k].phi, filename, string("orbital_",k, "_real"),
+       save(psi.o[k].phi, filename, string("orbital_",k, "_real"),
              string("orbital_", k, "_imag", ), append=(k>1))
     end
     h5open(filename,"r+") do file 
@@ -373,10 +414,10 @@ function save(psi::WfMCTDHF1D, filename::AbstractString)
     filename
 end
 
-function load!(psi::WfMCTDHF1D, filename::AbstractString)
+function TSSM.load!(psi::WfMCTDHF1D, filename::AbstractString)
     st = psi.m.spin_restricted ? 2 : 1
     for k=1:st:psi.m.N
-       TSSM.load!(psi.o[k].phi, filename, string("orbital_",k, "_real"),
+       load!(psi.o[k].phi, filename, string("orbital_",k, "_real"),
              string("orbital_", k, "_imag", ))
     end
     h5open(filename,"r") do file 
@@ -390,7 +431,7 @@ function gen_density_matrix(psi::WfMCTDHF1D)
     m = psi.m
     N = m.N
     rho = m.density_matrix
-    rho[:,:] = 0.0
+    rho[:,:] .= 0.0
     for j=1:N
         for l=j:N
             for (u, v, s) in m.density_rules[j,l]
@@ -409,7 +450,7 @@ function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=
     m = psi.m
     N = m.N
     rho = m.density2_tensor
-    rho[:,:,:,:] = 0.0
+    rho[:,:,:,:] .= 0.0
     for j=1:N
         for l=j:N
             for p=1:N
@@ -425,7 +466,7 @@ function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=
         end
     end
     if mult_inverse_density_matrix
-        X=bkfact(m.density_matrix)
+        X = bunchkaufman(m.density_matrix)
         for p=1:N
             for q=1:N
                 rho[:,:,p,q] = X \ rho[:,:,p,q]
@@ -436,7 +477,7 @@ function gen_density2_tensor(psi::WfMCTDHF1D; mult_inverse_density_matrix::Bool=
 end
 
 
-Base.norm(psi::WfMCTDHF1D) = Base.norm(psi.a)
+LinearAlgebra.norm(psi::WfMCTDHF1D) = norm(psi.a)
 #Note, only correct if orbitals are ortonormal
 
 function TSSM.inner_product(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
@@ -471,23 +512,23 @@ function TSSM.inner_product(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
     d
 end
 
-function distance(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D; expanded::Bool=false)  
+function TSSM.distance(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D; expanded::Bool=false)  
     m = psi1.m
     if m ≠ psi2.m
         error("psi1 and psi2 must belong to the same method")
     end
     if expanded
-        n2 = norm(psi1)^2+norm(psi2)^2-2*real(TSSM.inner_product(psi1,psi2))
+        n2 = norm(psi1)^2+norm(psi2)^2-2*real(inner_product(psi1,psi2))
         if n2<0.0
             return sqrt(complex(n2))
         else
             return sqrt(n2)
         end     
     else
-        n2 = Base.norm(psi1.a-psi2.a).^2
+        n2 = norm(psi1.a-psi2.a).^2
         st = m.spin_restricted ? 2 : 1
         for j=1:st:m.N     
-            n2 += TSSM.distance(psi1.o[j].phi, psi2.o[j].phi)^2
+            n2 += distance(psi1.o[j].phi, psi2.o[j].phi)^2
         end
         return sqrt(n2)
     end
@@ -523,7 +564,7 @@ function TSSM.set!(psi::WfMCTDHF1D, x::Number)
     for j=1:st:psi.m.N 
         set!(psi.o[j].phi, x)
     end
-    psi.a[:] = x
+    psi.a[:] .= x
 end
 
 
@@ -726,7 +767,7 @@ function orthonormalize_orbitals!(psi::WfMCTDHF1D)
                 end
             end    
         end
-        f = Base.norm(psi.o[p])
+        f = norm(psi.o[p])
         scale!(psi.o[p],1/f)
         for j=1:m.lena
             if p in m.slater_indices[j]
@@ -761,7 +802,7 @@ function orthonormalize_orbitals!(psi::WfMCTDHF1D)
     psi
 end
 
-function TSSM.normalize!(psi::WfMCTDHF1D)
+function LinearAlgebra.normalize!(psi::WfMCTDHF1D)
     orthonormalize_orbitals!(psi) 
     psi.a[:] /= norm(psi)
 end
@@ -977,29 +1018,4 @@ function TSSM.add_phi_A!(this::WfMCTDHF1D, other::WfMCTDHF1D, dt::Number, n::Int
     other.a[:] += coefficient/factorial(n)*this.a[:]
 end
 
-function TSSM.scale!(psi::WfMCTDHF1D, f::Number)
-    st = psi.m.spin_restricted ? 2 : 1
-    for j=1:st:psi.m.N
-        scale!(psi.o[j], f)
-    end
-    psi.a[:] *= f
-end
 
-function axpy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D, f::Number)
-    st = psi1.m.spin_restricted ? 2 : 1
-    for j=1:st:psi1.m.N
-        axpy!(psi1.o[j], psi2.o[j], f)
-    end
-    psi1.a[:] += f*psi2.a[:]
-end
-
-function TSSM.copy!(psi1::WfMCTDHF1D, psi2::WfMCTDHF1D)
-    st = psi1.m.spin_restricted ? 2 : 1
-    for j=1:st:psi1.m.N
-        TSSM.copy!(psi1.o[j].phi, psi2.o[j].phi)
-    end
-    for j=1:psi1.m.N
-        psi1.o[j].spin = psi2.o[j].spin
-    end
-    psi1.a[:] = psi2.a[:]
-end
