@@ -1,3 +1,4 @@
+using LinearAlgebra
 using Printf
 
 abstract type TimePropagationMethod end
@@ -654,11 +655,11 @@ mutable struct ExponentialMultistep <: TimePropagationMethod
     psi0 #::WaveFunction
     acc #::WaveFunction    
     starting_method #::TimePropagationMethod
-    starting_subdivide::Int # subdivision of dt for calculation of starting values
+    starting_subdivision::Int # subdivision of dt for calculation of starting values
      
     function ExponentialMultistep(N1::Int; version::Int=1, iters::Int=0,
         final_iteration::Bool=false, combine_first::Bool=true, starting_method::Union{Nothing,TimePropagationMethod}=nothing, 
-        quadrature::Union{Nothing,QuadratureRule}=nothing, starting_subdivide::Int=1)
+        quadrature::Union{Nothing,QuadratureRule}=nothing, starting_subdivision::Int=1)
         N = iters==0 ? N1 : N1+1
         @assert version>=0 && version<=2
         a = Float64[]
@@ -678,7 +679,7 @@ mutable struct ExponentialMultistep <: TimePropagationMethod
             C2 = Vector{Float64}(Rational{Int}[n^m for m=0:N1,   n=-N1+1:1]\Rational{Int}[1//(m+1) for m=0:N1])            
         end    
         ptr = N        
-        new(N, N1, iters, ptr, version, C1, C2, a, b, final_iteration, combine_first, nothing, nothing, nothing, starting_method, starting_subdivide)
+        new(N, N1, iters, ptr, version, C1, C2, a, b, final_iteration, combine_first, nothing, nothing, nothing, starting_method, starting_subdivision)
     end
 end    
 
@@ -794,8 +795,8 @@ function initialize!(method::ExponentialMultistep, psi::WaveFunction,
         method.rhs_back = WaveFunction[wave_function(psi.m) for j=1:method.N]              
         gen_rhs!(method.rhs_back[1], psi)
         k=1  
-        for I in EquidistantTimeStepper(method.starting_method, psi, t0, dt/method.starting_subdivide, (method.N1-1)*method.starting_subdivide)
-            if I[1] % method.starting_subdivide == 0
+        for I in EquidistantTimeStepper(method.starting_method, psi, t0, dt/method.starting_subdivision, (method.N1-1)*method.starting_subdivision)
+            if I[1] % method.starting_subdivision == 0
                 k += 1
                 gen_rhs!(method.rhs_back[k], psi)
             end
