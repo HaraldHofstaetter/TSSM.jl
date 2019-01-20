@@ -147,7 +147,7 @@ function step!(m::SplittingRK4BMethod, psi::WaveFunction,
             propagate_A!(psi, m.a[j]*dt)
         end
         if m.b[j]!=0.0
-            if !method.secondorder
+            if !m.secondorder
                 RK4_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
             else
                 RK2_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
