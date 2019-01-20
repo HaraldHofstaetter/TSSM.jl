@@ -112,17 +112,18 @@ function step!(m::SplittingMethod, psi::WaveFunction,
 end
 
 
-# Splitting with RK4 for B step
+# Splitting with RK4 for B step (alternatively lower order RK2 for cheaper lower order methods (strang))
 mutable struct SplittingRK4BMethod <: TimePropagationMethod
     s::Int
     a::Vector{Float64}
     b::Vector{Float64}
+    secondorder::Bool
     G #::WaveFunction
     U #::Vector{WaveFunction}
-    function SplittingRK4BMethod(a::Vector{Float64}, b::Vector{Float64})         
+    function SplittingRK4BMethod(a::Vector{Float64}, b::Vector{Float64}; secondorder::Bool=false)         
          s = length(a)
          @assert s==length(b)
-         new(s, a, b)
+         new(s, a, b, secondorder)
     end     
 end
 
@@ -146,7 +147,11 @@ function step!(m::SplittingRK4BMethod, psi::WaveFunction,
             propagate_A!(psi, m.a[j]*dt)
         end
         if m.b[j]!=0.0
-            RK4_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
+            if !method.secondorder
+                RK4_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
+            else
+                RK2_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
+            end
         end    
     end         
 end
@@ -179,6 +184,30 @@ function RK4_stepB!(psi::WaveFunction, dt::Number;
 
     gen_rhs!(G, U[4])
     axpy!(psi, G, 1/6*dt)
+    psi
+end
+
+function RK2_stepB!(psi::WaveFunction, dt::Number; 
+    # Second order Runge-Kutta method for propagating B by dt, using time at t+dt as implied
+    # by autonomization for splitting methods.
+    G::WaveFunction=wave_function(psi.m),
+    U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:2])
+
+    t = get_time(psi)
+    set_time!(psi, t+dt)
+    for j=1:2
+        copy!(U[j], psi)
+        set_time!(U[j], t)
+    end
+    set_time!(psi, t)
+
+    gen_rhs!(G, U[1])
+    axpy!(U[2], G, dt)
+    axpy!(psi, G, 1/2*dt)
+
+    gen_rhs!(G, U[2])
+    axpy!(psi, G, 1/2*dt)
+
     psi
 end
 
