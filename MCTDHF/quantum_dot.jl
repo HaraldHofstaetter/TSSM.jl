@@ -1,3 +1,15 @@
+# Usage instruction:
+# julia quantum_dot.jl groundstate # calculates groundstate at t0 = 0
+# julia quantum_dot.jl ref [tol] # tol::Float64, calc ref solution with specified tol for AdaptiveAdamsLawson
+# julia quantum_dot.jl {conv | stab} [method] [num_steps] # run experiment for equidistant method as listed below
+# conv compares the result with a reference solution and prints the norm distance function
+# stab calculates until t = 70 without external potential
+#
+# Parameters are changed as global variables otherwise
+# Experiment results are being saved to subdirectories, please review those lines and mkdir before running!
+# Saved data includes the wave_function as .h5 for ref and conv,
+# the time, norm, energy (, stepsize) for every timestep in a .jld file.
+# For conv, the error and the number of B_Calls is additionally saved.
 using TSSM
 using JLD
 include("mctdhf1d.jl")
