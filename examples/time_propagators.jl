@@ -1,3 +1,4 @@
+using LinearAlgebra
 using Printf
 
 abstract type TimePropagationMethod end
@@ -111,17 +112,18 @@ function step!(m::SplittingMethod, psi::WaveFunction,
 end
 
 
-# Splitting with RK4 for B step
+# Splitting with RK4 for B step (alternatively lower order RK2 for cheaper lower order methods (strang))
 mutable struct SplittingRK4BMethod <: TimePropagationMethod
     s::Int
     a::Vector{Float64}
     b::Vector{Float64}
+    secondorder::Bool
     G #::WaveFunction
     U #::Vector{WaveFunction}
-    function SplittingRK4BMethod(a::Vector{Float64}, b::Vector{Float64})         
+    function SplittingRK4BMethod(a::Vector{Float64}, b::Vector{Float64}; secondorder::Bool=false)         
          s = length(a)
          @assert s==length(b)
-         new(s, a, b)
+         new(s, a, b, secondorder)
     end     
 end
 
@@ -145,7 +147,11 @@ function step!(m::SplittingRK4BMethod, psi::WaveFunction,
             propagate_A!(psi, m.a[j]*dt)
         end
         if m.b[j]!=0.0
-            RK4_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
+            if !m.secondorder
+                RK4_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
+            else
+                RK2_stepB!(psi, m.b[j]*dt, G=m.G, U=m.U)
+            end
         end    
     end         
 end
@@ -178,6 +184,30 @@ function RK4_stepB!(psi::WaveFunction, dt::Number;
 
     gen_rhs!(G, U[4])
     axpy!(psi, G, 1/6*dt)
+    psi
+end
+
+function RK2_stepB!(psi::WaveFunction, dt::Number; 
+    # Second order Runge-Kutta method for propagating B by dt, using time at t+dt as implied
+    # by autonomization for splitting methods.
+    G::WaveFunction=wave_function(psi.m),
+    U::Vector{WaveFunction}=[wave_function(psi.m) for j=1:2])
+
+    t = get_time(psi)
+    set_time!(psi, t+dt)
+    for j=1:2
+        copy!(U[j], psi)
+        set_time!(U[j], t)
+    end
+    set_time!(psi, t)
+
+    gen_rhs!(G, U[1])
+    axpy!(U[2], G, dt)
+    axpy!(psi, G, 1/2*dt)
+
+    gen_rhs!(G, U[2])
+    axpy!(psi, G, 1/2*dt)
+
     psi
 end
 
@@ -654,10 +684,11 @@ mutable struct ExponentialMultistep <: TimePropagationMethod
     psi0 #::WaveFunction
     acc #::WaveFunction    
     starting_method #::TimePropagationMethod
+    starting_subdivision::Int # subdivision of dt for calculation of starting values
      
     function ExponentialMultistep(N1::Int; version::Int=1, iters::Int=0,
         final_iteration::Bool=false, combine_first::Bool=true, starting_method::Union{Nothing,TimePropagationMethod}=nothing, 
-        quadrature::Union{Nothing,QuadratureRule}=nothing)
+        quadrature::Union{Nothing,QuadratureRule}=nothing, starting_subdivision::Int=1)
         N = iters==0 ? N1 : N1+1
         @assert version>=0 && version<=2
         a = Float64[]
@@ -677,7 +708,7 @@ mutable struct ExponentialMultistep <: TimePropagationMethod
             C2 = Vector{Float64}(Rational{Int}[n^m for m=0:N1,   n=-N1+1:1]\Rational{Int}[1//(m+1) for m=0:N1])            
         end    
         ptr = N        
-        new(N, N1, iters, ptr, version, C1, C2, a, b, final_iteration, combine_first, nothing, nothing, nothing, starting_method)
+        new(N, N1, iters, ptr, version, C1, C2, a, b, final_iteration, combine_first, nothing, nothing, nothing, starting_method, starting_subdivision)
     end
 end    
 
@@ -793,9 +824,11 @@ function initialize!(method::ExponentialMultistep, psi::WaveFunction,
         method.rhs_back = WaveFunction[wave_function(psi.m) for j=1:method.N]              
         gen_rhs!(method.rhs_back[1], psi)
         k=1  
-        for I in EquidistantTimeStepper(method.starting_method, psi, t0, dt, method.N1-1) 
-            k += 1
-            gen_rhs!(method.rhs_back[k], psi)
+        for I in EquidistantTimeStepper(method.starting_method, psi, t0, dt/method.starting_subdivision, (method.N1-1)*method.starting_subdivision)
+            if I[1] % method.starting_subdivision == 0
+                k += 1
+                gen_rhs!(method.rhs_back[k], psi)
+            end
         end
         if method.version==2
             for k=0:method.N1-1
